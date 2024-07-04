@@ -1,0 +1,21 @@
+manifestVersion: subsquid.io/v0.1
+name: evm-logs-example
+version: 1
+description: |-
+  Basic example of processing evm logs 
+build:
+
+deploy:
+  addons:
+    postgres:
+  processor:
+    - name: sepolia-processor
+      cmd: ["sqd", "start-sepolia"]
+    - name: arbitrum-sepolia-processor
+      cmd: ["sqd", "start-arbitrum-sepolia"]
+    - name: base-sepolia-processor
+      cmd: ["sqd", "start-base-sepolia"]
+    - name: holesky-processor
+      cmd: ["sqd", "start-holesky"]
+  api:
+    cmd: [ "npx", "squid-graphql-server", "--dumb-cache", "in-memory", "--dumb-cache-ttl", "1000", "--dumb-cache-size", "100", "--dumb-cache-max-age", "1000" ]

@@ -2,6 +2,7 @@ import {  EntityManager,  } from "typeorm"
 import {  Domain,  Resource, } from './model'
 import { getSharedConfig, Domain as DomainConfig } from "./config"
 import { initDatabase } from "./utils"
+import { logger } from "./utils/logger"
 
 async function main(): Promise<void> {
     const dataSource = await initDatabase()
@@ -27,7 +28,7 @@ async function insertDomains(
 }
   
 main().then(() => {
-    console.log("Initialization completed successfully.");
+    logger.info("Initialization completed successfully.");
   }).catch(error => {
-    console.error("Initialization failed:", error);
+    logger.error("Initialization failed:", error);
   });

@@ -6,6 +6,7 @@ import { DecodedDepositLog, DecodedFailedHandlerExecution, DecodedProposalExecut
 import { getSharedConfig, Domain as DomainConfig, SharedConfig } from './config'
 import { ethers } from 'ethers'
 import { processDeposits, processExecutions, processFailedExecutions } from './evmIndexer/evmIndexer'
+import { logger } from './utils/logger'
 
 let provider: ethers.JsonRpcProvider
 let sharedConfig: SharedConfig
@@ -17,9 +18,9 @@ async function initProcess(): Promise<void> {
 }
 
 initProcess().then(() => {
-    console.log("Process initialization completed successfully.");
+    logger.info("Process initialization completed successfully.");
   }).catch(error => {
-    console.error("Process initialization failed:", error);
+    logger.error("Process initialization failed:", error);
   });
 
 processor.run(new TypeormDatabase({stateSchema: process.env.DOMAIN_ID, isolationLevel: "READ COMMITTED"}), async (ctx) => {

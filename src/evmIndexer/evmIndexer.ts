@@ -25,7 +25,8 @@ export async function processDeposits(ctx: Context, depositsData: DecodedDeposit
           txHash: d.txHash,
           blockNumber: d.blockNumber.toString(),
           depositData: d.depositData,
-          timestamp: d.timestamp
+          timestamp: d.timestamp,
+          handlerResponse: d.handlerResponse,
       })
 
       let transfer = await ctx.store.findOne(Transfer, {

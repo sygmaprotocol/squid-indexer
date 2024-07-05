@@ -87,8 +87,8 @@ export async function parseDestination(hexData: BytesLike, domain: DomainConfig,
         destination = recipient
         break
       case DomainTypes.SUBSTRATE:
-        let substrateAPI = substrateRpcUrlConfig.get(domain.id)
-        destination = await parseSubstrateDestination(recipient, substrateAPI!)
+        let substrateAPI = substrateRpcUrlConfig.get(domain.id)!
+        destination = await parseSubstrateDestination(recipient, substrateAPI)
         break
       default: 
         logger.error(`Unsupported domain type: ${domain.type}`)

@@ -26,7 +26,7 @@ type FeeDataResponse = {
   tokenAddress: string
 }
 
-export async function parseDeposit(log: Log, fromDomain: DomainConfig, toDomain: DomainConfig, provider: Provider): Promise<DecodedDepositLog> {
+export async function parseDeposit(log: Log, fromDomain: DomainConfig, toDomain: DomainConfig, provider: Provider, substrateRpcUrlConfig: Map<number, ApiPromise>): Promise<DecodedDepositLog> {
 
   let event = bridge.events.Deposit.decode(log)
   const resource = fromDomain.resources.find(resource => resource.resourceId == event.resourceID)!
@@ -41,7 +41,7 @@ export async function parseDeposit(log: Log, fromDomain: DomainConfig, toDomain:
         depositNonce: event.depositNonce,
         toDomainID: event.destinationDomainID,
         sender: transaction.from,
-        destination: await parseDestination(event.data as BytesLike, toDomain, resourceType) as string,
+        destination: await parseDestination(event.data as BytesLike, toDomain, resourceType, substrateRpcUrlConfig) as string,
         fromDomainID: Number(fromDomain.id),
         resourceID: resource.resourceId, 
         txHash: log.transactionHash,
@@ -54,7 +54,7 @@ export async function parseDeposit(log: Log, fromDomain: DomainConfig, toDomain:
       }
 }
 
-export async function parseDestination(hexData: BytesLike, domain: DomainConfig, resourceType: string): Promise<string> {
+export async function parseDestination(hexData: BytesLike, domain: DomainConfig, resourceType: string, substrateRpcUrlConfig: Map<number, ApiPromise>): Promise<string> {
     const arrayifyData = getBytes(hexData)
     let recipient = ""
     switch (resourceType) {
@@ -87,7 +87,8 @@ export async function parseDestination(hexData: BytesLike, domain: DomainConfig,
         destination = recipient
         break
       case DomainTypes.SUBSTRATE:
-        destination = await parseSubstrateDestination(recipient, domain)
+        let substrateAPI = substrateRpcUrlConfig.get(domain.id)
+        destination = await parseSubstrateDestination(recipient, substrateAPI!)
         break
       default: 
         logger.error(`Unsupported domain type: ${domain.type}`)
@@ -96,14 +97,9 @@ export async function parseDestination(hexData: BytesLike, domain: DomainConfig,
     return destination
   }
   
-  async function parseSubstrateDestination(recipient: string, domain: DomainConfig): Promise<string> {
-    const rpcUrlConfig = getSsmDomainConfig()
-    const wsProvider = new WsProvider(rpcUrlConfig.get(Number(domain.id)))
-    const api = await ApiPromise.create({
-      provider: wsProvider,
-    })
+  async function parseSubstrateDestination(recipient: string, substrateAPI: ApiPromise): Promise<string> {
   
-    const decodedData = api.createType("MultiLocation", recipient)
+    const decodedData = substrateAPI.createType("MultiLocation", recipient)
     const multiAddress = decodedData.toJSON() as unknown as MultiLocation
     for (const [, junctions] of Object.entries(multiAddress.interior)) {
       const junston = junctions as Junction

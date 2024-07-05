@@ -4,6 +4,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import { XcmAssetId } from "@polkadot/types/interfaces"
 import { logger } from "../utils/logger"
+import { ApiPromise, WsProvider } from "@polkadot/api"
 
 export type LocalDomainConfig = {
   url: string
@@ -82,11 +83,15 @@ export const getSharedConfig = async (url: string): Promise<SharedConfig> => {
   }
 }
 
-export const getSsmDomainConfig = (): Map<number, string> => {
-  const parsedResponse = JSON.parse(process.env.SUPPORTED_SUBSTRATE_RPCS!) as RpcUrlConfig
-  const rpcUrlMap = new Map<number, string>()
+export const getSsmDomainConfig = async (supportedRPCs: string): Promise<Map<number, ApiPromise>> => {
+  const parsedResponse = JSON.parse(supportedRPCs) as RpcUrlConfig
+  const rpcUrlMap = new Map<number, ApiPromise>()
   for (const rpcConfig of parsedResponse) {
-    rpcUrlMap.set(rpcConfig.id, rpcConfig.endpoint)
+    const wsProvider = new WsProvider(rpcConfig.endpoint)
+    const api = await ApiPromise.create({
+      provider: wsProvider,
+    })
+    rpcUrlMap.set(rpcConfig.id, api)
   }
 
   return rpcUrlMap

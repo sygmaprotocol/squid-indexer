@@ -1,3 +1,7 @@
+/*
+The Licensed Work is (c) 2024 Sygma
+SPDX-License-Identifier: LGPL-3.0-only
+*/
 import * as p from '@subsquid/evm-codec'
 import {fun, ContractBase, type AbiFunction, type FunctionReturn, type FunctionArguments} from '@subsquid/evm-abi'
 

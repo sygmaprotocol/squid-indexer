@@ -1,3 +1,7 @@
+/*
+The Licensed Work is (c) 2024 Sygma
+SPDX-License-Identifier: LGPL-3.0-only
+*/
 import { DataSource } from "typeorm";
 import { Account, Deposit, Domain, Execution, Fee, Resource, Transfer} from '../model'
 import { SnakeNamingStrategy } from "typeorm-naming-strategies"

@@ -1,3 +1,7 @@
+/*
+The Licensed Work is (c) 2024 Sygma
+SPDX-License-Identifier: LGPL-3.0-only
+*/
 import {  EntityManager,  } from "typeorm"
 import {  Domain,  Resource, } from './model'
 import { getSharedConfig, Domain as DomainConfig } from "./config"

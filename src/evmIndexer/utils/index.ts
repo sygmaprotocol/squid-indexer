@@ -12,6 +12,7 @@ import { logger } from '../../utils/logger'
 import { MultiLocation } from "@polkadot/types/interfaces"
 import { ApiPromise, WsProvider } from "@polkadot/api"
 import { getERC20Contract, getFeeRouterContract } from "../../services/contract"
+import { randomUUID } from 'crypto'
 
 
 export const nativeTokenAddress = "0x0000000000000000000000000000000000000000"
@@ -77,13 +78,20 @@ export async function parseDestination(hexData: BytesLike, domain: DomainConfig,
         break
       default:
         logger.error(`Unsupported resource type: ${resourceType}`)
+        return ""
     }
   
     let destination = ""
-    if (domain.type == DomainTypes.EVM) {
-      destination = recipient
-    } else if (domain.type == DomainTypes.SUBSTRATE) {
-      destination = await parseSubstrateDestination(recipient, domain)
+    switch(domain.type){
+      case DomainTypes.EVM:
+        destination = recipient
+        break
+      case DomainTypes.SUBSTRATE:
+        destination = await parseSubstrateDestination(recipient, domain)
+        break
+      default: 
+        logger.error(`Unsupported domain type: ${domain.type}`)
+        throw new Error(`unexpected domain type`)
     }
     return destination
   }
@@ -180,24 +188,28 @@ export async function parseDestination(hexData: BytesLike, domain: DomainConfig,
         "0x00",
       )) as FeeDataResponse
     
-      let tokenSymbol = fromDomain.nativeTokenSymbol
-      let decimals = fromDomain.nativeTokenDecimals
+      let tokenSymbol: string
+      let decimals: number
       if (fee.tokenAddress != nativeTokenAddress) {
         const token = getERC20Contract(provider, fee.tokenAddress)
         tokenSymbol = (await token.symbol()) as string
         decimals = Number(await token.decimals())
+      } else {
+        tokenSymbol = fromDomain.nativeTokenSymbol
+        decimals = fromDomain.nativeTokenDecimals
       }
     
       return {
+        id: randomUUID(),
         tokenAddress: fee.tokenAddress,
         tokenSymbol: tokenSymbol,
         decimals: decimals,
         amount: fee.fee.toString(),
       }
     } catch (err) {
-      console.log(err)
-      logger.error(err)
+      logger.error("Calculating fee failed", err)
       return {
+        id: randomUUID(), 
         tokenAddress: "",
         tokenSymbol: "",
         decimals: 0,

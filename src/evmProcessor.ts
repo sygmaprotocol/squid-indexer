@@ -24,7 +24,7 @@ export const processor = new EvmBatchProcessor()
         rateLimit: 10
     })
     .setBlockRange({from: parseInt(process.env.START_BLOCK || "0")})
-    .setFinalityConfirmation(parseInt(process.env.DOMAIN_CONFIRMATIONS!) || 75)
+    .setFinalityConfirmation(parseInt(process.env.DOMAIN_CONFIRMATIONS || "75"))
     .setFields({
         log: {
             topics: true,

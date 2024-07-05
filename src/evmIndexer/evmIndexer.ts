@@ -5,8 +5,6 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { Account, Deposit, Execution, Fee, Transfer, TransferStatus} from '../model'
 import { Context, } from '../evmProcessor'
 import { DecodedDepositLog, DecodedFailedHandlerExecution, DecodedProposalExecutionLog } from './evmTypes'
-import { randomUUID } from 'crypto'
-
 
 export async function processDeposits(ctx: Context, depositsData: DecodedDepositLog[]): Promise<void> {
 
@@ -16,7 +14,6 @@ export async function processDeposits(ctx: Context, depositsData: DecodedDeposit
       await ctx.store.upsert(account)
 
       const fee = new Fee(d.fee)
-      fee.id = randomUUID()
       await ctx.store.upsert(fee)
 
       const deposit = new Deposit({

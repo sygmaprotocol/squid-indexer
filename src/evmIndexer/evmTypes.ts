@@ -25,7 +25,7 @@ export type DecodedDepositLog = {
   transferType: string
   amount: string
   senderStatus?: string
-  fee?: FeeData 
+  fee: FeeData 
 }
 
   export type DecodedProposalExecutionLog = {
@@ -51,6 +51,7 @@ export type DecodedDepositLog = {
   }
 
   export type FeeData = {
+    id: string,
     tokenAddress: string
     tokenSymbol: string
     amount: string

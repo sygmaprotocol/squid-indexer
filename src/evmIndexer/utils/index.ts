@@ -16,7 +16,7 @@ import {
 import { MultiLocation } from "@polkadot/types/interfaces";
 import { ApiPromise } from "@polkadot/api";
 import * as bridge from "../../abi/bridge";
-import { Log } from "../../evmProcessor";
+import { Context, Log } from "../../evmProcessor";
 import {
   DecodedDepositLog,
   DecodedFailedHandlerExecution,
@@ -34,6 +34,7 @@ import {
   getERC20Contract,
   getFeeRouterContract,
 } from "../../services/contract";
+import { Transfer } from "../../model";
 
 export const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 type Junction = {
@@ -287,5 +288,25 @@ export async function getFee(
       decimals: 0,
       amount: "0",
     };
+  }
+}
+
+export async function getUpdatedTransfer(
+  ctx: Context,
+  transferValues: Partial<Transfer>
+): Promise<Transfer> {
+  const transfer = await ctx.store.findOne(Transfer, {
+    where: {
+      depositNonce: transferValues.depositNonce!,
+      fromDomainID: transferValues.fromDomainID!,
+      toDomainID: transferValues.toDomainID!,
+    },
+  });
+
+  if (!transfer) {
+    return new Transfer(transferValues);
+  } else {
+    Object.assign(transfer, transferValues);
+    return transfer;
   }
 }

@@ -2,20 +2,14 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {
-  Account,
-  Deposit,
-  Execution,
-  Fee,
-  Transfer,
-  TransferStatus,
-} from "../model";
+import { Account, Deposit, Execution, Fee, TransferStatus } from "../model";
 import { Context } from "../evmProcessor";
 import {
   DecodedDepositLog,
   DecodedFailedHandlerExecution,
   DecodedProposalExecutionLog,
 } from "./evmTypes";
+import { getUpdatedTransfer } from "./utils";
 
 export async function processDeposits(
   ctx: Context,
@@ -38,43 +32,21 @@ export async function processDeposits(
       handlerResponse: d.handlerResponse,
     });
 
-    let transfer = await ctx.store.findOne(Transfer, {
-      where: {
-        depositNonce: d.depositNonce,
-        toDomainID: d.toDomainID,
-        fromDomainID: Number(d.fromDomainID),
-      },
+    const transfer = await getUpdatedTransfer(ctx, {
+      id: d.id,
+      depositNonce: d.depositNonce,
+      amount: d.amount,
+      destination: d.destination,
+      status: TransferStatus.pending,
+      message: "",
+      resourceID: d.resourceID,
+      fromDomainID: d.fromDomainID,
+      toDomainID: d.toDomainID,
+      account: account,
+      deposit: deposit,
+      fee: fee,
     });
 
-    if (!transfer) {
-      transfer = new Transfer({
-        id: d.id,
-        depositNonce: d.depositNonce,
-        amount: d.amount,
-        destination: d.destination,
-        status: TransferStatus.pending,
-        message: "",
-        resourceID: d.resourceID,
-        fromDomainID: Number(d.fromDomainID),
-        toDomainID: d.toDomainID,
-        account: account,
-        deposit: deposit,
-        fee: fee,
-      });
-    } else {
-      (transfer.id = d.id),
-        (transfer.depositNonce = d.depositNonce),
-        (transfer.amount = d.amount),
-        (transfer.destination = d.destination),
-        (transfer.status = TransferStatus.pending),
-        (transfer.message = ""),
-        (transfer.resourceID = d.resourceID),
-        (transfer.fromDomainID = Number(d.fromDomainID)),
-        (transfer.toDomainID = d.toDomainID),
-        (transfer.account = account),
-        (transfer.deposit = deposit),
-        (transfer.fee = fee);
-    }
     await ctx.store.upsert(deposit);
     await ctx.store.upsert(transfer);
   }
@@ -92,29 +64,18 @@ export async function processExecutions(
       txHash: e.txHash,
     });
 
-    let transfer = await ctx.store.findOne(Transfer, {
-      where: {
-        depositNonce: e.depositNonce,
-        toDomainID: e.toDomainID,
-        fromDomainID: Number(e.fromDomainID),
-      },
+    const transfer = await getUpdatedTransfer(ctx, {
+      id: e.id,
+      depositNonce: e.depositNonce,
+      amount: null,
+      destination: null,
+      status: TransferStatus.executed,
+      message: "",
+      fromDomainID: e.fromDomainID,
+      toDomainID: e.toDomainID,
+      execution: execution,
     });
 
-    if (!transfer) {
-      transfer = new Transfer({
-        id: e.id,
-        depositNonce: e.depositNonce,
-        amount: null,
-        destination: null,
-        status: TransferStatus.executed,
-        message: "",
-        fromDomainID: Number(e.fromDomainID),
-        toDomainID: e.toDomainID,
-        execution: execution,
-      });
-    } else {
-      transfer.status = TransferStatus.executed;
-    }
     await ctx.store.upsert(execution);
     await ctx.store.upsert(transfer);
   }
@@ -132,30 +93,18 @@ export async function processFailedExecutions(
       txHash: e.txHash,
     });
 
-    let transfer = await ctx.store.findOne(Transfer, {
-      where: {
-        depositNonce: e.depositNonce,
-        toDomainID: e.toDomainID,
-        fromDomainID: e.fromDomainID,
-      },
+    const transfer = await getUpdatedTransfer(ctx, {
+      id: e.id,
+      depositNonce: e.depositNonce,
+      amount: null,
+      destination: null,
+      status: TransferStatus.failed,
+      message: e.message,
+      fromDomainID: e.fromDomainID,
+      toDomainID: e.toDomainID,
+      execution: failedExecution,
     });
 
-    if (!transfer) {
-      transfer = new Transfer({
-        id: e.id,
-        depositNonce: e.depositNonce,
-        amount: null,
-        destination: null,
-        status: TransferStatus.failed,
-        message: e.message,
-        fromDomainID: Number(e.fromDomainID),
-        toDomainID: e.toDomainID,
-        execution: failedExecution,
-      });
-    } else {
-      transfer.status = TransferStatus.failed;
-      transfer.message = e.message;
-    }
     await ctx.store.upsert(failedExecution);
     await ctx.store.upsert(transfer);
   }

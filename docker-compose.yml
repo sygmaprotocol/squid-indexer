@@ -39,7 +39,6 @@ services:
       DB_PORT: 5432
       DB_USERNAME: ${DB_USERNAME}
       DB_HOST: ${DB_HOST}
-      SHARED_CONFIG_URL: ${SHARED_CONFIG_URL}
   indexer-holesky:
     build: 
       context: .
@@ -55,4 +54,3 @@ services:
       DB_PORT: 5432
       DB_USERNAME: ${DB_USERNAME}
       DB_HOST: ${DB_HOST}
-      SHARED_CONFIG_URL: ${SHARED_CONFIG_URL}

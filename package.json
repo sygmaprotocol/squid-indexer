@@ -3,11 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "rm -rf lib && tsc",
+    "build": "rm -rf lib && sqd build",
     "update": "npx npm-check-updates --filter /subsquid/ --upgrade && npm i -f",
     "license-check": "license-check-and-add check -f license-config.json",
     "license-add": "license-check-and-add add -f license-config.json",
-    "license-remove": "license-check-and-add remove -f license-config.json"
+    "license-remove": "license-check-and-add remove -f license-config.json",
+    "migration:generate": "squid-typeorm-migration generate", 
+    "migration:apply": "squid-typeorm-migration apply"
   },
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.145.0",
@@ -23,6 +25,7 @@
     "@polkadot/typegen": "^12.0.1",
     "@polkadot/util": "^12.6.2",
     "@subsquid/archive-registry": "^3.3.2",
+    "@subsquid/cli": "^2.12.0",
     "@subsquid/evm-processor": "^1.17.1",
     "@subsquid/evm-typegen": "^4.0.0",
     "@subsquid/graphql-server": "^4.5.1",

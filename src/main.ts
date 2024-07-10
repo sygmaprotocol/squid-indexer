@@ -96,7 +96,7 @@ async function startEVMProcessing(): Promise<void> {
 
 startEVMProcessing()
   .then(() => {
-    logger.info("Processing completed successfully.");
+    logger.info("Processing started successfully.");
   })
   .catch((error) => {
     logger.error("An error occurred during processing:", error);

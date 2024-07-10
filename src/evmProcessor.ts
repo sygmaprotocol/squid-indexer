@@ -15,13 +15,13 @@ import * as bridge from "./abi/bridge";
 import { getProcessorConfig, ProcessorConfig, validateConfig } from "./config";
 import { logger } from "./utils/logger";
 
-let processorConfig: ProcessorConfig
+let processorConfig: ProcessorConfig;
 try {
   processorConfig = getProcessorConfig();
   validateConfig(processorConfig);
-} catch(error){
-  logger.error("Processor configuration validation failed: ", error)
-  process.exit(1)
+} catch (error) {
+  logger.error("Processor configuration validation failed: ", error);
+  process.exit(1);
 }
 
 export const processor = new EvmBatchProcessor()

@@ -9,21 +9,29 @@ import {
   EvmBatchProcessorFields,
   Log as _Log,
   Transaction as _Transaction,
-  assertNotNull,
 } from "@subsquid/evm-processor";
 import { Store } from "@subsquid/typeorm-store";
 import * as bridge from "./abi/bridge";
+import { getProcessorConfig, ProcessorConfig, validateConfig } from "./config";
+import { logger } from "./utils/logger";
 
-export const CONTRACT_ADDRESS = process.env.DOMAIN_BRIDGE_ADDRESS!;
+let processorConfig: ProcessorConfig
+try {
+  processorConfig = getProcessorConfig();
+  validateConfig(processorConfig);
+} catch(error){
+  logger.error("Processor configuration validation failed: ", error)
+  process.exit(1)
+}
 
 export const processor = new EvmBatchProcessor()
-  .setGateway(process.env.DOMAIN_GATEWAY!)
+  .setGateway(processorConfig.gateway)
   .setRpcEndpoint({
-    url: assertNotNull(process.env.RPC_URL, "No RPC endpoint supplied"),
+    url: processorConfig.rpcURL,
     rateLimit: 10,
   })
-  .setBlockRange({ from: parseInt(process.env.START_BLOCK || "0") })
-  .setFinalityConfirmation(parseInt(process.env.DOMAIN_CONFIRMATIONS || "75"))
+  .setBlockRange({ from: processorConfig.startBlock })
+  .setFinalityConfirmation(processorConfig.numberOfConfirmations)
   .setFields({
     log: {
       topics: true,
@@ -31,17 +39,17 @@ export const processor = new EvmBatchProcessor()
     },
   })
   .addLog({
-    address: [CONTRACT_ADDRESS],
+    address: [processorConfig.contractAddress],
     topic0: [bridge.events.ProposalExecution.topic],
     transaction: true,
   })
   .addLog({
-    address: [CONTRACT_ADDRESS],
+    address: [processorConfig.contractAddress],
     topic0: [bridge.events.Deposit.topic],
     transaction: true,
   })
   .addLog({
-    address: [CONTRACT_ADDRESS],
+    address: [processorConfig.contractAddress],
     topic0: [bridge.events.FailedHandlerExecution.topic],
     transaction: true,
   });

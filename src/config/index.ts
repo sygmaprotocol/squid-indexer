@@ -6,9 +6,19 @@ import { XcmAssetId } from "@polkadot/types/interfaces";
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { logger } from "../utils/logger";
 
-export type LocalDomainConfig = {
-  url: string;
+export type DomainConfig = {
+  rpcURL: string;
+  sharedConfigURL: string;
+  domainID: number;
+  supportedSubstrateRPCs: string;
+};
+
+export type ProcessorConfig = {
+  contractAddress: string;
+  gateway: string;
+  rpcURL: string;
   startBlock: number;
+  numberOfConfirmations: number;
 };
 
 export const enum ResourceTypes {
@@ -72,6 +82,33 @@ export type RpcUrlConfig = Array<{
   id: number;
   endpoint: string;
 }>;
+
+export function getProcessorConfig(): ProcessorConfig {
+  return {
+    contractAddress: process.env.DOMAIN_BRIDGE_ADDRESS!,
+    gateway: process.env.DOMAIN_GATEWAY!,
+    rpcURL: process.env.RPC_URL!,
+    numberOfConfirmations: Number(process.env.DOMAIN_CONFIRMATIONS),
+    startBlock: Number(process.env.START_BLOCK!),
+  };
+}
+
+export function getDomainConfig(): DomainConfig {
+  return {
+    domainID: Number(process.env.DOMAIN_ID),
+    rpcURL: process.env.RPC_URL!,
+    sharedConfigURL: process.env.SHARED_CONFIG_URL!,
+    supportedSubstrateRPCs: process.env.SUPPORTED_SUBSTRATE_RPCS!,
+  };
+}
+
+export function validateConfig(config: Record<string, any>): void {
+  for (const [key, value] of Object.entries(config)) {
+    if (!value) {
+      throw new Error(`${key} is not defined or invalid`);
+    }
+  }
+}
 
 export const getSharedConfig = async (url: string): Promise<SharedConfig> => {
   try {

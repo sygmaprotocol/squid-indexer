@@ -16,7 +16,12 @@ import {
   DecodedFailedHandlerExecution,
   DecodedProposalExecutionLog,
 } from "./evmIndexer/evmTypes";
-import { getSharedConfig, getSsmDomainConfig } from "./config";
+import {
+  getSharedConfig,
+  getSsmDomainConfig,
+  getDomainConfig,
+  validateConfig,
+} from "./config";
 import {
   processDeposits,
   processExecutions,
@@ -24,66 +29,75 @@ import {
 } from "./evmIndexer/evmIndexer";
 import { logger } from "./utils/logger";
 
-async function startProcessing(): Promise<void> {
-  try {
-    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
-    const sharedConfig = await getSharedConfig(process.env.SHARED_CONFIG_URL!);
-    const thisDomain = sharedConfig.domains.find(
-      (domain) => domain.id == Number(process.env.DOMAIN_ID)
-    )!;
-    const substrateRpcUrlConfig = await getSsmDomainConfig(
-      process.env.SUPPORTED_SUBSTRATE_RPCS!
+async function startEVMProcessing(): Promise<void> {
+  const domainConfig = getDomainConfig();
+  validateConfig(domainConfig);
+
+  const provider = new ethers.JsonRpcProvider(domainConfig.rpcURL);
+  const sharedConfig = await getSharedConfig(domainConfig.sharedConfigURL);
+  const thisDomain = sharedConfig.domains.find(
+    (domain) => domain.id == domainConfig.domainID
+  )!;
+  if (!thisDomain) {
+    throw new Error(
+      `Domain with ID ${domainConfig.domainID} not found in shared configuration`
     );
+  }
 
-    logger.info("Process initialization completed successfully.");
+  const substrateRpcUrlConfig = await getSsmDomainConfig(
+    domainConfig.supportedSubstrateRPCs
+  );
 
-    processor.run(
-      new TypeormDatabase({
-        stateSchema: process.env.DOMAIN_ID,
-        isolationLevel: "READ COMMITTED",
-      }),
-      async (ctx) => {
-        const deposits: DecodedDepositLog[] = [];
-        const executions: DecodedProposalExecutionLog[] = [];
-        const failedHandlerExecutions: DecodedFailedHandlerExecution[] = [];
-        for (const block of ctx.blocks) {
-          for (const log of block.logs) {
-            if (log.topics[0] === bridge.events.Deposit.topic) {
-              const event = bridge.events.Deposit.decode(log);
-              const toDomain = sharedConfig.domains.find(
-                (domain) => domain.id == event.destinationDomainID
-              );
-              deposits.push(
-                await parseDeposit(
-                  log,
-                  thisDomain,
-                  toDomain!,
-                  provider,
-                  substrateRpcUrlConfig
-                )
-              );
-            } else if (
-              log.topics[0] === bridge.events.ProposalExecution.topic
-            ) {
-              executions.push(parseProposalExecution(log, thisDomain));
-            } else if (
-              log.topics[0] === bridge.events.FailedHandlerExecution.topic
-            ) {
-              failedHandlerExecutions.push(
-                parseFailedHandlerExecution(log, thisDomain)
-              );
-            }
+  logger.info("Process initialization completed successfully.");
+
+  processor.run(
+    new TypeormDatabase({
+      stateSchema: process.env.DOMAIN_ID,
+      isolationLevel: "READ COMMITTED",
+    }),
+    async (ctx) => {
+      const deposits: DecodedDepositLog[] = [];
+      const executions: DecodedProposalExecutionLog[] = [];
+      const failedHandlerExecutions: DecodedFailedHandlerExecution[] = [];
+      for (const block of ctx.blocks) {
+        for (const log of block.logs) {
+          if (log.topics[0] === bridge.events.Deposit.topic) {
+            const event = bridge.events.Deposit.decode(log);
+            const toDomain = sharedConfig.domains.find(
+              (domain) => domain.id == event.destinationDomainID
+            );
+            deposits.push(
+              await parseDeposit(
+                log,
+                thisDomain,
+                toDomain!,
+                provider,
+                substrateRpcUrlConfig
+              )
+            );
+          } else if (log.topics[0] === bridge.events.ProposalExecution.topic) {
+            executions.push(parseProposalExecution(log, thisDomain));
+          } else if (
+            log.topics[0] === bridge.events.FailedHandlerExecution.topic
+          ) {
+            failedHandlerExecutions.push(
+              parseFailedHandlerExecution(log, thisDomain)
+            );
           }
         }
-
-        await processDeposits(ctx, deposits);
-        await processExecutions(ctx, executions);
-        await processFailedExecutions(ctx, failedHandlerExecutions);
       }
-    );
-  } catch (error) {
-    logger.error("Process initialization or execution failed:", error);
-  }
+
+      await processDeposits(ctx, deposits);
+      await processExecutions(ctx, executions);
+      await processFailedExecutions(ctx, failedHandlerExecutions);
+    }
+  );
 }
 
-void startProcessing();
+startEVMProcessing()
+  .then(() => {
+    logger.info("Processing completed successfully.");
+  })
+  .catch((error) => {
+    logger.error("An error occurred during processing:", error);
+  });

@@ -258,7 +258,7 @@ export async function getFee(
       event.destinationDomainID,
       event.resourceID,
       event.data,
-      "0x00"
+      process.env.STATIC_FEE_DATA
     )) as FeeDataResponse;
 
     let tokenSymbol: string;

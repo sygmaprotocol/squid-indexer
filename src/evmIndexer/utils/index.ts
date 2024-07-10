@@ -37,6 +37,7 @@ import {
 import { Transfer } from "../../model";
 
 export const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
+const STATIC_FEE_DATA = "0x00";
 type Junction = {
   accountId32?: {
     id: string;
@@ -77,7 +78,7 @@ export async function parseDeposit(
     ),
     fromDomainID: Number(fromDomain.id),
     resourceID: resource.resourceId,
-    txHash: log.transactionHash,
+    txHash: transaction.hash,
     timestamp: new Date(log.block.timestamp),
     depositData: event.data,
     handlerResponse: event.handlerResponse,
@@ -209,13 +210,14 @@ export function parseProposalExecution(
   toDomain: DomainConfig
 ): DecodedProposalExecutionLog {
   const event = bridge.events.ProposalExecution.decode(log);
+  const transaction = assertNotNull(log.transaction, "Missing transaction");
 
   return {
     id: log.id,
     blockNumber: log.block.height,
     from: log.transaction!.from,
     depositNonce: event.depositNonce,
-    txHash: log.transactionHash,
+    txHash: transaction.hash,
     timestamp: new Date(log.block.timestamp),
     fromDomainID: event.originDomainID,
     toDomainID: Number(toDomain.id),
@@ -227,13 +229,14 @@ export function parseFailedHandlerExecution(
   toDomain: DomainConfig
 ): DecodedFailedHandlerExecution {
   const event = bridge.events.FailedHandlerExecution.decode(log);
+  const transaction = assertNotNull(log.transaction, "Missing transaction");
 
   return {
     id: log.id,
     fromDomainID: event.originDomainID,
     toDomainID: toDomain.id,
     depositNonce: event.depositNonce,
-    txHash: log.transactionHash,
+    txHash: transaction.hash,
     message: ethers.decodeBytes32String(
       "0x" + Buffer.from(event.lowLevelData.slice(-64)).toString()
     ),
@@ -258,7 +261,7 @@ export async function getFee(
       event.destinationDomainID,
       event.resourceID,
       event.data,
-      process.env.STATIC_FEE_DATA
+      STATIC_FEE_DATA
     )) as FeeDataResponse;
 
     let tokenSymbol: string;

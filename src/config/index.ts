@@ -11,6 +11,7 @@ export type DomainConfig = {
   sharedConfigURL: string;
   domainID: number;
   supportedSubstrateRPCs: string;
+  domainType: string;
 };
 
 export type ProcessorConfig = {
@@ -84,25 +85,30 @@ export type RpcUrlConfig = Array<{
 }>;
 
 export function getProcessorConfig(): ProcessorConfig {
-  return {
+  const processorConfig: ProcessorConfig = {
     contractAddress: process.env.DOMAIN_BRIDGE_ADDRESS!,
     gateway: process.env.DOMAIN_GATEWAY!,
     rpcURL: process.env.RPC_URL!,
     numberOfConfirmations: Number(process.env.DOMAIN_CONFIRMATIONS),
     startBlock: Number(process.env.START_BLOCK!),
   };
+  validateConfig(processorConfig);
+  return processorConfig;
 }
 
 export function getDomainConfig(): DomainConfig {
-  return {
+  const domainConfig: DomainConfig = {
     domainID: Number(process.env.DOMAIN_ID),
     rpcURL: process.env.RPC_URL!,
     sharedConfigURL: process.env.SHARED_CONFIG_URL!,
     supportedSubstrateRPCs: process.env.SUPPORTED_SUBSTRATE_RPCS!,
+    domainType: process.env.DOMAIN_TYPE!,
   };
+  validateConfig(domainConfig);
+  return domainConfig;
 }
 
-export function validateConfig(config: Record<string, any>): void {
+function validateConfig(config: Record<string, any>): void {
   for (const [key, value] of Object.entries(config)) {
     if (!value) {
       throw new Error(`${key} is not defined or invalid`);

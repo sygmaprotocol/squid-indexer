@@ -3,4 +3,3 @@ lib
 Dockerfile
 docker-compose.yml 
 .dockerignore
-db

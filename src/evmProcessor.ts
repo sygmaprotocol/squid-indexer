@@ -70,7 +70,7 @@ export async function startEvmProcessing(
             const toDomain = sharedConfig.domains.find(
               (domain) => domain.id == event.destinationDomainID
             );
-            if (!toDomain){
+            if (!toDomain) {
               throw new Error(
                 `Destination domain with ID ${event.destinationDomainID} not found in shared configuration`
               );
@@ -79,7 +79,7 @@ export async function startEvmProcessing(
               await parseDeposit(
                 log,
                 thisDomain,
-                toDomain!,
+                toDomain,
                 provider,
                 substrateRpcUrlConfig
               )

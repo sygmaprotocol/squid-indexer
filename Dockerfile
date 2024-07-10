@@ -32,6 +32,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/lib ./lib
 COPY --from=builder /app/envs ./envs
+COPY --from=builder /app/db ./db
 LABEL org.opencontainers.image.source https://github.com/sygmaprotocol/squid-indexer/
 EXPOSE 8000
 

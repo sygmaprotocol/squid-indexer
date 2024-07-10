@@ -70,6 +70,11 @@ export async function startEvmProcessing(
             const toDomain = sharedConfig.domains.find(
               (domain) => domain.id == event.destinationDomainID
             );
+            if (!toDomain){
+              throw new Error(
+                `Destination domain with ID ${event.destinationDomainID} not found in shared configuration`
+              );
+            }
             deposits.push(
               await parseDeposit(
                 log,

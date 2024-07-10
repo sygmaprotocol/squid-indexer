@@ -59,6 +59,11 @@ export async function parseDeposit(
   const resource = fromDomain.resources.find(
     (resource) => resource.resourceId == event.resourceID
   )!;
+  if (!resource){
+    throw new Error(
+      `Resource with ID ${event.resourceID} not found in shared configuration`
+    );
+  }
   const resourceType = resource.type || "";
   const resourceDecimals = resource.decimals || 18;
 

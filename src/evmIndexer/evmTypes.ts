@@ -3,12 +3,6 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 
-export type DecodedLogs = {
-  deposit: Array<DecodedDepositLog>;
-  proposalExecution: Array<DecodedProposalExecutionLog>;
-  errors: Array<DecodedFailedHandlerExecution>;
-};
-
 export type DecodedDepositLog = {
   id: string;
   blockNumber: number;
@@ -58,22 +52,15 @@ export type FeeData = {
   decimals: number;
 };
 
-export enum EventType {
-  DEPOSIT = "Deposit",
-  PROPOSAL_EXECUTION = "ProposalExecution",
-  FAILED_HANDLER_EXECUTION = "FailedHandlerExecution",
-  FEE_COLLECTED = "FeeCollected",
-}
-
-export enum FeeHandlerType {
-  BASIC = "basic",
-  PERCENTAGE = "percentage",
-}
-
 export enum DepositType {
   FUNGIBLE = "fungible",
   NONFUNGIBLE = "nonfungible",
   SEMIFUNGIBLE = "semifungible",
   PERMISSIONLESS_GENERIC = "permissionlessGeneric",
   PERMISSIONED_GENERIC = "permissionedGeneric",
+}
+
+export enum ContractType {
+  ERC20 = "erc20", 
+  FEE_ROUTER = "feeRouter"
 }

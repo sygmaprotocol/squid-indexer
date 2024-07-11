@@ -7,11 +7,11 @@ import { startEvmProcessing } from "./evmProcessor";
 import {
   getDomainConfig,
   getProcessorConfig,
-  DomainTypes,
   getSharedConfig,
   getSsmDomainConfig,
 } from "./config";
 import { logger } from "./utils/logger";
+import { Network } from "@buildwithsygma/sygma-sdk-core";
 
 async function startProcessing(): Promise<void> {
   const processorConfig = getProcessorConfig();
@@ -28,7 +28,7 @@ async function startProcessing(): Promise<void> {
   }
 
   switch (domainConfig.domainType) {
-    case DomainTypes.EVM: {
+    case Network.EVM: {
       const provider = new ethers.JsonRpcProvider(domainConfig.rpcURL);
       const substrateRpcUrlConfig = await getSsmDomainConfig(
         domainConfig.supportedSubstrateRPCs

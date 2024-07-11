@@ -18,6 +18,7 @@ import { ApiPromise } from "@polkadot/api";
 import * as bridge from "../../abi/bridge";
 import { Context, Log } from "../../evmProcessor";
 import {
+  ContractType,
   DecodedDepositLog,
   DecodedFailedHandlerExecution,
   DecodedProposalExecutionLog,
@@ -25,16 +26,12 @@ import {
   FeeData,
 } from "../evmTypes";
 import {
-  DomainTypes,
   Domain as DomainConfig,
-  ResourceTypes,
 } from "../../config";
 import { logger } from "../../utils/logger";
-import {
-  getERC20Contract,
-  getFeeRouterContract,
-} from "../../services/contract";
 import { Transfer } from "../../model";
+import { getContract } from "../../services/contract";
+import { Network, ResourceType } from "@buildwithsygma/sygma-sdk-core";
 
 export const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 const STATIC_FEE_DATA = "0x00";
@@ -106,8 +103,8 @@ export function parseDestination(
   const arrayifyData = getBytes(hexData);
   let recipient = "";
   switch (resourceType) {
-    case ResourceTypes.FUNGIBLE:
-    case ResourceTypes.NON_FUNGIBLE: {
+    case ResourceType.FUNGIBLE:
+    case ResourceType.NON_FUNGIBLE: {
       const recipientlen = Number(
         "0x" + Buffer.from(arrayifyData.slice(32, 64)).toString("hex")
       );
@@ -116,7 +113,7 @@ export function parseDestination(
         Buffer.from(arrayifyData.slice(64, 64 + recipientlen)).toString("hex");
       break;
     }
-    case ResourceTypes.PERMISSIONLESS_GENERIC:
+    case ResourceType.PERMISSIONLESS_GENERIC:
       {
         // 32 + 2 + 1 + 1 + 20 + 20
         const lenExecuteFuncSignature = Number(
@@ -148,10 +145,10 @@ export function parseDestination(
 
   let destination = "";
   switch (domain.type) {
-    case DomainTypes.EVM:
+    case Network.EVM:
       destination = recipient;
       break;
-    case DomainTypes.SUBSTRATE:
+    case Network.SUBSTRATE:
       destination = parseSubstrateDestination(
         recipient,
         substrateRpcUrlConfig.get(domain.id)!
@@ -258,7 +255,7 @@ export async function getFee(
   try {
     const event = bridge.events.Deposit.decode(log);
 
-    const feeRouter = getFeeRouterContract(provider, fromDomain.feeRouter);
+    const feeRouter = getContract(provider, fromDomain.feeRouter, ContractType.FEE_ROUTER);
 
     const fee = (await feeRouter.calculateFee(
       event.user,
@@ -272,7 +269,7 @@ export async function getFee(
     let tokenSymbol: string;
     let decimals: number;
     if (fee.tokenAddress != nativeTokenAddress) {
-      const token = getERC20Contract(provider, fee.tokenAddress);
+      const token = getContract(provider, fee.tokenAddress, ContractType.ERC20);
       tokenSymbol = (await token.symbol()) as string;
       decimals = Number(await token.decimals());
     } else {

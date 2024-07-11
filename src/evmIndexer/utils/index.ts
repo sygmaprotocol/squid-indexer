@@ -15,6 +15,7 @@ import {
 } from "ethers";
 import { MultiLocation } from "@polkadot/types/interfaces";
 import { ApiPromise } from "@polkadot/api";
+import { Network, ResourceType } from "@buildwithsygma/sygma-sdk-core";
 import * as bridge from "../../abi/bridge";
 import { Context, Log } from "../../evmProcessor";
 import {
@@ -25,13 +26,10 @@ import {
   DepositType,
   FeeData,
 } from "../evmTypes";
-import {
-  Domain as DomainConfig,
-} from "../../config";
+import { Domain as DomainConfig } from "../../config";
 import { logger } from "../../utils/logger";
 import { Transfer } from "../../model";
 import { getContract } from "../../services/contract";
-import { Network, ResourceType } from "@buildwithsygma/sygma-sdk-core";
 
 export const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 const STATIC_FEE_DATA = "0x00";
@@ -255,7 +253,11 @@ export async function getFee(
   try {
     const event = bridge.events.Deposit.decode(log);
 
-    const feeRouter = getContract(provider, fromDomain.feeRouter, ContractType.FEE_ROUTER);
+    const feeRouter = getContract(
+      provider,
+      fromDomain.feeRouter,
+      ContractType.FEE_ROUTER
+    );
 
     const fee = (await feeRouter.calculateFee(
       event.user,

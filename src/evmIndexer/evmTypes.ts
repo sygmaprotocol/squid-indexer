@@ -61,6 +61,6 @@ export enum DepositType {
 }
 
 export enum ContractType {
-  ERC20 = "erc20", 
-  FEE_ROUTER = "feeRouter"
+  ERC20 = "erc20",
+  FEE_ROUTER = "feeRouter",
 }

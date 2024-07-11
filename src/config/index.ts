@@ -3,8 +3,14 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import { ApiPromise, WsProvider } from "@polkadot/api";
+import {
+  EvmResource,
+  FeeHandler,
+  Network,
+  ResourceType,
+  SubstrateResource,
+} from "@buildwithsygma/sygma-sdk-core";
 import { logger } from "../utils/logger";
-import {EvmResource, FeeHandler, Network, ResourceType, SubstrateResource} from "@buildwithsygma/sygma-sdk-core"
 
 export type DomainConfig = {
   rpcURL: string;

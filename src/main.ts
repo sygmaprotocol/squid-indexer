@@ -3,6 +3,7 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import { ethers } from "ethers";
+import { Network } from "@buildwithsygma/sygma-sdk-core";
 import { startEvmProcessing } from "./evmProcessor";
 import {
   getDomainConfig,
@@ -11,7 +12,6 @@ import {
   getSsmDomainConfig,
 } from "./config";
 import { logger } from "./utils/logger";
-import { Network } from "@buildwithsygma/sygma-sdk-core";
 
 async function startProcessing(): Promise<void> {
   const processorConfig = getProcessorConfig();

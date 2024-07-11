@@ -2,12 +2,14 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
+import { ethers } from "ethers";
 import { startEvmProcessing } from "./evmProcessor";
 import {
   getDomainConfig,
   getProcessorConfig,
   DomainTypes,
   getSharedConfig,
+  getSsmDomainConfig,
 } from "./config";
 import { logger } from "./utils/logger";
 
@@ -26,14 +28,23 @@ async function startProcessing(): Promise<void> {
   }
 
   switch (domainConfig.domainType) {
-    case DomainTypes.EVM:
-      await startEvmProcessing(
+    case DomainTypes.EVM: {
+      const provider = new ethers.JsonRpcProvider(domainConfig.rpcURL);
+      const substrateRpcUrlConfig = await getSsmDomainConfig(
+        domainConfig.supportedSubstrateRPCs
+      );
+
+      logger.info("Process initialization completed successfully.");
+      startEvmProcessing(
         processorConfig,
         domainConfig,
         sharedConfig,
-        thisDomain
+        thisDomain,
+        provider,
+        substrateRpcUrlConfig
       );
       break;
+    }
     default:
       throw new Error("Unsupported domain type");
   }

@@ -11,16 +11,10 @@ import {
   Transaction as _Transaction,
 } from "@subsquid/evm-processor";
 import { Store, TypeormDatabase } from "@subsquid/typeorm-store";
-import { ethers } from "ethers";
+import { Provider } from "ethers";
+import { ApiPromise } from "@polkadot/api";
 import * as bridge from "./abi/bridge";
-import {
-  Domain,
-  DomainConfig,
-  getSsmDomainConfig,
-  ProcessorConfig,
-  SharedConfig,
-} from "./config";
-import { logger } from "./utils/logger";
+import { Domain, DomainConfig, ProcessorConfig, SharedConfig } from "./config";
 import {
   DecodedDepositLog,
   DecodedFailedHandlerExecution,
@@ -39,20 +33,15 @@ import {
 
 let processor: EvmBatchProcessor;
 
-export async function startEvmProcessing(
+export function startEvmProcessing(
   processorConfig: ProcessorConfig,
   domainConfig: DomainConfig,
   sharedConfig: SharedConfig,
-  thisDomain: Domain
-): Promise<void> {
+  thisDomain: Domain,
+  provider: Provider,
+  substrateRpcUrlConfig: Map<number, ApiPromise>
+): void {
   processor = getEvmProcessor(processorConfig);
-
-  const substrateRpcUrlConfig = await getSsmDomainConfig(
-    domainConfig.supportedSubstrateRPCs
-  );
-  const provider = new ethers.JsonRpcProvider(domainConfig.rpcURL);
-
-  logger.info("Process initialization completed successfully.");
 
   processor.run(
     new TypeormDatabase({

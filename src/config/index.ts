@@ -16,7 +16,7 @@ export type DomainConfig = {
 
 export type ProcessorConfig = {
   contractAddress: string;
-  gateway: string;
+  gateway?: string;
   rpcURL: string;
   startBlock: number;
   numberOfConfirmations: number;
@@ -87,12 +87,13 @@ export type RpcUrlConfig = Array<{
 export function getProcessorConfig(): ProcessorConfig {
   const processorConfig: ProcessorConfig = {
     contractAddress: process.env.DOMAIN_BRIDGE_ADDRESS!,
-    gateway: process.env.DOMAIN_GATEWAY!,
+    gateway: process.env.DOMAIN_GATEWAY || "",
     rpcURL: process.env.RPC_URL!,
     numberOfConfirmations: Number(process.env.DOMAIN_CONFIRMATIONS),
     startBlock: Number(process.env.START_BLOCK!),
   };
-  validateConfig(processorConfig);
+  const { gateway, ...requiredConfig } = processorConfig;
+  validateConfig(requiredConfig);
   return processorConfig;
 }
 

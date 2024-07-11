@@ -103,8 +103,7 @@ export async function startEvmProcessing(
 }
 
 function getEvmProcessor(processorConfig: ProcessorConfig): EvmBatchProcessor {
-  return new EvmBatchProcessor()
-    .setGateway(processorConfig.gateway)
+  const evmProcessor = new EvmBatchProcessor()
     .setRpcEndpoint({
       url: processorConfig.rpcURL,
       rateLimit: 10,
@@ -131,6 +130,11 @@ function getEvmProcessor(processorConfig: ProcessorConfig): EvmBatchProcessor {
       topic0: [bridge.events.FailedHandlerExecution.topic],
       transaction: true,
     });
+
+  if (processorConfig.gateway && processorConfig.gateway.trim() !== "") {
+    evmProcessor.setGateway(processorConfig.gateway);
+  }
+  return evmProcessor;
 }
 
 export type Fields = EvmBatchProcessorFields<typeof processor>;

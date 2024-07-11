@@ -10,6 +10,7 @@
     "license-remove": "license-check-and-add remove -f license-config.json",
     "migration:generate": "squid-typeorm-migration generate",
     "migration:apply": "squid-typeorm-migration apply",
+    "test:unit": "NODE_ENV=test nyc --exclude **/data/** --all --include \"src/**/*.ts\"  mocha -r ts-node/register \"tests/unit/**/*.spec.ts\"",
     "lint": "yarn run lint:style && yarn run lint:types",
     "lint:fix": "yarn run lint:style --fix && yarn run lint:types",
     "lint:style": "eslint --color --ext .ts src/",

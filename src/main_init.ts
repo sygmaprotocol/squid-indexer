@@ -11,7 +11,7 @@ import { logger } from "./utils/logger";
 async function main(): Promise<void> {
   const dataSource = await initDatabase();
 
-  const sharedConfig = await getSharedConfig(process.env.SHARED_CONFIG_URL!);
+  const sharedConfig = await getSharedConfig();
 
   await insertDomains(sharedConfig.domains, dataSource.manager);
   await dataSource.destroy();

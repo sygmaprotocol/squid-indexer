@@ -13,11 +13,10 @@ import {
 import { logger } from "../utils/logger";
 
 export type DomainConfig = {
-  rpcURL: string;
-  sharedConfigURL: string;
   domainID: number;
-  supportedSubstrateRPCs: string;
   domainType: string;
+  rpcURL: string;
+  supportedSubstrateRPCs: string;
 };
 
 export type ProcessorConfig = {
@@ -73,7 +72,6 @@ export function getDomainConfig(): DomainConfig {
   const domainConfig: DomainConfig = {
     domainID: Number(process.env.DOMAIN_ID),
     rpcURL: process.env.RPC_URL!,
-    sharedConfigURL: process.env.SHARED_CONFIG_URL!,
     supportedSubstrateRPCs: process.env.SUPPORTED_SUBSTRATE_RPCS!,
     domainType: process.env.DOMAIN_TYPE!,
   };
@@ -89,9 +87,13 @@ function validateConfig(config: Record<string, any>): void {
   }
 }
 
-export const getSharedConfig = async (url: string): Promise<SharedConfig> => {
+export const getSharedConfig = async (): Promise<SharedConfig> => {
   try {
-    const response = await fetch(url);
+    const sharedConfigURL = process.env.SHARED_CONFIG_URL!;
+    if (!sharedConfigURL) {
+      throw new Error(`shared configuration URL is not defined or invalid`);
+    }
+    const response = await fetch(sharedConfigURL);
     return (await response.json()) as SharedConfig;
   } catch (e) {
     logger.error(`Failed to fetch config for ${process.env.STAGE || ""}`, e);

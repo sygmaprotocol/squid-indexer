@@ -16,8 +16,8 @@ import { logger } from "./utils/logger";
 async function startProcessing(): Promise<void> {
   const processorConfig = getProcessorConfig();
   const domainConfig = getDomainConfig();
+  const sharedConfig = await getSharedConfig();
 
-  const sharedConfig = await getSharedConfig(domainConfig.sharedConfigURL);
   const thisDomain = sharedConfig.domains.find(
     (domain) => domain.id == domainConfig.domainID
   )!;

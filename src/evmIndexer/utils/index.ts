@@ -8,6 +8,7 @@ import {
   AbiCoder,
   BigNumberish,
   BytesLike,
+  Contract,
   Provider,
   ethers,
   formatUnits,
@@ -16,6 +17,7 @@ import {
 import { MultiLocation } from "@polkadot/types/interfaces";
 import { ApiPromise } from "@polkadot/api";
 import { Network, ResourceType } from "@buildwithsygma/sygma-sdk-core";
+import ERC20Contract from "@openzeppelin/contracts/build/contracts/ERC20.json";
 import * as bridge from "../../abi/bridge";
 import { Context, Log } from "../../evmProcessor";
 import {
@@ -29,7 +31,7 @@ import {
 import { Domain as DomainConfig } from "../../config";
 import { logger } from "../../utils/logger";
 import { Transfer } from "../../model";
-import { getContract } from "../../services/contract";
+import * as FeeHandlerRouter from "../../abi/FeeHandlerRouter.json";
 
 export const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 const STATIC_FEE_DATA = "0x00";
@@ -295,6 +297,19 @@ export async function getFee(
       decimals: 0,
       amount: "0",
     };
+  }
+}
+
+function getContract(
+  provider: Provider,
+  contractAddress: string,
+  contractType: ContractType
+): Contract {
+  switch (contractType) {
+    case ContractType.ERC20:
+      return new Contract(contractAddress, ERC20Contract.abi, provider);
+    case ContractType.FEE_ROUTER:
+      return new Contract(contractAddress, FeeHandlerRouter.abi, provider);
   }
 }
 

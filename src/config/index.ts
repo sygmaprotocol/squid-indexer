@@ -6,9 +6,9 @@ import { ApiPromise, WsProvider } from "@polkadot/api";
 import {
   EvmResource,
   FeeHandler,
-  Network,
   ResourceType,
   SubstrateResource,
+  Domain as DomainSDK,
 } from "@buildwithsygma/sygma-sdk-core";
 import { logger } from "../utils/logger";
 
@@ -31,10 +31,7 @@ export type SharedConfig = {
   domains: Array<Domain>;
 };
 
-export type Domain = {
-  id: number;
-  name: string;
-  type: Network;
+export type Domain = DomainSDK & {
   bridge: string;
   feeRouter: string;
   feeHandlers: Array<FeeHandler>;

@@ -28,7 +28,7 @@ import {
   DepositType,
   FeeData,
 } from "../evmTypes";
-import { Domain as DomainConfig } from "../../config";
+import { Domain } from "../../config";
 import { logger } from "../../utils/logger";
 import { Transfer } from "../../model";
 import * as FeeHandlerRouter from "../../abi/FeeHandlerRouter.json";
@@ -47,8 +47,8 @@ type FeeDataResponse = {
 
 export async function parseDeposit(
   log: Log,
-  fromDomain: DomainConfig,
-  toDomain: DomainConfig,
+  fromDomain: Domain,
+  toDomain: Domain,
   provider: Provider,
   substrateRpcUrlConfig: Map<number, ApiPromise>
 ): Promise<DecodedDepositLog> {
@@ -96,7 +96,7 @@ export async function parseDeposit(
 
 export function parseDestination(
   hexData: BytesLike,
-  domain: DomainConfig,
+  domain: Domain,
   resourceType: string,
   substrateRpcUrlConfig: Map<number, ApiPromise>
 ): string {
@@ -209,7 +209,7 @@ function decodeAmountsOrTokenId(
 
 export function parseProposalExecution(
   log: Log,
-  toDomain: DomainConfig
+  toDomain: Domain
 ): DecodedProposalExecutionLog {
   const event = bridge.events.ProposalExecution.decode(log);
   const transaction = assertNotNull(log.transaction, "Missing transaction");
@@ -228,7 +228,7 @@ export function parseProposalExecution(
 
 export function parseFailedHandlerExecution(
   log: Log,
-  toDomain: DomainConfig
+  toDomain: Domain
 ): DecodedFailedHandlerExecution {
   const event = bridge.events.FailedHandlerExecution.decode(log);
   const transaction = assertNotNull(log.transaction, "Missing transaction");
@@ -249,7 +249,7 @@ export function parseFailedHandlerExecution(
 
 export async function getFee(
   log: Log,
-  fromDomain: DomainConfig,
+  fromDomain: Domain,
   provider: Provider
 ): Promise<FeeData> {
   try {

@@ -2,13 +2,17 @@
 
 ### Running locally 
 
-Starting docker container:
+Starting the indexer:
 
-`docker-compose up`
+`yarn start`
 
 Checking stored data using GraphQL: 
 
 `sqd serve`
+
+Stopping and removing containers: 
+
+`yarn stop`
 
 For additional commands see `commands.json`
 

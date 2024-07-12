@@ -14,7 +14,9 @@
     "lint": "yarn run lint:style && yarn run lint:types",
     "lint:fix": "yarn run lint:style --fix && yarn run lint:types",
     "lint:style": "eslint --color --ext .ts src/",
-    "lint:types": "tsc --noEmit --pretty"
+    "lint:types": "tsc --noEmit --pretty",
+    "start": "docker-compose --env-file ./envs/.env.init up --build",
+    "stop": "docker-compose --env-file ./envs/.env.init down"
   },
   "dependencies": {
     "@aws-sdk/client-ssm": "^3.145.0",

@@ -90,7 +90,7 @@ export async function parseDeposit(
       resourceDecimals,
       resourceType
     ) as string,
-    fee: await getFee(log, fromDomain, provider),
+    fee: await getFee(event, fromDomain, provider),
   };
 }
 
@@ -177,7 +177,7 @@ function parseSubstrateDestination(
   return "";
 }
 
-function decodeAmountsOrTokenId(
+export function decodeAmountsOrTokenId(
   data: string,
   decimals: number,
   resourceType: string
@@ -252,13 +252,11 @@ export function parseFailedHandlerExecution(
 }
 
 export async function getFee(
-  log: Log,
+  event: bridge.DepositEventArgs,
   fromDomain: Domain,
   provider: Provider
 ): Promise<FeeData> {
   try {
-    const event = bridge.events.Deposit.decode(log);
-
     const feeRouter = getContract(
       provider,
       fromDomain.feeRouter,

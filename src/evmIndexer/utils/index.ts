@@ -55,7 +55,7 @@ export async function parseDeposit(
   const event = bridge.events.Deposit.decode(log);
   const resource = fromDomain.resources.find(
     (resource) => resource.resourceId == event.resourceID
-  )!;
+  );
   if (!resource) {
     throw new Error(
       `Resource with ID ${event.resourceID} not found in shared configuration`
@@ -148,12 +148,16 @@ export function parseDestination(
     case Network.EVM:
       destination = recipient;
       break;
-    case Network.SUBSTRATE:
-      destination = parseSubstrateDestination(
-        recipient,
-        substrateRpcUrlConfig.get(domain.id)!
-      );
+    case Network.SUBSTRATE: {
+      const substrateAPI = substrateRpcUrlConfig.get(domain.id);
+      if (!substrateAPI) {
+        throw new Error(
+          `Substrate domain with id ${domain.id} not found in RPC configuration variable`
+        );
+      }
+      destination = parseSubstrateDestination(recipient, substrateAPI);
       break;
+    }
   }
   return destination;
 }

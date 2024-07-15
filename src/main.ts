@@ -20,7 +20,7 @@ async function startProcessing(): Promise<void> {
 
   const thisDomain = sharedConfig.domains.find(
     (domain) => domain.id == domainConfig.domainID
-  )!;
+  );
   if (!thisDomain) {
     throw new Error(
       `Domain with ID ${domainConfig.domainID} not found in shared configuration`

@@ -3,6 +3,8 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 
+import type { XcmAssetId } from "@polkadot/types/interfaces";
+
 export type DecodedDepositLog = {
   id: string;
   blockNumber: number;
@@ -59,6 +61,24 @@ export enum DepositType {
   PERMISSIONLESS_GENERIC = "permissionlessGeneric",
   PERMISSIONED_GENERIC = "permissionedGeneric",
 }
+
+export type EvmResource = {
+  resourceId: string;
+  type: DepositType;
+  address: string;
+  symbol: string;
+  decimals: number;
+};
+
+export type SubstrateResource = {
+  resourceId: string;
+  type: DepositType;
+  address: string;
+  symbol: string;
+  decimals: number;
+  assetName: string;
+  xcmMultiAssetId: XcmAssetId;
+};
 
 export enum ContractType {
   ERC20 = "erc20",

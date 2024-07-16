@@ -2,9 +2,11 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import { EntityManager } from "typeorm";
+import type { EntityManager } from "typeorm";
+
+import type { Domain as DomainConfig } from "./config";
+import { getSharedConfig } from "./config";
 import { Domain, Resource } from "./model";
-import { getSharedConfig, Domain as DomainConfig } from "./config";
 import { initDatabase } from "./utils";
 import { logger } from "./utils/logger";
 
@@ -19,7 +21,7 @@ async function main(): Promise<void> {
 
 async function insertDomains(
   domains: Array<DomainConfig>,
-  manager: EntityManager
+  manager: EntityManager,
 ): Promise<void> {
   for (const domain of domains) {
     await manager.upsert(
@@ -29,7 +31,7 @@ async function insertDomains(
         lastIndexedBlock: domain.startBlock.toString(),
         name: domain.name,
       },
-      ["id"]
+      ["id"],
     );
     for (const resource of domain.resources) {
       await manager.upsert(
@@ -39,7 +41,7 @@ async function insertDomains(
           type: resource.type,
           decimals: resource.decimals,
         },
-        ["id"]
+        ["id"],
       );
     }
   }

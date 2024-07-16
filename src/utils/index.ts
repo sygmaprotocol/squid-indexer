@@ -4,6 +4,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import { DataSource } from "typeorm";
 import { SnakeNamingStrategy } from "typeorm-naming-strategies";
+
 import {
   Account,
   Deposit,

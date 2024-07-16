@@ -2,19 +2,20 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import { ApiPromise, WsProvider } from "@polkadot/api";
-import {
-  EvmResource,
+import type {
   FeeHandler,
   ResourceType,
-  SubstrateResource,
   Domain as DomainSDK,
 } from "@buildwithsygma/sygma-sdk-core";
+import { Network } from "@buildwithsygma/sygma-sdk-core";
+import { ApiPromise, WsProvider } from "@polkadot/api";
+
+import type { EvmResource, SubstrateResource } from "../evmIndexer/evmTypes";
 import { logger } from "../utils/logger";
 
 export type DomainConfig = {
   domainID: number;
-  domainType: string;
+  domainType: Network;
   rpcURL: string;
   supportedSubstrateRPCs: string;
 };
@@ -66,17 +67,21 @@ export function getProcessorConfig(): ProcessorConfig {
 }
 
 export function getDomainConfig(): DomainConfig {
+  const domainType = process.env.DOMAIN_TYPE;
+  if (!domainType || !Object.values(Network).includes(domainType as Network)) {
+    throw new Error("Domain type missing or invalid");
+  }
   const domainConfig: DomainConfig = {
     domainID: Number(process.env.DOMAIN_ID),
     rpcURL: process.env.RPC_URL!,
     supportedSubstrateRPCs: process.env.SUPPORTED_SUBSTRATE_RPCS!,
-    domainType: process.env.DOMAIN_TYPE!,
+    domainType: domainType as Network,
   };
   validateConfig(domainConfig);
   return domainConfig;
 }
 
-function validateConfig(config: Record<string, any>): void {
+function validateConfig(config: Record<string, number | string>): void {
   for (const [key, value] of Object.entries(config)) {
     if (!value) {
       throw new Error(`${key} is not defined or invalid`);
@@ -99,7 +104,7 @@ export const getSharedConfig = async (): Promise<SharedConfig> => {
 };
 
 export const getSsmDomainConfig = async (
-  supportedRPCs: string
+  supportedRPCs: string,
 ): Promise<Map<number, ApiPromise>> => {
   const parsedResponse = JSON.parse(supportedRPCs) as RpcUrlConfig;
   const rpcUrlMap = new Map<number, ApiPromise>();

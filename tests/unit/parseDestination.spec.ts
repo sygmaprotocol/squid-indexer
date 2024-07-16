@@ -7,7 +7,8 @@ import sinon from "sinon"
 import { ApiPromise, WsProvider } from "@polkadot/api"
 import { Domain, getSsmDomainConfig } from "../../src/config"
 import { parseDestination } from "../../src/evmIndexer/utils"
-import { Network, ResourceType } from "@buildwithsygma/sygma-sdk-core"
+import { Network } from "@buildwithsygma/sygma-sdk-core"
+import { DepositType } from "../../src/evmIndexer/evmTypes"
 
 describe("Destination parser", function () {
     const mockToJson = sinon.stub()
@@ -37,7 +38,7 @@ describe("Destination parser", function () {
         type: Network.EVM,
       } as unknown as Domain
   
-      const destination = await parseDestination(hexData, domain, ResourceType.PERMISSIONLESS_GENERIC, new Map<number, ApiPromise>())
+      const destination = await parseDestination(hexData, domain, DepositType.PERMISSIONLESS_GENERIC, new Map<number, ApiPromise>())
       expect(destination).to.be.deep.equal("0xdee6b4c59e3a0f0088878aeccf849a49031eed30")
     })
   
@@ -49,7 +50,7 @@ describe("Destination parser", function () {
         type: Network.EVM,
       } as unknown as Domain
   
-      const destination = await parseDestination(hexData, domain, ResourceType.FUNGIBLE, new Map<number, ApiPromise>())
+      const destination = await parseDestination(hexData, domain, DepositType.FUNGIBLE, new Map<number, ApiPromise>())
       expect(destination).to.be.deep.equal("0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b")
     })
     
@@ -74,7 +75,7 @@ describe("Destination parser", function () {
           },
         },
       })
-      const destination = await parseDestination(hexData, domain, ResourceType.FUNGIBLE, substrateRPCs)
+      const destination = await parseDestination(hexData, domain, DepositType.FUNGIBLE, substrateRPCs)
       expect(destination).to.equal("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY")
     })
   
@@ -95,7 +96,7 @@ describe("Destination parser", function () {
         },
       })
   
-      const result = await parseDestination(hexData, domain, ResourceType.FUNGIBLE, substrateRPCs)
+      const result = await parseDestination(hexData, domain, DepositType.FUNGIBLE, substrateRPCs)
       expect(result).to.equal("")
     })
   })

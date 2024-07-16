@@ -13,7 +13,7 @@ services:
       context: .
       dockerfile: ./Dockerfile 
       args: 
-        START_SCRIPT: "start-init.sh"
+        START_SCRIPT: "start:init"
     restart: on-failure
     depends_on: 
       - db
@@ -29,7 +29,7 @@ services:
       context: .
       dockerfile: ./Dockerfile 
       args: 
-        START_SCRIPT: "start-sepolia.sh"
+        START_SCRIPT: "start:sepolia"
     restart: on-failure
     depends_on: 
       - indexer-init
@@ -44,7 +44,7 @@ services:
       context: .
       dockerfile: ./Dockerfile 
       args: 
-        START_SCRIPT: "start-holesky.sh"
+        START_SCRIPT: "start:holesky"
     restart: on-failure
     depends_on: 
       - indexer-init

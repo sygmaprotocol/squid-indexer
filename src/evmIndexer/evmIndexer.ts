@@ -2,9 +2,11 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
+import type { Context } from "../evmProcessor";
+import type { Transfer } from "../model";
 import { Account, Deposit, Execution, Fee, TransferStatus } from "../model";
-import { Context } from "../evmProcessor";
-import {
+
+import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecution,
   DecodedProposalExecutionLog,
@@ -13,8 +15,10 @@ import { getUpdatedTransfer } from "./utils";
 
 export async function processDeposits(
   ctx: Context,
-  depositsData: DecodedDepositLog[]
+  depositsData: DecodedDepositLog[],
 ): Promise<void> {
+  const deposits = new Set<Deposit>();
+  const transfers = new Set<Transfer>();
   for (const d of depositsData) {
     const account = new Account({ id: d.sender });
     await ctx.store.upsert(account);
@@ -47,15 +51,19 @@ export async function processDeposits(
       fee: fee,
     });
 
-    await ctx.store.upsert(deposit);
-    await ctx.store.upsert(transfer);
+    deposits.add(deposit);
+    transfers.add(transfer);
   }
+  await ctx.store.upsert([...deposits.values()]);
+  await ctx.store.upsert([...transfers.values()]);
 }
 
 export async function processExecutions(
   ctx: Context,
-  executionsData: DecodedProposalExecutionLog[]
+  executionsData: DecodedProposalExecutionLog[],
 ): Promise<void> {
+  const executions = new Set<Execution>();
+  const transfers = new Set<Transfer>();
   for (const e of executionsData) {
     const execution = new Execution({
       blockNumber: e.blockNumber.toString(),
@@ -76,15 +84,19 @@ export async function processExecutions(
       execution: execution,
     });
 
-    await ctx.store.upsert(execution);
-    await ctx.store.upsert(transfer);
+    executions.add(execution);
+    transfers.add(transfer);
   }
+  await ctx.store.upsert([...executions.values()]);
+  await ctx.store.upsert([...transfers.values()]);
 }
 
 export async function processFailedExecutions(
   ctx: Context,
-  failedExecutionsData: DecodedFailedHandlerExecution[]
+  failedExecutionsData: DecodedFailedHandlerExecution[],
 ): Promise<void> {
+  const failedExecutions = new Set<Execution>();
+  const transfers = new Set<Transfer>();
   for (const e of failedExecutionsData) {
     const failedExecution = new Execution({
       blockNumber: e.blockNumber.toString(),
@@ -105,7 +117,10 @@ export async function processFailedExecutions(
       execution: failedExecution,
     });
 
-    await ctx.store.upsert(failedExecution);
-    await ctx.store.upsert(transfer);
+    failedExecutions.add(failedExecution);
+    transfers.add(transfer);
   }
+
+  await ctx.store.upsert([...failedExecutions.values()]);
+  await ctx.store.upsert([...transfers.values()]);
 }

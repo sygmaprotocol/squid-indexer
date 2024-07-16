@@ -8,9 +8,9 @@ import { Network } from "@buildwithsygma/sygma-sdk-core";
 import ERC20Contract from "@openzeppelin/contracts/build/contracts/ERC20.json";
 import type { ApiPromise } from "@polkadot/api";
 import type { MultiLocation } from "@polkadot/types/interfaces";
-import { assertNotNull } from "@subsquid/evm-processor";
+import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
 import type { BigNumberish, Provider } from "ethers";
-import { AbiCoder, Contract, ethers, formatUnits, getBytes } from "ethers";
+import { AbiCoder, Contract, ethers, formatUnits } from "ethers";
 
 import * as FeeHandlerRouter from "../../abi/FeeHandlerRouter.json";
 import * as bridge from "../../abi/bridge";
@@ -93,42 +93,41 @@ export function parseDestination(
   resourceType: DepositType,
   substrateRpcUrlConfig: Map<number, ApiPromise>,
 ): string {
-  const arrayifyData = getBytes(hexData);
+  const arrayifyData = decodeHex(hexData);
   let recipient = "";
   switch (resourceType) {
     case DepositType.FUNGIBLE:
     case DepositType.NONFUNGIBLE: {
       const recipientlen = Number(
-        "0x" + Buffer.from(arrayifyData.slice(32, 64)).toString("hex"),
+        "0x" + arrayifyData.subarray(32, 64).toString("hex"),
       );
       recipient =
-        "0x" +
-        Buffer.from(arrayifyData.slice(64, 64 + recipientlen)).toString("hex");
+        "0x" + arrayifyData.subarray(64, 64 + recipientlen).toString("hex");
       break;
     }
     case DepositType.PERMISSIONLESS_GENERIC:
       {
         // 32 + 2 + 1 + 1 + 20 + 20
         const lenExecuteFuncSignature = Number(
-          "0x" + Buffer.from(arrayifyData.slice(32, 34)).toString("hex"),
+          "0x" + arrayifyData.subarray(32, 34).toString("hex"),
         );
         const lenExecuteContractAddress = Number(
           "0x" +
-            Buffer.from(
-              arrayifyData.slice(
+            arrayifyData
+              .subarray(
                 34 + lenExecuteFuncSignature,
                 35 + lenExecuteFuncSignature,
-              ),
-            ).toString("hex"),
+              )
+              .toString("hex"),
         );
         recipient =
           "0x" +
-          Buffer.from(
-            arrayifyData.slice(
+          arrayifyData
+            .subarray(
               35 + lenExecuteFuncSignature,
               35 + lenExecuteFuncSignature + lenExecuteContractAddress,
-            ),
-          ).toString("hex");
+            )
+            .toString("hex");
       }
       break;
     default:
@@ -235,7 +234,7 @@ export function parseFailedHandlerExecution(
     depositNonce: event.depositNonce,
     txHash: transaction.hash,
     message: ethers.decodeBytes32String(
-      "0x" + Buffer.from(event.lowLevelData.slice(-64)).toString(),
+      "0x" + Buffer.from(event.lowLevelData).subarray(-64).toString(),
     ),
     blockNumber: log.block.height,
     timestamp: new Date(log.block.timestamp),

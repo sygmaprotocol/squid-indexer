@@ -17,15 +17,24 @@ export async function processDeposits(
   ctx: Context,
   depositsData: DecodedDepositLog[],
 ): Promise<void> {
-  const deposits = new Set<Deposit>();
-  const transfers = new Set<Transfer>();
+  const accounts = new Map<string, Account>();
+  const fees = new Map<string, Fee>();
+  const deposits = new Map<string, Deposit>();
+  const transfers = new Map<string, Transfer>();
+
   for (const d of depositsData) {
-    const account = new Account({ id: d.sender });
-    await ctx.store.upsert(account);
+    if (!accounts.has(d.sender)) {
+      accounts.set(d.sender, new Account({ id: d.sender }));
+    }
+    if (!fees.has(d.fee.id)) {
+      fees.set(d.fee.id, new Fee(d.fee));
+    }
+  }
 
-    const fee = new Fee(d.fee);
-    await ctx.store.upsert(fee);
+  await ctx.store.upsert([...accounts.values()]);
+  await ctx.store.upsert([...fees.values()]);
 
+  for (const d of depositsData) {
     const deposit = new Deposit({
       id: d.id,
       type: d.transferType,
@@ -46,13 +55,17 @@ export async function processDeposits(
       resourceID: d.resourceID,
       fromDomainID: d.fromDomainID,
       toDomainID: d.toDomainID,
-      account: account,
+      accountID: d.sender,
       deposit: deposit,
-      fee: fee,
+      fee: new Fee(d.fee),
     });
 
-    deposits.add(deposit);
-    transfers.add(transfer);
+    if (!deposits.has(d.id)) {
+      deposits.set(d.id, deposit);
+    }
+    if (!transfers.has(d.id)) {
+      transfers.set(d.id, transfer);
+    }
   }
   await ctx.store.upsert([...deposits.values()]);
   await ctx.store.upsert([...transfers.values()]);
@@ -62,8 +75,8 @@ export async function processExecutions(
   ctx: Context,
   executionsData: DecodedProposalExecutionLog[],
 ): Promise<void> {
-  const executions = new Set<Execution>();
-  const transfers = new Set<Transfer>();
+  const executions = new Map<string, Execution>();
+  const transfers = new Map<string, Transfer>();
   for (const e of executionsData) {
     const execution = new Execution({
       blockNumber: e.blockNumber.toString(),
@@ -84,8 +97,12 @@ export async function processExecutions(
       execution: execution,
     });
 
-    executions.add(execution);
-    transfers.add(transfer);
+    if (!executions.has(e.id)) {
+      executions.set(e.id, execution);
+    }
+    if (!transfers.has(e.id)) {
+      transfers.set(e.id, transfer);
+    }
   }
   await ctx.store.upsert([...executions.values()]);
   await ctx.store.upsert([...transfers.values()]);
@@ -95,8 +112,8 @@ export async function processFailedExecutions(
   ctx: Context,
   failedExecutionsData: DecodedFailedHandlerExecution[],
 ): Promise<void> {
-  const failedExecutions = new Set<Execution>();
-  const transfers = new Set<Transfer>();
+  const failedExecutions = new Map<string, Execution>();
+  const transfers = new Map<string, Transfer>();
   for (const e of failedExecutionsData) {
     const failedExecution = new Execution({
       blockNumber: e.blockNumber.toString(),
@@ -117,8 +134,12 @@ export async function processFailedExecutions(
       execution: failedExecution,
     });
 
-    failedExecutions.add(failedExecution);
-    transfers.add(transfer);
+    if (!failedExecutions.has(e.id)) {
+      failedExecutions.set(e.id, failedExecution);
+    }
+    if (!transfers.has(e.id)) {
+      transfers.set(e.id, transfer);
+    }
   }
 
   await ctx.store.upsert([...failedExecutions.values()]);

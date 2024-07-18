@@ -2,8 +2,8 @@
  * The Licensed Work is (c) 2024 Sygma
  * SPDX-License-Identifier: LGPL-3.0-only
  */
-module.exports = class Data1720089277299 {
-    name = 'Data1720089277299'
+module.exports = class Data1721290798390 {
+    name = 'Data1721290798390'
 
     async up(db) {
         await db.query(`CREATE TABLE "resource" ("id" character varying NOT NULL, "type" text NOT NULL, "decimals" integer, CONSTRAINT "PK_e2894a5867e06ae2e8889f1173f" PRIMARY KEY ("id"))`)

@@ -14,6 +14,7 @@ type Transfer @entity {
   execution: Execution @unique
   fee: Fee @unique
   account: Account
+  accountID: String
   message: String
   usdValue: Float
 }

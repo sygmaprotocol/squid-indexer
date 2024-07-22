@@ -35,7 +35,8 @@ describe("Get updated transfer", function () {
             fromDomainID: 1, 
             toDomainID: 2, 
             fromDomain: {id: "1", name: "testDomain", lastIndexedBlock: "0", transfersFrom: [], transfersTo: []},
-            status: TransferStatus.pending
+            status: TransferStatus.pending,
+            accountID: "0x1"
         }
 
         const expectedTransfer: Transfer = {
@@ -45,6 +46,7 @@ describe("Get updated transfer", function () {
             id: "",
             fromDomain: {id: "1", name: "testDomain", lastIndexedBlock: "0", transfersFrom: [], transfersTo: []},
             status: TransferStatus.pending,
+            accountID: "0x1",
             resource: undefined,
             resourceID: undefined,
             toDomain: undefined,
@@ -74,6 +76,7 @@ describe("Get updated transfer", function () {
             fromDomain: {id: "1", name: "testDomain", lastIndexedBlock: "0", transfersFrom: [], transfersTo: []},
             status: TransferStatus.pending,
             id: "1",
+            accountID: "0x1", 
             resource: undefined,
             resourceID: undefined,
             toDomain: undefined,
@@ -94,6 +97,7 @@ describe("Get updated transfer", function () {
             fromDomain: {id: "1", name: "testDomain", lastIndexedBlock: "0", transfersFrom: [], transfersTo: []},
             status: TransferStatus.pending,
             id: "1",
+            accountID: "0x1", 
             resource: undefined,
             resourceID: undefined,
             toDomain: undefined,

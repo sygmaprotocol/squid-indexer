@@ -158,7 +158,7 @@ function parseSubstrateDestination(
   recipient: string,
   substrateAPI: ApiPromise,
 ): string {
-  const decodedData = substrateAPI.createType("MultiLocation", recipient);
+  const decodedData = substrateAPI.createType<MultiLocation>(recipient);
   const multiAddress = decodedData.toJSON() as unknown as MultiLocation;
   for (const [, junctions] of Object.entries(multiAddress.interior)) {
     const junston = junctions as Junction;

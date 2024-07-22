@@ -42,7 +42,6 @@
     "@buildwithsygma/sygma-sdk-core": "^2.1.0",
     "@chainsafe/eslint-config": "^2.2.4",
     "@polkadot/types": "10.9.1",
-    "@rushstack/eslint-patch": "^1.10.3",
     "@subsquid/evm-typegen": "^4.0.0",
     "@subsquid/substrate-metadata-explorer": "^3.1.2",
     "@types/chai": "^4.3.16",

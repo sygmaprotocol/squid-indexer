@@ -9,34 +9,39 @@ RUN apk update
 RUN apk add --no-cache git
 
 # create root application folder
-WORKDIR /app
+WORKDIR /squid
 
-# copy configs to /app folder
+# enable corepack
+RUN corepack enable
+
+# copy configs to /squid folder
 COPY .yarnrc.yml ./
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY yarn.lock ./
 
-RUN yarn install --frozen-lockfile
-
-# copy source code to /app/src folder
+RUN corepack yarn install
+ 
+# copy source code to /squid/src folder
 COPY . .
 
 # check files list
 RUN ls -a
 
-RUN yarn build
+RUN corepack yarn build
 
 FROM node:18-alpine
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/lib ./lib
-COPY --from=builder /app/envs ./envs
-COPY --from=builder /app/db ./db
+COPY --from=builder /squid/node_modules ./node_modules
+COPY --from=builder /squid/package*.json ./
+COPY --from=builder /squid/lib ./lib
+COPY --from=builder /squid/envs ./envs
+COPY --from=builder /squid/db ./db
+COPY --from=builder /squid/start-prod.sh ./start-prod.sh
+COPY --from=builder /squid/commands.json ./
+
+RUN corepack yarn global add @subsquid/commands && mv $(which squid-commands) /usr/local/bin/sqd
+
 LABEL org.opencontainers.image.source https://github.com/sygmaprotocol/squid-indexer/
 EXPOSE 8000
 
-ARG START_SCRIPT
-ENV START_SCRIPT_ENV=$START_SCRIPT
-
-ENTRYPOINT yarn $START_SCRIPT_ENV
+ENTRYPOINT sh /start-prod.sh

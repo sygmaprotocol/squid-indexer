@@ -14,11 +14,8 @@
     "lint:types": "tsc --noEmit --pretty",
     "migration:apply": "squid-typeorm-migration apply",
     "migration:generate": "squid-typeorm-migration generate",
-    "start": "docker-compose --env-file ./envs/.env.init up --build",
-    "start:holesky": "node --require=dotenv/config ./lib/main.js dotenv_config_path=envs/.env.holesky",
-    "start:init": "yarn migration:apply && node --require=dotenv/config ./lib/main_init.js dotenv_config_path=envs/.env.init",
-    "start:sepolia": "node --require=dotenv/config ./lib/main.js dotenv_config_path=envs/.env.sepolia",
-    "stop": "docker-compose --env-file ./envs/.env.init down",
+    "start": "docker-compose up --build",
+    "stop": "docker-compose down",
     "test:unit": "NODE_ENV=test nyc --exclude **/data/** --all --include \"src/**/*.ts\"  mocha -r ts-node/register \"tests/unit/**/*.spec.ts\"",
     "update": "npx npm-check-updates --filter /subsquid/ --upgrade && npm i -f"
   },

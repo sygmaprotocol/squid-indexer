@@ -7,50 +7,29 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_PASSWORD: ${DB_PASS}
     ports:
-      - "${DB_PORT}:5432"
+      - "23798:${DB_PORT}"
+    env_file: ./envs/.env.init
   indexer-init:
     build: 
       context: .
       dockerfile: ./Dockerfile 
-      args: 
-        START_SCRIPT: "start:init"
     restart: on-failure
     depends_on: 
       - db
-    environment:
-      DB_NAME: ${DB_NAME}
-      DB_PASS: ${DB_PASS}
-      DB_PORT: 5432
-      DB_USERNAME: ${DB_USERNAME}
-      DB_HOST: ${DB_HOST}
-      SHARED_CONFIG_URL: ${SHARED_CONFIG_URL}
+    env_file: ./envs/.env.init
   indexer-sepolia:
     build: 
       context: .
       dockerfile: ./Dockerfile 
-      args: 
-        START_SCRIPT: "start:sepolia"
     restart: on-failure
     depends_on: 
       - indexer-init
-    environment:
-      DB_NAME: ${DB_NAME}
-      DB_PASS: ${DB_PASS}
-      DB_PORT: 5432
-      DB_USERNAME: ${DB_USERNAME}
-      DB_HOST: ${DB_HOST}
+    env_file: ./envs/.env.sepolia
   indexer-holesky:
     build: 
       context: .
       dockerfile: ./Dockerfile 
-      args: 
-        START_SCRIPT: "start:holesky"
     restart: on-failure
     depends_on: 
       - indexer-init
-    environment:
-      DB_NAME: ${DB_NAME}
-      DB_PASS: ${DB_PASS}
-      DB_PORT: 5432
-      DB_USERNAME: ${DB_USERNAME}
-      DB_HOST: ${DB_HOST}
+    env_file: ./envs/.env.holesky

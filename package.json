@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.3",
-    "@polkadot/api": "^12.0.1",
+    "@polkadot/api": "^12.2.1",
     "@subsquid/cli": "^2.12.0",
     "@subsquid/evm-abi": "^0.3.0",
     "@subsquid/evm-codec": "^0.3.0",
@@ -41,7 +41,7 @@
   "devDependencies": {
     "@buildwithsygma/sygma-sdk-core": "^2.1.0",
     "@chainsafe/eslint-config": "^2.2.4",
-    "@polkadot/types": "10.9.1",
+    "@polkadot/types": "^12.2.1",
     "@subsquid/evm-typegen": "^4.0.0",
     "@subsquid/substrate-metadata-explorer": "^3.1.2",
     "@types/chai": "^4.3.16",
@@ -54,6 +54,19 @@
     "sinon": "^15.2.0",
     "ts-node": "^10.2.1",
     "typeorm-naming-strategies": "^4.1.0",
+    "typescript": "^5.4.4"
+  },
+  "resolutions": {
+    "@polkadot/api": "^12.2.1",
+    "@polkadot/types": "^12.2.1",
+    "@polkadot/keyring": "^13.0.2",
+    "@polkadot/networks": "^13.0.2",
+    "@polkadot/rpc-provider": "^12.2.1",
+    "@polkadot/util": "^13.0.2",
+    "@polkadot/util-crypto": "^13.0.2",
+    "@polkadot/wasm-crypto": "^7.3.2",
+    "@polkadot/x-randomvalues": "^13.0.2",
+    "@polkadot/x-bigint": "^13.0.2",
     "typescript": "^5.4.4"
   }
 }

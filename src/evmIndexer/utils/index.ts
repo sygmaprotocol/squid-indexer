@@ -186,7 +186,7 @@ export function decodeAmountsOrTokenId(
       const tokenId = AbiCoder.defaultAbiCoder().decode(
         ["uint256"],
         data,
-      )[0] as number;
+      )[0] as bigint;
       return tokenId.toString();
     }
     case DepositType.SEMIFUNGIBLE: {

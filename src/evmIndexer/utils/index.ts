@@ -28,11 +28,6 @@ import { ContractType, DepositType } from "../evmTypes";
 
 export const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 const STATIC_FEE_DATA = "0x00";
-type Junction = {
-  accountId32?: {
-    id: string;
-  };
-};
 type FeeDataResponse = {
   fee: string;
   tokenAddress: string;
@@ -158,17 +153,19 @@ function parseSubstrateDestination(
   recipient: string,
   substrateAPI: ApiPromise,
 ): string {
-  const decodedData = substrateAPI.createType<MultiLocation>(recipient);
-  const multiAddress = decodedData.toJSON() as unknown as MultiLocation;
-  for (const [, junctions] of Object.entries(multiAddress.interior)) {
-    const junston = junctions as Junction;
-    if (junston.accountId32?.id) {
-      return junston.accountId32.id;
+  const decodedData = substrateAPI.createType<MultiLocation>(
+    "MultiLocation",
+    recipient,
+  );
+
+  const junction = decodedData.interior;
+  if (junction.isX1) {
+    if (junction.asX1.isAccountId32) {
+      return junction.asX1.asAccountId32.id.toString();
     }
   }
   return "";
 }
-
 export function decodeAmountsOrTokenId(
   data: string,
   decimals: number,

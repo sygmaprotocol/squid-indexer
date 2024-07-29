@@ -11,18 +11,12 @@ import { Network } from "@buildwithsygma/sygma-sdk-core"
 import { DepositType } from "../../src/evmIndexer/evmTypes"
 
 describe("Destination parser", function () {
-    const mockToJson = sinon.stub()
-    beforeEach(() => {
-
-      const mockCreateType = sinon.stub()
-  
+    let mockJunction: any; 
+    let mockCreateType = sinon.stub()
+    beforeEach(() => {     
       const mockApiPromise = {
         createType: mockCreateType,
       }
-      mockCreateType.returns({
-        toJSON: mockToJson,
-      })
-  
       sinon.stub(ApiPromise, "create").resolves(mockApiPromise as unknown as ApiPromise)
     })
   
@@ -57,24 +51,27 @@ describe("Destination parser", function () {
     it("should parse substrate destination for evm deposit log", async () => {
       sinon.stub(WsProvider.prototype, "connect")
       const substrateRPCs = await getSsmDomainConfig('[{"id": 3, "endpoint": "ws://substrate-pallet:9944"}]')
-      
+
       const hexData =
         "0x00000000000000000000000000000000000000000000000000005af3107a4000000000000000000000000000000000000000000000000000000000000000002400010100d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
       const domain = {
         id: 3,
         type: Network.SUBSTRATE,
       } as unknown as Domain
-  
-      mockToJson.returns({
-        parents: 0,
-        interior: {
-          x1: {
-            accountId32: {
-              id: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-            },
-          },
-        },
+
+      mockJunction = {
+        isX1: true,
+        asX1: {
+          isAccountId32: true,
+          asAccountId32: {
+            id: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+        } 
+        }
+      }
+      mockCreateType.returns( {
+        interior: mockJunction,
       })
+
       const destination = await parseDestination(hexData, domain, DepositType.FUNGIBLE, substrateRPCs)
       expect(destination).to.equal("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY")
     })
@@ -88,14 +85,20 @@ describe("Destination parser", function () {
         id: 3,
         type: Network.SUBSTRATE,
       } as unknown as Domain
-  
-      mockToJson.returns({
-        parents: 0,
-        interior: {
-          x1: {},
-        },
+      
+      mockJunction = {
+        isX1: true,
+        asX1: {
+          isAccountId32: false,
+          asAccountId32: {
+            id: ""
+          }
+        }
+      }
+      mockCreateType.returns( {
+        interior: mockJunction,
       })
-  
+
       const result = await parseDestination(hexData, domain, DepositType.FUNGIBLE, substrateRPCs)
       expect(result).to.equal("")
     })

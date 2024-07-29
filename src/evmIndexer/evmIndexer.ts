@@ -3,15 +3,20 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import type { Context } from "../evmProcessor";
-import type { Transfer } from "../model";
-import { Account, Deposit, Execution, Fee, TransferStatus } from "../model";
+import {
+  Transfer,
+  Account,
+  Deposit,
+  Execution,
+  Fee,
+  TransferStatus,
+} from "../model";
 
 import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecution,
   DecodedProposalExecutionLog,
 } from "./evmTypes";
-import { getUpdatedTransfer } from "./utils";
 
 export async function processDeposits(
   ctx: Context,
@@ -45,7 +50,7 @@ export async function processDeposits(
       handlerResponse: d.handlerResponse,
     });
 
-    const transfer = await getUpdatedTransfer(ctx, {
+    const transfer = new Transfer({
       id: d.id,
       depositNonce: d.depositNonce,
       amount: d.amount,
@@ -85,7 +90,7 @@ export async function processExecutions(
       txHash: e.txHash,
     });
 
-    const transfer = await getUpdatedTransfer(ctx, {
+    const transfer = new Transfer({
       id: e.id,
       depositNonce: e.depositNonce,
       amount: null,
@@ -122,7 +127,7 @@ export async function processFailedExecutions(
       txHash: e.txHash,
     });
 
-    const transfer = await getUpdatedTransfer(ctx, {
+    const transfer = new Transfer({
       id: e.id,
       depositNonce: e.depositNonce,
       amount: null,

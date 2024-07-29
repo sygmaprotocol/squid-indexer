@@ -29,3 +29,11 @@ export async function initDatabase(): Promise<DataSource> {
   await dataSource.initialize();
   return dataSource;
 }
+
+export function generateTransferID(
+  depositNonce: string,
+  fromDomainID: string,
+  toDomainID: string,
+): string {
+  return depositNonce + "-" + fromDomainID + "-" + toDomainID;
+}

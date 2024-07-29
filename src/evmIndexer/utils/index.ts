@@ -15,8 +15,8 @@ import { AbiCoder, Contract, ethers, formatUnits } from "ethers";
 import * as FeeHandlerRouter from "../../abi/FeeHandlerRouter.json";
 import * as bridge from "../../abi/bridge";
 import type { Domain } from "../../config";
-import type { Context, Log } from "../../evmProcessor";
-import { Transfer } from "../../model";
+import type { Log } from "../../evmProcessor";
+import { generateTransferID } from "../../utils";
 import { logger } from "../../utils/logger";
 import type {
   DecodedDepositLog,
@@ -55,7 +55,11 @@ export async function parseDeposit(
   const transaction = assertNotNull(log.transaction, "Missing transaction");
 
   return {
-    id: log.id,
+    id: generateTransferID(
+      event.depositNonce.toString(),
+      fromDomain.id.toString(),
+      event.destinationDomainID.toString(),
+    ),
     blockNumber: log.block.height,
     depositNonce: event.depositNonce,
     toDomainID: event.destinationDomainID,
@@ -66,7 +70,7 @@ export async function parseDeposit(
       resourceType,
       substrateRpcUrlConfig,
     ),
-    fromDomainID: Number(fromDomain.id),
+    fromDomainID: fromDomain.id,
     resourceID: resource.resourceId,
     txHash: transaction.hash,
     timestamp: new Date(log.block.timestamp),
@@ -206,14 +210,18 @@ export function parseProposalExecution(
   const transaction = assertNotNull(log.transaction, "Missing transaction");
 
   return {
-    id: log.id,
+    id: generateTransferID(
+      event.depositNonce.toString(),
+      event.originDomainID.toString(),
+      toDomain.id.toString(),
+    ),
     blockNumber: log.block.height,
     from: log.transaction!.from,
     depositNonce: event.depositNonce,
     txHash: transaction.hash,
     timestamp: new Date(log.block.timestamp),
     fromDomainID: event.originDomainID,
-    toDomainID: Number(toDomain.id),
+    toDomainID: toDomain.id,
   };
 }
 
@@ -225,7 +233,11 @@ export function parseFailedHandlerExecution(
   const transaction = assertNotNull(log.transaction, "Missing transaction");
 
   return {
-    id: log.id,
+    id: generateTransferID(
+      event.depositNonce.toString(),
+      event.originDomainID.toString(),
+      toDomain.id.toString(),
+    ),
     fromDomainID: event.originDomainID,
     toDomainID: toDomain.id,
     depositNonce: event.depositNonce,
@@ -299,25 +311,5 @@ function getContract(
       return new Contract(contractAddress, ERC20Contract.abi, provider);
     case ContractType.FEE_ROUTER:
       return new Contract(contractAddress, FeeHandlerRouter.abi, provider);
-  }
-}
-
-export async function getUpdatedTransfer(
-  ctx: Context,
-  transferValues: Partial<Transfer>,
-): Promise<Transfer> {
-  const transfer = await ctx.store.findOne(Transfer, {
-    where: {
-      depositNonce: transferValues.depositNonce!,
-      fromDomainID: transferValues.fromDomainID!,
-      toDomainID: transferValues.toDomainID!,
-    },
-  });
-
-  if (!transfer) {
-    return new Transfer(transferValues);
-  } else {
-    Object.assign(transfer, transferValues);
-    return transfer;
   }
 }

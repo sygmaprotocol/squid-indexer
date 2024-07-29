@@ -25,9 +25,6 @@ RUN corepack yarn install
 # copy source code to /squid/src folder
 COPY . .
 
-# check files list
-RUN ls -a
-
 RUN corepack yarn build
 
 FROM node:18-alpine

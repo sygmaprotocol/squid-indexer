@@ -26,3 +26,6 @@ jobs:
       - run: yarn run lint 
       - name: Check license
         run: yarn run license-check
+      - run: yarn run build
+      - name: Run tests
+        run: yarn run test:unit

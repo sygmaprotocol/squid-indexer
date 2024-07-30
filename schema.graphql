@@ -1,0 +1,75 @@
+type Transfer @entity {
+  id: ID!
+  depositNonce: BigInt!
+  resource: Resource
+  resourceID: String
+  fromDomain: Domain!
+  fromDomainID: Int!
+  toDomain: Domain
+  toDomainID: Int
+  destination: String
+  amount: String
+  status: TransferStatus!
+  deposit: Deposit @unique
+  execution: Execution @unique
+  fee: Fee @unique
+  account: Account
+  accountID: String
+  message: String
+  usdValue: Float
+}
+
+type Deposit @entity {
+  id: ID!
+  transfer: Transfer @derivedFrom(field: "deposit")
+  type: String!
+  txHash: String!
+  blockNumber: String!
+  depositData: String!
+  timestamp: DateTime
+  handlerResponse: String!
+}
+
+type Execution @entity {
+  id: ID!
+  transfer: Transfer @derivedFrom(field: "execution")
+  txHash: String!
+  timestamp: DateTime
+  blockNumber: String! 
+}
+
+enum TransferStatus {
+  pending
+  executed
+  failed
+}
+
+type Account @entity {
+  id: ID!
+  addressStatus: String
+  transfers: [Transfer!] @derivedFrom(field: "account")
+}
+
+type Resource @entity {
+  id: ID!
+  type: String!
+  decimals: Int
+  transfers: [Transfer!] @derivedFrom(field: "resource")
+}
+
+type Domain @entity {
+  id: ID!
+  name: String!
+  lastIndexedBlock: String!
+  transfersFrom: [Transfer!] @derivedFrom(field: "fromDomain")
+  transfersTo: [Transfer!] @derivedFrom(field: "toDomain")
+}
+
+type Fee @entity {
+  id: ID! 
+  amount: String!
+  tokenAddress: String!
+  tokenSymbol: String!
+  decimals: Int
+  transfer: Transfer @derivedFrom(field: "fee")
+}

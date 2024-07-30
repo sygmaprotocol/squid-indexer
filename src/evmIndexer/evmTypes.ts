@@ -79,8 +79,3 @@ export type SubstrateResource = {
   assetName: string;
   xcmMultiAssetId: XcmAssetId;
 };
-
-export enum ContractType {
-  ERC20 = "erc20",
-  FEE_ROUTER = "feeRouter",
-}

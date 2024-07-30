@@ -5,17 +5,18 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { randomUUID } from "crypto";
 
 import { Network } from "@buildwithsygma/sygma-sdk-core";
-import ERC20Contract from "@openzeppelin/contracts/build/contracts/ERC20.json";
 import type { ApiPromise } from "@polkadot/api";
 import type { MultiLocation } from "@polkadot/types/interfaces";
+import type { BlockHeader } from "@subsquid/evm-processor";
 import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
-import type { BigNumberish, Provider } from "ethers";
-import { AbiCoder, Contract, ethers, formatUnits } from "ethers";
+import type { BigNumberish } from "ethers";
+import { AbiCoder, ethers, formatUnits } from "ethers";
 
-import * as FeeHandlerRouter from "../../abi/FeeHandlerRouter.json";
-import * as bridge from "../../abi/bridge";
+import * as FeeHandlerRouter from "../../abi/FeeHandlerRouter";
+import * as Bridge from "../../abi/bridge";
+import * as ERC20 from "../../abi/erc20";
 import type { Domain } from "../../config";
-import type { Log } from "../../evmProcessor";
+import type { Context, Log } from "../../evmProcessor";
 import { generateTransferID } from "../../utils";
 import { logger } from "../../utils/logger";
 import type {
@@ -24,23 +25,20 @@ import type {
   DecodedProposalExecutionLog,
   FeeData,
 } from "../evmTypes";
-import { ContractType, DepositType } from "../evmTypes";
+import { DepositType } from "../evmTypes";
 
 export const nativeTokenAddress = "0x0000000000000000000000000000000000000000";
 const STATIC_FEE_DATA = "0x00";
-type FeeDataResponse = {
-  fee: string;
-  tokenAddress: string;
-};
 
 export async function parseDeposit(
+  ctx: Context,
+  blockHeader: BlockHeader,
   log: Log,
   fromDomain: Domain,
   toDomain: Domain,
-  provider: Provider,
   substrateRpcUrlConfig: Map<number, ApiPromise>,
 ): Promise<DecodedDepositLog> {
-  const event = bridge.events.Deposit.decode(log);
+  const event = Bridge.events.Deposit.decode(log);
   const resource = fromDomain.resources.find(
     (resource) => resource.resourceId == event.resourceID,
   );
@@ -82,7 +80,7 @@ export async function parseDeposit(
       resourceDecimals,
       resourceType,
     ) as string,
-    fee: await getFee(event, fromDomain, provider),
+    fee: await getFee(ctx, blockHeader, event, fromDomain),
   };
 }
 
@@ -206,7 +204,7 @@ export function parseProposalExecution(
   log: Log,
   toDomain: Domain,
 ): DecodedProposalExecutionLog {
-  const event = bridge.events.ProposalExecution.decode(log);
+  const event = Bridge.events.ProposalExecution.decode(log);
   const transaction = assertNotNull(log.transaction, "Missing transaction");
 
   return {
@@ -229,7 +227,7 @@ export function parseFailedHandlerExecution(
   log: Log,
   toDomain: Domain,
 ): DecodedFailedHandlerExecution {
-  const event = bridge.events.FailedHandlerExecution.decode(log);
+  const event = Bridge.events.FailedHandlerExecution.decode(log);
   const transaction = assertNotNull(log.transaction, "Missing transaction");
 
   return {
@@ -251,31 +249,31 @@ export function parseFailedHandlerExecution(
 }
 
 export async function getFee(
-  event: bridge.DepositEventArgs,
+  ctx: Context,
+  blockHeader: BlockHeader,
+  event: Bridge.DepositEventArgs,
   fromDomain: Domain,
-  provider: Provider,
 ): Promise<FeeData> {
   try {
-    const feeRouter = getContract(
-      provider,
+    const feeRouter = new FeeHandlerRouter.Contract(
+      ctx,
+      blockHeader,
       fromDomain.feeRouter,
-      ContractType.FEE_ROUTER,
     );
-
-    const fee = (await feeRouter.calculateFee(
+    const fee = await feeRouter.calculateFee(
       event.user,
       fromDomain.id,
       event.destinationDomainID,
       event.resourceID,
       event.data,
       STATIC_FEE_DATA,
-    )) as FeeDataResponse;
+    );
 
     let tokenSymbol: string;
     let decimals: number;
     if (fee.tokenAddress != nativeTokenAddress) {
-      const token = getContract(provider, fee.tokenAddress, ContractType.ERC20);
-      tokenSymbol = (await token.symbol()) as string;
+      const token = new ERC20.Contract(ctx, blockHeader, fee.tokenAddress);
+      tokenSymbol = await token.symbol();
       decimals = Number(await token.decimals());
     } else {
       tokenSymbol = fromDomain.nativeTokenSymbol;
@@ -298,18 +296,5 @@ export async function getFee(
       decimals: 0,
       amount: "0",
     };
-  }
-}
-
-function getContract(
-  provider: Provider,
-  contractAddress: string,
-  contractType: ContractType,
-): Contract {
-  switch (contractType) {
-    case ContractType.ERC20:
-      return new Contract(contractAddress, ERC20Contract.abi, provider);
-    case ContractType.FEE_ROUTER:
-      return new Contract(contractAddress, FeeHandlerRouter.abi, provider);
   }
 }

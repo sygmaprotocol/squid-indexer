@@ -13,7 +13,6 @@ import type {
 import { EvmBatchProcessor } from "@subsquid/evm-processor";
 import type { Store } from "@subsquid/typeorm-store";
 import { TypeormDatabase } from "@subsquid/typeorm-store";
-import type { Provider } from "ethers";
 
 import * as bridge from "./abi/bridge";
 import type {
@@ -45,7 +44,6 @@ export function startEvmProcessing(
   domainConfig: DomainConfig,
   sharedConfig: SharedConfig,
   thisDomain: Domain,
-  provider: Provider,
   substrateRpcUrlConfig: Map<number, ApiPromise>,
 ): void {
   processor = getEvmProcessor(processorConfig);
@@ -73,10 +71,11 @@ export function startEvmProcessing(
             }
             deposits.push(
               await parseDeposit(
+                ctx,
+                block.header,
                 log,
                 thisDomain,
                 toDomain,
-                provider,
                 substrateRpcUrlConfig,
               ),
             );

@@ -16,7 +16,6 @@ import { logger } from "../utils/logger";
 export type DomainConfig = {
   domainID: number;
   domainType: Network;
-  rpcURL: string;
   supportedSubstrateRPCs: string;
 };
 
@@ -73,7 +72,6 @@ export function getDomainConfig(): DomainConfig {
   }
   const domainConfig: DomainConfig = {
     domainID: Number(process.env.DOMAIN_ID),
-    rpcURL: process.env.RPC_URL!,
     supportedSubstrateRPCs: process.env.SUPPORTED_SUBSTRATE_RPCS!,
     domainType: domainType as Network,
   };

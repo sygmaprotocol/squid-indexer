@@ -3,7 +3,6 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import { Network } from "@buildwithsygma/sygma-sdk-core";
-import { ethers } from "ethers";
 
 import {
   getDomainConfig,
@@ -30,7 +29,6 @@ async function startProcessing(): Promise<void> {
 
   switch (domainConfig.domainType) {
     case Network.EVM: {
-      const provider = new ethers.JsonRpcProvider(domainConfig.rpcURL);
       const substrateRpcUrlConfig = await getSsmDomainConfig(
         domainConfig.supportedSubstrateRPCs,
       );
@@ -41,7 +39,6 @@ async function startProcessing(): Promise<void> {
         domainConfig,
         sharedConfig,
         thisDomain,
-        provider,
         substrateRpcUrlConfig,
       );
       break;

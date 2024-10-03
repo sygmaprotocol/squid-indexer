@@ -15,7 +15,8 @@ import type { Store } from "@subsquid/typeorm-store";
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 import type { Provider } from "ethers";
 
-import * as bridge from "./abi/bridge";
+import * as bridge from "../abi/bridge";
+
 import type {
   Domain,
   DomainConfig,

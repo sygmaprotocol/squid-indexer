@@ -2,8 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, JoinColumn as JoinColumn_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, BigIntColumn as BigIntColumn_, ManyToOne as ManyToOne_, Index as Index_, StringColumn as StringColumn_, IntColumn as IntColumn_, OneToOne as OneToOne_, JoinColumn as JoinColumn_, FloatColumn as FloatColumn_} from "@subsquid/typeorm-store"
 import {Resource} from "./resource.model"
 import {Domain} from "./domain.model"
 import {TransferStatus} from "./_transferStatus"
@@ -21,34 +20,34 @@ export class Transfer {
     @PrimaryColumn_()
     id!: string
 
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+    @BigIntColumn_({nullable: false})
     depositNonce!: bigint
 
     @Index_()
     @ManyToOne_(() => Resource, {nullable: true})
     resource!: Resource | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     resourceID!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Domain, {nullable: true})
     fromDomain!: Domain
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     fromDomainID!: number
 
     @Index_()
     @ManyToOne_(() => Domain, {nullable: true})
     toDomain!: Domain | undefined | null
 
-    @Column_("int4", {nullable: true})
+    @IntColumn_({nullable: true})
     toDomainID!: number | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     destination!: string | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     amount!: string | undefined | null
 
     @Column_("varchar", {length: 8, nullable: false})
@@ -73,12 +72,12 @@ export class Transfer {
     @ManyToOne_(() => Account, {nullable: true})
     account!: Account | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     accountID!: string | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     message!: string | undefined | null
 
-    @Column_("numeric", {transformer: marshal.floatTransformer, nullable: true})
+    @FloatColumn_({nullable: true})
     usdValue!: number | undefined | null
 }

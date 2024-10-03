@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, IntColumn as IntColumn_, OneToOne as OneToOne_} from "@subsquid/typeorm-store"
 import {Transfer} from "./transfer.model"
 
 @Entity_()
@@ -14,16 +14,18 @@ export class Fee {
     @PrimaryColumn_()
     id!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     amount!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     tokenAddress!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     tokenSymbol!: string
 
-    @Column_("int4", {nullable: true})
+    @IntColumn_({nullable: true})
     decimals!: number | undefined | null
 
+    @OneToOne_(() => Transfer, e => e.fee)
+    transfer!: Transfer | undefined | null
 }

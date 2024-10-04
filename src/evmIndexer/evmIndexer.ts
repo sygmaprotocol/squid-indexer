@@ -63,6 +63,7 @@ export async function processDeposits(
       accountID: d.sender,
       deposit: deposit,
       fee: new Fee(d.fee),
+      usdValue: d.usdValue,
     });
 
     if (!deposits.has(d.id)) {

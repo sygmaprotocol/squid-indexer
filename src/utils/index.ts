@@ -37,3 +37,34 @@ export function generateTransferID(
 ): string {
   return depositNonce + "-" + fromDomainID + "-" + toDomainID;
 }
+
+export async function fetchRetry(
+  input: RequestInfo | URL,
+  init?: RequestInit | undefined,
+  retryCount = parseInt(process.env.RETRY_COUNT || "3"),
+  backoff = parseInt(process.env.BACKOFF || "500"),
+): Promise<Response> {
+  let statusCode = 0;
+  while (retryCount > 0) {
+    try {
+      const res = await fetch(input, init);
+      if (res.status != 200) {
+        statusCode = res.status;
+        throw new Error();
+      }
+      return res;
+    } catch {
+      await sleep(backoff);
+      backoff *= 2;
+    } finally {
+      retryCount -= 1;
+    }
+  }
+  throw new Error(
+    `Error while fetching URL: ${String(input)}. Status code: ${statusCode}`,
+  );
+}
+
+export async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

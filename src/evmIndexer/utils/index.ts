@@ -16,6 +16,8 @@ import * as FeeHandlerRouter from "../../abi/FeeHandlerRouter.json";
 import * as bridge from "../../abi/bridge";
 import type { Domain } from "../../config";
 import type { Log } from "../../evmProcessor";
+import type CoinMarketCapService from "../../services/coinmarketcap/coinmarketcap.service";
+import type { OfacComplianceService } from "../../services/ofac";
 import { generateTransferID } from "../../utils";
 import { logger } from "../../utils/logger";
 import type {
@@ -39,6 +41,8 @@ export async function parseDeposit(
   toDomain: Domain,
   provider: Provider,
   substrateRpcUrlConfig: Map<number, ApiPromise>,
+  coinMarketCapService: CoinMarketCapService,
+  ofacComplianceService: OfacComplianceService,
 ): Promise<DecodedDepositLog> {
   const event = bridge.events.Deposit.decode(log);
   const resource = fromDomain.resources.find(
@@ -53,6 +57,34 @@ export async function parseDeposit(
   const resourceDecimals = resource.decimals || 18;
 
   const transaction = assertNotNull(log.transaction, "Missing transaction");
+
+  const amount = decodeAmountsOrTokenId(
+    event.data,
+    resourceDecimals,
+    resourceType,
+  ) as string;
+
+  let amountInUSD: number | undefined;
+  if (resourceType !== DepositType.FUNGIBLE) {
+    amountInUSD = undefined;
+  } else {
+    try {
+      amountInUSD = await coinMarketCapService.getValueInUSD(amount, resource.symbol);
+    } catch (error) {
+      logger.error((error as Error).message);
+      amountInUSD = 0;
+    }
+  }
+
+  let senderStatus: string;
+  try {
+    senderStatus = (await ofacComplianceService.checkSanctionedAddress(
+      transaction.from,
+    )) as string;
+  } catch (e) {
+    logger.error(`Checking address failed: ${(e as Error).message}`)
+    senderStatus = "";
+  }
 
   return {
     id: generateTransferID(
@@ -77,11 +109,9 @@ export async function parseDeposit(
     depositData: event.data,
     handlerResponse: event.handlerResponse,
     transferType: resourceType,
-    amount: decodeAmountsOrTokenId(
-      event.data,
-      resourceDecimals,
-      resourceType,
-    ) as string,
+    amount: amount,
+    senderStatus: senderStatus,
+    usdValue: amountInUSD,
     fee: await getFee(event, fromDomain, provider),
   };
 }

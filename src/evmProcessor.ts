@@ -37,6 +37,8 @@ import {
   parseFailedHandlerExecution,
   parseProposalExecution,
 } from "./evmIndexer/utils";
+import type CoinMarketCapService from "./services/coinmarketcap/coinmarketcap.service";
+import type { OfacComplianceService } from "./services/ofac";
 
 let processor: EvmBatchProcessor;
 
@@ -47,6 +49,8 @@ export function startEvmProcessing(
   thisDomain: Domain,
   provider: Provider,
   substrateRpcUrlConfig: Map<number, ApiPromise>,
+  coinMarketCapService: CoinMarketCapService,
+  ofacComplianceService: OfacComplianceService,
 ): void {
   processor = getEvmProcessor(processorConfig);
 
@@ -78,6 +82,8 @@ export function startEvmProcessing(
                 toDomain,
                 provider,
                 substrateRpcUrlConfig,
+                coinMarketCapService,
+                ofacComplianceService,
               ),
             );
           } else if (log.topics[0] === bridge.events.ProposalExecution.topic) {

@@ -69,7 +69,10 @@ export async function parseDeposit(
     amountInUSD = undefined;
   } else {
     try {
-      amountInUSD = await coinMarketCapService.getValueInUSD(amount, resource.symbol);
+      amountInUSD = await coinMarketCapService.getValueInUSD(
+        amount,
+        resource.symbol,
+      );
     } catch (error) {
       logger.error((error as Error).message);
       amountInUSD = 0;
@@ -82,7 +85,7 @@ export async function parseDeposit(
       transaction.from,
     )) as string;
   } catch (e) {
-    logger.error(`Checking address failed: ${(e as Error).message}`)
+    logger.error(`Checking address failed: ${(e as Error).message}`);
     senderStatus = "";
   }
 

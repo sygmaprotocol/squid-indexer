@@ -10,8 +10,9 @@ import type { FastifyInstance } from "fastify";
 import fastifyHealthcheck from "fastify-healthcheck";
 import plugin from "typeorm-fastify-plugin";
 
-import { routes } from "./routes";
-import { AppDataSource } from "./utils";
+import { AppDataSource } from "../utils";
+
+import { routes } from "./routes/routes";
 
 export const app: FastifyInstance = fastify({ logger: true });
 void app.register(cors, {

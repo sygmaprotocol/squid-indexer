@@ -32,4 +32,4 @@ COPY --from=builder /squid/envs ./envs
 LABEL org.opencontainers.image.source https://github.com/sygmaprotocol/sygma-explorer-indexer
 EXPOSE 8000
 
-CMD ["node", "./lib/index.js"]
+CMD ["node", "./lib/api/index.js"]

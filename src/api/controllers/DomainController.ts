@@ -5,8 +5,8 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { Environment } from "@buildwithsygma/sygma-sdk-core";
 import type { FastifyReply, FastifyRequest } from "fastify";
 
+import { logger } from "../../utils/logger";
 import { DomainMetadataConfig } from "../utils/domainMetadata";
-import { logger } from "../utils/logger";
 import { ResourcesMetadataConfig } from "../utils/resourcesMetadata";
 
 const env = process.env.ENVIRONMENT || "";

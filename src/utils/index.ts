@@ -5,7 +5,6 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { DataSource } from "typeorm";
 import { SnakeNamingStrategy } from "typeorm-naming-strategies";
 
-import type { IncludedQueryParams } from "../interfaces";
 import {
   Account,
   Deposit,
@@ -26,51 +25,3 @@ export const AppDataSource = new DataSource({
   entities: [Domain, Transfer, Resource, Deposit, Execution, Account, Fee],
   namingStrategy: new SnakeNamingStrategy(),
 });
-
-export const getTransferQueryParams = (): IncludedQueryParams => {
-  return {
-    resource: {
-      type: true,
-      id: true,
-    },
-    toDomain: {
-      name: true,
-      lastIndexedBlock: true,
-      id: true,
-    },
-    fromDomain: {
-      name: true,
-      lastIndexedBlock: true,
-      id: true,
-    },
-    fee: {
-      id: true,
-      amount: true,
-      tokenAddress: true,
-      tokenSymbol: true,
-      decimals: true,
-    },
-    deposit: {
-      txHash: true,
-      blockNumber: true,
-      depositData: true,
-      handlerResponse: true,
-      timestamp: true,
-    },
-    execution: {
-      txHash: true,
-      blockNumber: true,
-      timestamp: true,
-    },
-    account: {
-      id: true,
-      addressStatus: true,
-    },
-  };
-};
-
-export class NotFound extends Error {
-  constructor(message: string) {
-    super(message);
-  }
-}

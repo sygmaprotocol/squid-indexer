@@ -4,9 +4,9 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import type { FastifyInstance } from "fastify";
 
-import { DomainsController } from "./controllers/DomainController";
-import { RoutesController } from "./controllers/RoutesController";
-import { TransfersController } from "./controllers/TransfersController";
+import { DomainsController } from "../controllers/DomainController";
+import { RoutesController } from "../controllers/RoutesController";
+import { TransfersController } from "../controllers/TransfersController";
 import {
   domainsMetadataSchema,
   resourcesByDomainSchema,
@@ -19,7 +19,7 @@ import {
   transfersBySenderSchema,
   transfersBySourceDomainToDestinationDomainSchema,
   transfersSchema,
-} from "./controllers/schemas";
+} from "../controllers/schemas";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function routes(fastify: FastifyInstance): Promise<void> {

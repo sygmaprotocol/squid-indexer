@@ -5,9 +5,9 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { Environment } from "@buildwithsygma/sygma-sdk-core";
 import type { FastifyReply, FastifyRequest } from "fastify";
 
+import { logger } from "../../utils/logger";
 import type { IRouteByResourceType, IRoutesByDomain } from "../interfaces";
 import { RoutesService } from "../services/routes.service";
-import { logger } from "../utils/logger";
 
 const env = process.env.ENVIRONMENT || "";
 const routeService = new RoutesService(

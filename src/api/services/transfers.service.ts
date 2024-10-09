@@ -4,9 +4,10 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import type { FindOptionsWhere, Repository } from "typeorm";
 
-import type { TransferStatus } from "../model";
-import { Deposit, Transfer } from "../model";
-import { AppDataSource, getTransferQueryParams, NotFound } from "../utils";
+import type { TransferStatus } from "../../model";
+import { Deposit, Transfer } from "../../model";
+import { AppDataSource } from "../../utils";
+import { getTransferQueryParams, NotFound } from "../utils";
 
 export type Pagination = {
   page: number;

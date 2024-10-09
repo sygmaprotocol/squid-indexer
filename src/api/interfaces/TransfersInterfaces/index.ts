@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import type { TransferStatus } from "../../model";
+import type { TransferStatus } from "../../../model";
 import type { DomainType } from "../../services/transfers.service";
 
 export interface ITransfer {

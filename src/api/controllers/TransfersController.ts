@@ -4,6 +4,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import type { FastifyReply, FastifyRequest } from "fastify";
 
+import { logger } from "../../utils/logger";
 import type {
   ITransfer,
   ITransferByDomain,
@@ -17,7 +18,6 @@ import type {
 } from "../interfaces";
 import TransfersService from "../services/transfers.service";
 import { NotFound } from "../utils";
-import { logger } from "../utils/logger";
 
 const transfersService = new TransfersService();
 export const TransfersController = {

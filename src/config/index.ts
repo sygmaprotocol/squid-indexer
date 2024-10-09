@@ -9,9 +9,35 @@ import type {
 } from "@buildwithsygma/sygma-sdk-core";
 import { Network } from "@buildwithsygma/sygma-sdk-core";
 import { ApiPromise, WsProvider } from "@polkadot/api";
+import type { XcmAssetId } from "@polkadot/types/interfaces";
 
-import type { EvmResource, SubstrateResource } from "../evmIndexer/evmTypes";
 import { logger } from "../utils/logger";
+
+export enum DepositType {
+  FUNGIBLE = "fungible",
+  NONFUNGIBLE = "nonfungible",
+  SEMIFUNGIBLE = "semifungible",
+  PERMISSIONLESS_GENERIC = "permissionlessGeneric",
+  PERMISSIONED_GENERIC = "permissionedGeneric",
+}
+
+export type EvmResource = {
+  resourceId: string;
+  type: DepositType;
+  address: string;
+  symbol: string;
+  decimals: number;
+};
+
+export type SubstrateResource = {
+  resourceId: string;
+  type: DepositType;
+  address: string;
+  symbol: string;
+  decimals: number;
+  assetName: string;
+  xcmMultiAssetId: XcmAssetId;
+};
 
 export type DomainConfig = {
   domainID: number;
@@ -61,7 +87,7 @@ export function getProcessorConfig(): ProcessorConfig {
     numberOfConfirmations: Number(process.env.DOMAIN_CONFIRMATIONS),
     startBlock: Number(process.env.START_BLOCK!),
   };
-  const { gateway, ...requiredConfig } = processorConfig;
+  const { gateway, contractAddress, ...requiredConfig } = processorConfig;
   validateConfig(requiredConfig);
   return processorConfig;
 }
@@ -77,7 +103,8 @@ export function getDomainConfig(): DomainConfig {
     supportedSubstrateRPCs: process.env.SUPPORTED_SUBSTRATE_RPCS!,
     domainType: domainType as Network,
   };
-  validateConfig(domainConfig);
+  const { supportedSubstrateRPCs, ...requiredConfig } = domainConfig;
+  validateConfig(requiredConfig);
   return domainConfig;
 }
 

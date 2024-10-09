@@ -15,28 +15,29 @@ import type { Store } from "@subsquid/typeorm-store";
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 import type { Provider } from "ethers";
 
-import * as bridge from "./abi/bridge";
+import * as bridge from "../abi/bridge";
 import type {
   Domain,
   DomainConfig,
   ProcessorConfig,
   SharedConfig,
-} from "./config";
+} from "../config";
 import {
   processDeposits,
   processExecutions,
   processFailedExecutions,
-} from "./evmIndexer/evmIndexer";
+} from "../indexer";
 import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecution,
   DecodedProposalExecutionLog,
-} from "./evmIndexer/evmTypes";
+} from "../utils/types";
+
 import {
   parseDeposit,
   parseFailedHandlerExecution,
   parseProposalExecution,
-} from "./evmIndexer/utils";
+} from "./utils";
 
 let processor: EvmBatchProcessor;
 
@@ -106,11 +107,6 @@ function getEvmProcessor(processorConfig: ProcessorConfig): EvmBatchProcessor {
     })
     .setBlockRange({ from: processorConfig.startBlock })
     .setFinalityConfirmation(processorConfig.numberOfConfirmations)
-    .setFields({
-      log: {
-        topics: true,
-      },
-    })
     .addLog({
       address: [processorConfig.contractAddress],
       topic0: [bridge.events.ProposalExecution.topic],

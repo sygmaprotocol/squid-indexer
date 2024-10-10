@@ -2,7 +2,9 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import type { Context } from "../evmProcessor";
+import type { Store } from "@subsquid/typeorm-store";
+
+import type { Context } from "./evm/evmProcessor";
 import {
   Transfer,
   Account,
@@ -10,16 +12,17 @@ import {
   Execution,
   Fee,
   TransferStatus,
-} from "../model";
-
+} from "./model";
+import type { ProcessorContext } from "./substrate/substrateProcessor";
 import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecution,
   DecodedProposalExecutionLog,
-} from "./evmTypes";
+  FeeCollectedData,
+} from "./utils/types";
 
 export async function processDeposits(
-  ctx: Context,
+  ctx: Context | ProcessorContext<Store>,
   depositsData: DecodedDepositLog[],
 ): Promise<void> {
   const accounts = new Map<string, Account>();
@@ -31,8 +34,10 @@ export async function processDeposits(
     if (!accounts.has(d.sender)) {
       accounts.set(d.sender, new Account({ id: d.sender }));
     }
-    if (!fees.has(d.fee.id)) {
-      fees.set(d.fee.id, new Fee(d.fee));
+    if (d.fee) {
+      if (!fees.has(d.fee.id)) {
+        fees.set(d.fee.id, new Fee(d.fee));
+      }
     }
   }
 
@@ -77,7 +82,7 @@ export async function processDeposits(
 }
 
 export async function processExecutions(
-  ctx: Context,
+  ctx: Context | ProcessorContext<Store>,
   executionsData: DecodedProposalExecutionLog[],
 ): Promise<void> {
   const executions = new Map<string, Execution>();
@@ -114,7 +119,7 @@ export async function processExecutions(
 }
 
 export async function processFailedExecutions(
-  ctx: Context,
+  ctx: Context | ProcessorContext<Store>,
   failedExecutionsData: DecodedFailedHandlerExecution[],
 ): Promise<void> {
   const failedExecutions = new Map<string, Execution>();
@@ -149,4 +154,38 @@ export async function processFailedExecutions(
 
   await ctx.store.upsert([...failedExecutions.values()]);
   await ctx.store.upsert([...transfers.values()]);
+}
+
+export async function processFees(
+  ctx: Context | ProcessorContext<Store>,
+  feeCollectedData: FeeCollectedData[],
+): Promise<void> {
+  const fees = new Map<string, Fee>();
+  for (const f of feeCollectedData) {
+    if (!fees.has(f.id)) {
+      const fee = new Fee({
+        id: f.id,
+        amount: f.amount,
+        decimals: f.decimals,
+        tokenAddress: f.tokenAddress,
+        tokenSymbol: f.tokenSymbol,
+      });
+      fees.set(f.id, fee);
+    }
+  }
+  await ctx.store.upsert([...fees.values()]);
+
+  for (const f of feeCollectedData) {
+    const transfer = await ctx.store.findOne(Transfer, {
+      where: {
+        deposit: {
+          txHash: f.txIdentifier,
+        },
+      },
+    });
+    if (transfer) {
+      transfer.fee = fees.get(f.id);
+      await ctx.store.upsert(transfer);
+    }
+  }
 }

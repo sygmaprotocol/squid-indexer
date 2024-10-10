@@ -11,7 +11,8 @@ import {
   getSharedConfig,
   getSsmDomainConfig,
 } from "./config";
-import { startEvmProcessing } from "./evmProcessor";
+import { startEvmProcessing } from "./evm/evmProcessor";
+import { startSubstrateProcessing } from "./substrate/substrateProcessor";
 import { logger } from "./utils/logger";
 
 async function startProcessing(): Promise<void> {
@@ -44,6 +45,10 @@ async function startProcessing(): Promise<void> {
         provider,
         substrateRpcUrlConfig,
       );
+      break;
+    }
+    case Network.SUBSTRATE: {
+      startSubstrateProcessing(processorConfig, domainConfig, thisDomain);
       break;
     }
     default:

@@ -3,8 +3,6 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 
-import type { XcmAssetId } from "@polkadot/types/interfaces";
-
 export type DecodedDepositLog = {
   id: string;
   blockNumber: number;
@@ -21,13 +19,12 @@ export type DecodedDepositLog = {
   transferType: string;
   amount: string;
   senderStatus?: string;
-  fee: FeeData;
+  fee?: FeeData;
 };
 
 export type DecodedProposalExecutionLog = {
   id: string;
   blockNumber: number;
-  from: string;
   depositNonce: bigint;
   txHash: string;
   timestamp: Date;
@@ -54,33 +51,6 @@ export type FeeData = {
   decimals: number;
 };
 
-export enum DepositType {
-  FUNGIBLE = "fungible",
-  NONFUNGIBLE = "nonfungible",
-  SEMIFUNGIBLE = "semifungible",
-  PERMISSIONLESS_GENERIC = "permissionlessGeneric",
-  PERMISSIONED_GENERIC = "permissionedGeneric",
-}
-
-export type EvmResource = {
-  resourceId: string;
-  type: DepositType;
-  address: string;
-  symbol: string;
-  decimals: number;
+export type FeeCollectedData = FeeData & {
+  txIdentifier: string;
 };
-
-export type SubstrateResource = {
-  resourceId: string;
-  type: DepositType;
-  address: string;
-  symbol: string;
-  decimals: number;
-  assetName: string;
-  xcmMultiAssetId: XcmAssetId;
-};
-
-export enum ContractType {
-  ERC20 = "erc20",
-  FEE_ROUTER = "feeRouter",
-}

@@ -47,6 +47,8 @@
     "@types/chai": "^4.3.16",
     "@types/mocha": "^10.0.7",
     "@types/sinon": "^17.0.3",
+    "bignumber.js": "^9.1.2",
+    "cache-manager": "^5.2.4",
     "chai": "^4.3.7",
     "eslint": "^8.21.0",
     "mocha": "^10.2.0",

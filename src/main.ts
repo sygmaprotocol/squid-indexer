@@ -3,6 +3,7 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import { Network } from "@buildwithsygma/sygma-sdk-core";
+import { caching } from "cache-manager";
 import { ethers } from "ethers";
 
 import {
@@ -12,6 +13,8 @@ import {
   getSsmDomainConfig,
 } from "./config";
 import { startEvmProcessing } from "./evmProcessor";
+import CoinMarketCapService from "./services/coinmarketcap/coinmarketcap.service";
+import { OfacComplianceService } from "./services/ofac";
 import { logger } from "./utils/logger";
 
 async function startProcessing(): Promise<void> {
@@ -28,6 +31,21 @@ async function startProcessing(): Promise<void> {
     );
   }
 
+  const ttlInMins = Number(process.env.CACHE_TTL_IN_MINS) || 5;
+  const memoryCache = await caching("memory", {
+    ttl: ttlInMins * 1000,
+  });
+  const coinMarketCapServiceInstance = new CoinMarketCapService(
+    process.env.COINMARKETCAP_API_KEY || "",
+    process.env.COINMARKETCAP_API_URL || "",
+    memoryCache,
+  );
+
+  const ofacComplianceService = new OfacComplianceService(
+    process.env.CHAIN_ANALYSIS_URL || "",
+    process.env.CHAIN_ANALYSIS_API_KEY || "",
+  );
+
   switch (domainConfig.domainType) {
     case Network.EVM: {
       const provider = new ethers.JsonRpcProvider(domainConfig.rpcURL);
@@ -43,6 +61,8 @@ async function startProcessing(): Promise<void> {
         thisDomain,
         provider,
         substrateRpcUrlConfig,
+        coinMarketCapServiceInstance,
+        ofacComplianceService,
       );
       break;
     }

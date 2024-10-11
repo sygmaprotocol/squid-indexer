@@ -31,23 +31,19 @@ async function startProcessing(): Promise<void> {
     );
   }
 
-  const coinMarketCapAPIKey = process.env.COINMARKETCAP_API_KEY || "";
-  const coinMarketCapUrl = process.env.COINMARKETCAP_API_URL || "";
   const ttlInMins = Number(process.env.CACHE_TTL_IN_MINS) || 5;
   const memoryCache = await caching("memory", {
     ttl: ttlInMins * 1000,
   });
   const coinMarketCapServiceInstance = new CoinMarketCapService(
-    coinMarketCapAPIKey,
-    coinMarketCapUrl,
+    process.env.COINMARKETCAP_API_KEY || "",
+    process.env.COINMARKETCAP_API_URL || "",
     memoryCache,
   );
 
-  const chainAnalysisUrl = process.env.CHAIN_ANALYSIS_URL || "";
-  const chainAnalysisApiKey = process.env.CHAIN_ANALYSIS_API_KEY || "";
   const ofacComplianceService = new OfacComplianceService(
-    chainAnalysisUrl,
-    chainAnalysisApiKey,
+    process.env.CHAIN_ANALYSIS_URL || "",
+    process.env.CHAIN_ANALYSIS_API_KEY || "",
   );
 
   switch (domainConfig.domainType) {

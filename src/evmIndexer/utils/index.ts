@@ -64,30 +64,15 @@ export async function parseDeposit(
     resourceType,
   ) as string;
 
-  let amountInUSD: number | undefined;
-  if (resourceType !== DepositType.FUNGIBLE) {
-    amountInUSD = undefined;
-  } else {
-    try {
-      amountInUSD = await coinMarketCapService.getValueInUSD(
-        amount,
-        resource.symbol,
-      );
-    } catch (error) {
-      logger.error((error as Error).message);
-      amountInUSD = 0;
-    }
-  }
+  const amountInUSD = await coinMarketCapService.getValueInUSD(
+    amount,
+    resource.symbol,
+    resourceType,
+  );
 
-  let senderStatus: string;
-  try {
-    senderStatus = (await ofacComplianceService.checkSanctionedAddress(
-      transaction.from,
-    )) as string;
-  } catch (e) {
-    logger.error(`Checking address failed: ${(e as Error).message}`);
-    senderStatus = "";
-  }
+  const senderStatus = await ofacComplianceService.checkSanctionedAddress(
+    transaction.from,
+  );
 
   return {
     id: generateTransferID(

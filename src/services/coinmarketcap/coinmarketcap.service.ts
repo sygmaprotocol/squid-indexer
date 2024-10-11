@@ -8,6 +8,7 @@ import path from "path";
 import { BigNumber } from "bignumber.js";
 import type { MemoryCache } from "cache-manager";
 
+import { DepositType } from "../../evmIndexer/evmTypes";
 import { fetchRetry } from "../../utils";
 import { logger } from "../../utils/logger";
 
@@ -79,9 +80,22 @@ class CoinMarketCapService {
   public async getValueInUSD(
     amount: string,
     tokenSymbol: string,
-  ): Promise<number> {
-    const convertedValue = await this.getValueConvertion(amount, tokenSymbol);
-    return convertedValue.toNumber();
+    resourceType: DepositType,
+  ): Promise<number | undefined> {
+    if (resourceType !== DepositType.FUNGIBLE) {
+      return undefined;
+    } else {
+      try {
+        const convertedValue = await this.getValueConvertion(
+          amount,
+          tokenSymbol,
+        );
+        return convertedValue.toNumber();
+      } catch (error) {
+        logger.error((error as Error).message);
+        return 0;
+      }
+    }
   }
 }
 

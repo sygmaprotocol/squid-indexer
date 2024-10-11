@@ -4,6 +4,8 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import url from "url";
 
+import { logger } from "../../utils/logger";
+
 type ChainAnalysisIdentification = {
   category: string;
   name: string;
@@ -28,23 +30,27 @@ export class OfacComplianceService {
     this.chainAnalysisApiKey = chainAnalisysApiKey;
   }
 
-  public async checkSanctionedAddress(
-    address: string,
-  ): Promise<string | Error> {
-    const urlToUse = url.resolve(this.chainAnalysisUrl, address);
+  public async checkSanctionedAddress(address: string): Promise<string> {
+    try {
+      const urlToUse = url.resolve(this.chainAnalysisUrl, address);
 
-    const response = await fetch(urlToUse, {
-      headers: {
-        "X-API-Key": `${this.chainAnalysisApiKey}`,
-        Accept: "application/json",
-      },
-    });
-    const data = (await response.json()) as ChainAnalysisResponse;
+      const response = await fetch(urlToUse, {
+        headers: {
+          "X-API-Key": `${this.chainAnalysisApiKey}`,
+          Accept: "application/json",
+        },
+      });
+      const data = (await response.json()) as ChainAnalysisResponse;
 
-    if (response.status !== 200) {
-      throw new Error(`Chain Analysis API returned status ${response.status}`);
+      if (response.status !== 200) {
+        throw new Error(
+          `Chain Analysis API returned status ${response.status}`,
+        );
+      }
+      return data.identifications.length ? AddressStatus.OFAC : "";
+    } catch (error) {
+      logger.error(`Checking address failed: ${(error as Error).message}`);
+      return "";
     }
-
-    return data.identifications.length ? AddressStatus.OFAC : "";
   }
 }

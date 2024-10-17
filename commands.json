@@ -11,7 +11,7 @@
         "cmd": ["tsc"]
       },
       "up": {
-        "description": "Start a PG database",
+        "description": "Start indexer",
         "cmd": [
           "docker",
           "compose",
@@ -20,7 +20,7 @@
         ]
       },
       "down": {
-        "description": "Drop a PG database",
+        "description": "Drop indexer",
         "cmd": [
           "docker",
           "compose",
@@ -66,16 +66,6 @@
         "deps": ["build", "migration:apply"],
         "cmd": ["node", "--require=dotenv/config", "lib/main.js", "dotenv_config_path=envs/.env.holesky"]
       },
-      "start-arbitrum-sepolia":{
-        "description": "Start Arbitrum Sepolia indexer",
-        "deps": ["build", "migration:apply"],
-        "cmd": ["node", "--require=dotenv/config", "lib/main.js", "dotenv_config_path=envs/.env.arbitrum-sepolia"]
-      },
-      "start-base-sepolia":{
-        "description": "Start Base Sepolia indexer",
-        "deps": ["build", "migration:apply"],
-        "cmd": ["node", "--require=dotenv/config", "lib/main.js", "dotenv_config_path=envs/.env.base-sepolia"]
-      },
       "process": {
         "description": "Load .env and start the squid processor",
         "deps": ["build", "migration:apply"],
@@ -90,18 +80,6 @@
         "description": "Start the squid processor",
         "cmd": ["node", "lib/main.js"],
         "hidden": true
-      },
-      "serve": {
-        "description": "Start the GraphQL API server",
-        "cmd": ["squid-graphql-server"]
-      },
-      "serve:prod": {
-        "description": "Start the GraphQL API server with caching and limits",
-        "cmd": ["squid-graphql-server", 
-          "--dumb-cache", "in-memory", 
-          "--dumb-cache-ttl", "1000", 
-          "--dumb-cache-size", "100", 
-          "--dumb-cache-max-age", "1000" ]
       },
       "check-updates": {
         "cmd": ["npx", "--yes", "npm-check-updates", "--filter=/subsquid/", "--upgrade"],

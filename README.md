@@ -6,13 +6,9 @@ Starting the indexer:
 
 `yarn start`
 
-Checking stored data using GraphQL: 
-
-`sqd serve`
-
 Stopping and removing containers: 
 
 `yarn stop`
 
-For additional commands see `commands.json`
+For additional commands see `package.json` or `commands.json`
 

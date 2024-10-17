@@ -3,8 +3,8 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import { expect } from "chai"
-import {  decodeAmountsOrTokenId } from "../../src/evmIndexer/utils"
-import { DepositType } from "../../src/evmIndexer/evmTypes"
+import {  decodeAmountsOrTokenId } from "../../src/indexer/evmIndexer/utils"
+import { DepositType } from "../../src/indexer/evmIndexer/evmTypes"
 
 describe("Decode amount or token id", function () {
     it("should decode amount for fungible transfer", async function () {

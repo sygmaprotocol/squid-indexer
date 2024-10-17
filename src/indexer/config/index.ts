@@ -10,8 +10,8 @@ import type {
 import { Network } from "@buildwithsygma/sygma-sdk-core";
 import { ApiPromise, WsProvider } from "@polkadot/api";
 
+import { logger } from "../../utils/logger";
 import type { EvmResource, SubstrateResource } from "../evmIndexer/evmTypes";
-import { logger } from "../utils/logger";
 
 export type DomainConfig = {
   domainID: number;

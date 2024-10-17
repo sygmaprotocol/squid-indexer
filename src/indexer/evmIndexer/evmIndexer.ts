@@ -2,7 +2,6 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import type { Context } from "../evmProcessor";
 import {
   Transfer,
   Account,
@@ -10,7 +9,8 @@ import {
   Execution,
   Fee,
   TransferStatus,
-} from "../model";
+} from "../../model";
+import type { Context } from "../evmProcessor";
 
 import type {
   DecodedDepositLog,

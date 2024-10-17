@@ -33,3 +33,10 @@ services:
     depends_on: 
       - indexer-init
     env_file: ./envs/.env.holesky
+  api:
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.api
+    env_file: ./envs/.env.init
+    ports:
+      - "8000:8000"

@@ -12,12 +12,12 @@ import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
 import type { BigNumberish, Provider } from "ethers";
 import { AbiCoder, Contract, ethers, formatUnits } from "ethers";
 
-import * as FeeHandlerRouter from "../../abi/FeeHandlerRouter.json";
-import * as bridge from "../../abi/bridge";
+import * as FeeHandlerRouter from "../../../abi/FeeHandlerRouter.json";
+import * as bridge from "../../../abi/bridge";
+import { logger } from "../../../utils/logger";
 import type { Domain } from "../../config";
 import type { Log } from "../../evmProcessor";
 import { generateTransferID } from "../../utils";
-import { logger } from "../../utils/logger";
 import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecution,

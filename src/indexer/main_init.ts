@@ -4,14 +4,15 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import type { EntityManager } from "typeorm";
 
-import type { Domain as DomainConfig } from "./config";
+import { Domain, Resource } from "../model";
+import { AppDataSource } from "../utils";
+import { logger } from "../utils/logger";
+
 import { getSharedConfig } from "./config";
-import { Domain, Resource } from "./model";
-import { initDatabase } from "./utils";
-import { logger } from "./utils/logger";
+import type { Domain as DomainConfig } from "./config";
 
 async function main(): Promise<void> {
-  const dataSource = await initDatabase();
+  const dataSource = await AppDataSource.initialize();
 
   const sharedConfig = await getSharedConfig();
 

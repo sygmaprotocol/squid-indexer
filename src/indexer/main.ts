@@ -5,6 +5,8 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { Network } from "@buildwithsygma/sygma-sdk-core";
 import { ethers } from "ethers";
 
+import { logger } from "../utils/logger";
+
 import {
   getDomainConfig,
   getProcessorConfig,
@@ -12,7 +14,6 @@ import {
   getSsmDomainConfig,
 } from "./config";
 import { startEvmProcessing } from "./evmProcessor";
-import { logger } from "./utils/logger";
 
 async function startProcessing(): Promise<void> {
   const processorConfig = getProcessorConfig();

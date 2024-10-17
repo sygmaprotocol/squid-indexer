@@ -5,10 +5,10 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { expect } from "chai"
 import sinon from "sinon"
 import { ApiPromise, WsProvider } from "@polkadot/api"
-import { Domain, getSsmDomainConfig } from "../../src/config"
-import { parseDestination } from "../../src/evmIndexer/utils"
+import { Domain, getSsmDomainConfig } from "../../src/indexer/config"
+import { parseDestination } from "../../src/indexer/evmIndexer/utils"
 import { Network } from "@buildwithsygma/sygma-sdk-core"
-import { DepositType } from "../../src/evmIndexer/evmTypes"
+import { DepositType } from "../../src/indexer/evmIndexer/evmTypes"
 
 describe("Destination parser", function () {
     let mockJunction: any; 

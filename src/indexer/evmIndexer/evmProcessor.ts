@@ -5,16 +5,8 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { EvmBatchProcessor } from "@subsquid/evm-processor";
 
 import * as bridge from "../../abi/bridge";
-import {
-  Transfer,
-  Account,
-  Deposit,
-  Execution,
-  Fee,
-  TransferStatus,
-} from "../../model";
 import type { Domain } from "../config";
-import type { Context, IProcessor } from "../indexer";
+import type { Context, DecodedEvents, IParser, IProcessor } from "../indexer";
 import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecution,
@@ -22,13 +14,16 @@ import type {
 } from "../types";
 
 export class EVMProcessor implements IProcessor {
-  public getProcessor(
-    rpcUrls: Map<number, string>,
-    domain: Domain,
-  ): EvmBatchProcessor {
+  private parser: IParser;
+  private rpcUrl: string;
+  constructor(parser: IParser, rpcUrl: string) {
+    this.parser = parser;
+    this.rpcUrl = rpcUrl;
+  }
+  public getProcessor(domain: Domain): EvmBatchProcessor {
     const evmProcessor = new EvmBatchProcessor()
       .setRpcEndpoint({
-        url: rpcUrls.get(domain.id) || "",
+        url: this.rpcUrl,
         rateLimit: 10,
       })
       .setBlockRange({ from: domain.startBlock })
@@ -60,136 +55,28 @@ export class EVMProcessor implements IProcessor {
     return evmProcessor;
   }
 
-  public async processDeposits(
+  public async processEvents(
     ctx: Context,
-    depositsData: DecodedDepositLog[],
-  ): Promise<void> {
-    const accounts = new Map<string, Account>();
-    const fees = new Map<string, Fee>();
-    const deposits = new Map<string, Deposit>();
-    const transfers = new Map<string, Transfer>();
-
-    for (const d of depositsData) {
-      if (!accounts.has(d.sender)) {
-        accounts.set(d.sender, new Account({ id: d.sender }));
-      }
-      if (!fees.has(d.fee.id)) {
-        fees.set(d.fee.id, new Fee(d.fee));
-      }
-    }
-
-    await ctx.store.upsert([...accounts.values()]);
-    await ctx.store.upsert([...fees.values()]);
-
-    for (const d of depositsData) {
-      const deposit = new Deposit({
-        id: d.id,
-        type: d.transferType,
-        txHash: d.txHash,
-        blockNumber: d.blockNumber.toString(),
-        depositData: d.depositData,
-        timestamp: d.timestamp,
-        handlerResponse: d.handlerResponse,
-      });
-
-      const transfer = new Transfer({
-        id: d.id,
-        depositNonce: d.depositNonce,
-        amount: d.amount,
-        destination: d.destination,
-        status: TransferStatus.pending,
-        message: "",
-        resourceID: d.resourceID,
-        fromDomainID: d.fromDomainID,
-        toDomainID: d.toDomainID,
-        accountID: d.sender,
-        deposit: deposit,
-        fee: new Fee(d.fee),
-      });
-
-      if (!deposits.has(d.id)) {
-        deposits.set(d.id, deposit);
-      }
-      if (!transfers.has(d.id)) {
-        transfers.set(d.id, transfer);
+    domain: Domain,
+  ): Promise<DecodedEvents> {
+    const deposits: DecodedDepositLog[] = [];
+    const executions: DecodedProposalExecutionLog[] = [];
+    const failedHandlerExecutions: DecodedFailedHandlerExecution[] = [];
+    for (const block of ctx.blocks) {
+      for (const log of block.logs) {
+        if (log.topics[0] === bridge.events.Deposit.topic) {
+          deposits.push(await this.parser.parseDeposit(log, domain));
+        } else if (log.topics[0] === bridge.events.ProposalExecution.topic) {
+          executions.push(this.parser.parseProposalExecution(log, domain));
+        } else if (
+          log.topics[0] === bridge.events.FailedHandlerExecution.topic
+        ) {
+          failedHandlerExecutions.push(
+            this.parser.parseFailedHandlerExecution(log, domain),
+          );
+        }
       }
     }
-    await ctx.store.upsert([...deposits.values()]);
-    await ctx.store.upsert([...transfers.values()]);
-  }
-
-  public async processExecutions(
-    ctx: Context,
-    executionsData: DecodedProposalExecutionLog[],
-  ): Promise<void> {
-    const executions = new Map<string, Execution>();
-    const transfers = new Map<string, Transfer>();
-    for (const e of executionsData) {
-      const execution = new Execution({
-        blockNumber: e.blockNumber.toString(),
-        id: e.id,
-        timestamp: e.timestamp,
-        txHash: e.txHash,
-      });
-
-      const transfer = new Transfer({
-        id: e.id,
-        depositNonce: e.depositNonce,
-        amount: null,
-        destination: null,
-        status: TransferStatus.executed,
-        message: "",
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
-        execution: execution,
-      });
-
-      if (!executions.has(e.id)) {
-        executions.set(e.id, execution);
-      }
-      if (!transfers.has(e.id)) {
-        transfers.set(e.id, transfer);
-      }
-    }
-    await ctx.store.upsert([...executions.values()]);
-    await ctx.store.upsert([...transfers.values()]);
-  }
-
-  public async processFailedExecutions(
-    ctx: Context,
-    failedExecutionsData: DecodedFailedHandlerExecution[],
-  ): Promise<void> {
-    const failedExecutions = new Map<string, Execution>();
-    const transfers = new Map<string, Transfer>();
-    for (const e of failedExecutionsData) {
-      const failedExecution = new Execution({
-        blockNumber: e.blockNumber.toString(),
-        id: e.id,
-        timestamp: e.timestamp,
-        txHash: e.txHash,
-      });
-
-      const transfer = new Transfer({
-        id: e.id,
-        depositNonce: e.depositNonce,
-        amount: null,
-        destination: null,
-        status: TransferStatus.failed,
-        message: e.message,
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
-        execution: failedExecution,
-      });
-
-      if (!failedExecutions.has(e.id)) {
-        failedExecutions.set(e.id, failedExecution);
-      }
-      if (!transfers.has(e.id)) {
-        transfers.set(e.id, transfer);
-      }
-    }
-
-    await ctx.store.upsert([...failedExecutions.values()]);
-    await ctx.store.upsert([...transfers.values()]);
+    return { deposits, executions, failedHandlerExecutions };
   }
 }

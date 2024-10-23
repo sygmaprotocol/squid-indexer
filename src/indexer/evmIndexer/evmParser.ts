@@ -7,6 +7,7 @@ import { randomUUID } from "crypto";
 
 import { ResourceType } from "@buildwithsygma/sygma-sdk-core";
 import ERC20Contract from "@openzeppelin/contracts/build/contracts/ERC20.json";
+import type { Log } from "@subsquid/evm-processor";
 import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
 import type { BigNumberish, JsonRpcProvider, Provider } from "ethers";
 import { AbiCoder, Contract, ethers, formatUnits } from "ethers";
@@ -14,8 +15,8 @@ import { AbiCoder, Contract, ethers, formatUnits } from "ethers";
 import * as FeeHandlerRouter from "../../abi/FeeHandlerRouter.json";
 import * as bridge from "../../abi/bridge";
 import { logger } from "../../utils/logger";
-import type { Domain, DomainConfig } from "../config";
-import type { Log, IParser } from "../indexer";
+import type { Domain } from "../config";
+import type { IParser } from "../indexer";
 import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecution,
@@ -33,18 +34,21 @@ export class EVMParser implements IParser {
   private nativeTokenAddress = "0x0000000000000000000000000000000000000000";
   private STATIC_FEE_DATA = "0x00";
   private provider: JsonRpcProvider;
+  private parsers!: Map<number, IParser>;
   constructor(rpcUrl: string) {
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
+  }
+
+  public init(parsers: Map<number, IParser>): void {
+    this.parsers = parsers;
   }
   public async parseDeposit(
     log: Log,
     fromDomain: Domain,
-    domainConfigMap: Map<number, DomainConfig>,
   ): Promise<DecodedDepositLog> {
     const event = bridge.events.Deposit.decode(log);
-    const domainConfig = domainConfigMap.get(event.destinationDomainID);
-    const toDomain = domainConfig?.domainData;
-    if (!toDomain) {
+    const destinationParser = this.parsers.get(event.destinationDomainID);
+    if (!destinationParser) {
       throw new Error(
         `Destination domain id ${event.destinationDomainID} not supported`,
       );
@@ -72,7 +76,7 @@ export class EVMParser implements IParser {
       depositNonce: event.depositNonce,
       toDomainID: event.destinationDomainID,
       sender: transaction.from,
-      destination: this.parseDestination(event.data, resourceType),
+      destination: destinationParser.parseDestination(event.data, resourceType),
       fromDomainID: fromDomain.id,
       resourceID: resource.resourceId,
       txHash: transaction.hash,
@@ -137,10 +141,7 @@ export class EVMParser implements IParser {
     };
   }
 
-  private parseDestination(
-    hexData: string,
-    resourceType: ResourceType,
-  ): string {
+  public parseDestination(hexData: string, resourceType: ResourceType): string {
     const arrayifyData = decodeHex(hexData);
     let recipient = "";
     switch (resourceType) {

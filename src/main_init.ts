@@ -5,7 +5,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 import type { EntityManager } from "typeorm";
 
 import type { Domain as DomainConfig } from "./indexer/config";
-import { getSharedConfig } from "./indexer/config";
+import { fetchSharedConfig } from "./indexer/config";
 import { Domain, Resource } from "./model";
 import { initDatabase } from "./utils";
 import { logger } from "./utils/logger";
@@ -13,7 +13,7 @@ import { logger } from "./utils/logger";
 async function main(): Promise<void> {
   const dataSource = await initDatabase();
 
-  const sharedConfig = await getSharedConfig();
+  const sharedConfig = await fetchSharedConfig();
 
   await insertDomains(sharedConfig.domains, dataSource.manager);
   await dataSource.destroy();

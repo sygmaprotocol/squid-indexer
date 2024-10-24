@@ -65,6 +65,7 @@ export class SubstrateParser implements ISubstrateParser {
     const resourceType = resource.type || "";
 
     const extrinsic = assertNotNull(event.extrinsic, "Missing extrinsic");
+
     return {
       id: generateTransferID(
         decodedEvent.depositNonce.toString(),
@@ -78,7 +79,7 @@ export class SubstrateParser implements ISubstrateParser {
       destination: `0x${decodedEvent.depositData.substring(2).slice(128, decodedEvent.depositData.length - 1)}`,
       fromDomainID: fromDomain.id,
       resourceID: resource.resourceId,
-      txHash: extrinsic.hash,
+      txHash: extrinsic.id,
       timestamp: new Date(event.block.timestamp || ""),
       depositData: decodedEvent.depositData,
       handlerResponse: decodedEvent.handlerResponse,
@@ -86,6 +87,7 @@ export class SubstrateParser implements ISubstrateParser {
       amount: this.getDecodedAmount(decodedEvent.depositData),
     };
   }
+
   public parseProposalExecution(
     event: Event,
     toDomain: Domain,
@@ -103,7 +105,7 @@ export class SubstrateParser implements ISubstrateParser {
       from: "",
       blockNumber: event.block.height,
       depositNonce: decodedEvent.depositNonce,
-      txHash: extrinsic.hash,
+      txHash: extrinsic.id,
       timestamp: new Date(event.block.timestamp || ""),
       fromDomainID: decodedEvent.originDomainId,
       toDomainID: toDomain.id,
@@ -126,7 +128,7 @@ export class SubstrateParser implements ISubstrateParser {
       fromDomainID: decodedEvent.originDomainId,
       toDomainID: toDomain.id,
       depositNonce: decodedEvent.depositNonce,
-      txHash: extrinsic.hash,
+      txHash: extrinsic.id,
       message: decodedEvent.error,
       blockNumber: event.block.height,
       timestamp: new Date(event.block.timestamp!),
@@ -144,7 +146,7 @@ export class SubstrateParser implements ISubstrateParser {
       );
     }
 
-    const txIdentifier = `${log.block.height}-${log.extrinsic?.index}`;
+    const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
     return {
       id: randomUUID(),
@@ -152,7 +154,7 @@ export class SubstrateParser implements ISubstrateParser {
       decimals: resource.decimals || 0,
       tokenAddress: JSON.stringify(decodedEvent.feeAssetId),
       tokenSymbol: resource.assetName,
-      txIdentifier: txIdentifier,
+      txIdentifier: extrinsic.id,
     };
   }
 

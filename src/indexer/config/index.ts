@@ -55,7 +55,7 @@ type Config = {
 export async function getConfig(): Promise<Config> {
   const sharedConfig = await fetchSharedConfig();
   const rpcMap = createRpcMap();
-  const parserMap = initializeParserMap(sharedConfig, rpcMap);
+  const parserMap = await initializeParserMap(sharedConfig, rpcMap);
 
   const domainConfig = getDomainConfig(sharedConfig);
   const parser = getDomainParser(domainConfig, parserMap);
@@ -111,29 +111,30 @@ function createRpcMap(): Map<number, string> {
 }
 
 // Initialize parser map for all supported domains
-function initializeParserMap(
+async function initializeParserMap(
   sharedConfig: SharedConfig,
   rpcMap: Map<number, string>,
-): Map<number, IParser> {
+): Promise<Map<number, IParser>> {
   const parserMap = new Map<number, IParser>();
 
   for (const domain of sharedConfig.domains) {
-    if (domain.type === Network.EVM) {
-      const rpcUrl = rpcMap.get(domain.id);
-      if (!rpcUrl) {
-        throw new Error(
-          `Unsupported or missing RPC URL for domain ID: ${domain.id}`,
-        );
+    const rpcUrl = rpcMap.get(domain.id);
+    if (!rpcUrl) {
+      throw new Error(
+        `Unsupported or missing RPC URL for domain ID: ${domain.id}`,
+      );
+    }
+    switch (domain.type) {
+      case Network.EVM: {
+        parserMap.set(domain.id, new EVMParser(rpcUrl));
+        break;
       }
-      parserMap.set(domain.id, new EVMParser(rpcUrl));
-    } else if (domain.type == Network.SUBSTRATE) {
-      const rpcUrl = rpcMap.get(domain.id);
-      if (!rpcUrl) {
-        throw new Error(
-          `Unsupported or missing RPC URL for domain ID: ${domain.id}`,
-        );
+      case Network.SUBSTRATE: {
+        const parser = new SubstrateParser(rpcUrl);
+        await parser.init(new Map());
+        parserMap.set(domain.id, parser);
+        break;
       }
-      parserMap.set(domain.id, new SubstrateParser(rpcUrl));
     }
   }
 

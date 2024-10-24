@@ -3,12 +3,6 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 
-export type DepositEvent = {
-  destinationDomainID: number;
-  resourceID: string;
-  depositNonce: bigint;
-  data: string;
-};
 export type DecodedDepositLog = {
   id: string;
   blockNumber: number;
@@ -31,7 +25,6 @@ export type DecodedDepositLog = {
 export type DecodedProposalExecutionLog = {
   id: string;
   blockNumber: number;
-  from: string;
   depositNonce: bigint;
   txHash: string;
   timestamp: Date;

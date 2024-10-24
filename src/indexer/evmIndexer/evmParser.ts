@@ -107,7 +107,6 @@ export class EVMParser implements IParser {
         toDomain.id.toString(),
       ),
       blockNumber: log.block.height,
-      from: log.transaction!.from,
       depositNonce: event.depositNonce,
       txHash: transaction.hash,
       timestamp: new Date(log.block.timestamp),

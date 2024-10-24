@@ -102,7 +102,6 @@ export class SubstrateParser implements ISubstrateParser {
         decodedEvent.originDomainId.toString(),
         toDomain.id.toString(),
       ),
-      from: "",
       blockNumber: event.block.height,
       depositNonce: decodedEvent.depositNonce,
       txHash: extrinsic.id,

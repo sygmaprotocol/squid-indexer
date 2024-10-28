@@ -4,6 +4,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import type {
   DataHandlerContext,
+  FieldSelection,
   SubstrateBatchProcessorFields,
   Event as _Event,
 } from "@subsquid/substrate-processor";
@@ -25,14 +26,11 @@ import { events } from "./types";
 export class SubstrateProcessor implements IProcessor {
   private parser: ISubstrateParser;
   private rpcUrl: string;
-  private readonly fieldsConfig: {
-    extrinsic: { hash: boolean };
-    block: { timestamp: boolean };
-  };
+  private fieldSelection: FieldSelection;
   constructor(parser: ISubstrateParser, rpcUrl: string) {
     this.parser = parser;
     this.rpcUrl = rpcUrl;
-    this.fieldsConfig = {
+    this.fieldSelection = {
       extrinsic: { hash: true },
       block: { timestamp: true },
     };
@@ -62,7 +60,7 @@ export class SubstrateProcessor implements IProcessor {
         name: [events.sygmaBridge.feeCollected.name],
         extrinsic: true,
       })
-      .setFields(this.fieldsConfig);
+      .setFields(this.fieldSelection);
     if (process.env.DOMAIN_GATEWAY) {
       substrateProcessor.setGateway(process.env.DOMAIN_GATEWAY);
     }

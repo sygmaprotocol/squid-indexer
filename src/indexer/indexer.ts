@@ -255,6 +255,7 @@ export class Indexer {
     }
     await ctx.store.upsert([...fees.values()]);
 
+    const transfersToUpdate = new Map<string, Transfer>();
     for (const f of feeCollectedData) {
       const transfer = await ctx.store.findOne(Transfer, {
         where: {
@@ -265,8 +266,9 @@ export class Indexer {
       });
       if (transfer) {
         transfer.fee = fees.get(f.id);
-        await ctx.store.upsert(transfer);
+        transfersToUpdate.set(transfer.id, transfer);
       }
     }
+    await ctx.store.upsert([...transfersToUpdate.values()]);
   }
 }

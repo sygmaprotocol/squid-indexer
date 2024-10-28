@@ -60,7 +60,7 @@ export async function getConfig(): Promise<Config> {
   const domainConfig = getDomainConfig(sharedConfig);
   const parser = getDomainParser(domainConfig, parserMap);
 
-  parser.init(parserMap);
+  parser.setParsers(parserMap);
 
   return { domain: domainConfig, parser, rpcMap: rpcMap };
 }
@@ -131,7 +131,7 @@ async function initializeParserMap(
       }
       case Network.SUBSTRATE: {
         const parser = new SubstrateParser(rpcUrl);
-        await parser.init(new Map());
+        await parser.initializeSubstrateProvider();
         parserMap.set(domain.id, parser);
         break;
       }

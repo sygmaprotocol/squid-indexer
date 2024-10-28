@@ -39,7 +39,7 @@ export class EVMParser implements IParser {
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
   }
 
-  public init(parsers: Map<number, IParser>): void {
+  public setParsers(parsers: Map<number, IParser>): void {
     this.parsers = parsers;
   }
   public async parseDeposit(

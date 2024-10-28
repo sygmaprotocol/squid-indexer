@@ -37,7 +37,7 @@ import type {
 } from "./types";
 
 export interface IParser {
-  init(parsers: Map<number, IParser>): void;
+  setParsers(parsers: Map<number, IParser>): void;
   parseDeposit(
     log: Log | Event,
     fromDomain: Domain,

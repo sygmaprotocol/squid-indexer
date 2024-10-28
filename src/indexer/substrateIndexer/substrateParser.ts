@@ -41,18 +41,22 @@ export class SubstrateParser implements ISubstrateParser {
     this.rpcUrl = rpcUrl;
   }
 
-  public async init(parsers: Map<number, IParser>): Promise<void> {
+  public setParsers(parsers: Map<number, IParser>): void {
     this.parsers = parsers;
+  }
 
-    const wsProvider = new WsProvider(this.rpcUrl);
-    const api = await ApiPromise.create({
-      provider: wsProvider,
-    });
-    this.provider = api;
+  public async initializeSubstrateProvider(): Promise<void> {
+    this.provider = await this.createSubstrateProvider();
   }
 
   public parseDeposit(event: Event, fromDomain: Domain): DecodedDepositLog {
     const decodedEvent = events.sygmaBridge.deposit.v1250.decode(event);
+    const destinationParser = this.parsers.get(decodedEvent.destDomainId);
+    if (!destinationParser) {
+      throw new Error(
+        `Destination domain id ${decodedEvent.destDomainId} not supported`,
+      );
+    }
     const resource = fromDomain.resources.find(
       (resource) => resource.resourceId == decodedEvent.resourceId,
     );
@@ -76,7 +80,10 @@ export class SubstrateParser implements ISubstrateParser {
       depositNonce: decodedEvent.depositNonce,
       toDomainID: decodedEvent.destDomainId,
       sender: decodedEvent.sender,
-      destination: `0x${decodedEvent.depositData.substring(2).slice(128, decodedEvent.depositData.length - 1)}`,
+      destination: destinationParser.parseDestination(
+        decodedEvent.depositData,
+        resourceType,
+      ),
       fromDomainID: fromDomain.id,
       resourceID: resource.resourceId,
       txHash: extrinsic.id,
@@ -218,5 +225,13 @@ export class SubstrateParser implements ISubstrateParser {
     const parsedAmount = `0x${depositData.substring(2).slice(0, 64)}`;
     const decodedDepositData = abiCoder.decode(["uint256"], parsedAmount);
     return formatEther((decodedDepositData[0] as BigNumber).toString());
+  }
+
+  private async createSubstrateProvider(): Promise<ApiPromise> {
+    const wsProvider = new WsProvider(this.rpcUrl);
+    const api = await ApiPromise.create({
+      provider: wsProvider,
+    });
+    return api;
   }
 }

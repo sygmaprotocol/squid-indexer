@@ -138,7 +138,7 @@ async function initializeParserMap(
         if (resource.type == ResourceType.FUNGIBLE) {
           const token = getContract(
             provider,
-            domain.feeRouter,
+            resource.address,
             ContractType.ERC20,
           );
           const symbol = (await token.symbol()) as string;

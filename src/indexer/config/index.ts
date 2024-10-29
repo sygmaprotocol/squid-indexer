@@ -135,7 +135,10 @@ async function initializeParserMap(
       const provider = new ethers.JsonRpcProvider(rpcUrl);
 
       for (const resource of domain.resources as EvmResource[]) {
-        if (resource.type == ResourceType.FUNGIBLE && resource.address !== NATIVE_TOKEN_ADDRESS) {
+        if (
+          resource.type == ResourceType.FUNGIBLE &&
+          resource.address !== NATIVE_TOKEN_ADDRESS
+        ) {
           const token = getContract(
             provider,
             resource.address,

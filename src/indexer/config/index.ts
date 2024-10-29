@@ -4,16 +4,23 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import type {
   FeeHandler,
-  ResourceType,
   Domain as DomainSDK,
   Resource,
-} from "@buildwithsygma/sygma-sdk-core";
-import { Network } from "@buildwithsygma/sygma-sdk-core";
+  EvmResource,
+} from "@buildwithsygma/core";
+import { ResourceType, Network } from "@buildwithsygma/core";
+import { ethers } from "ethers";
 
 import { logger } from "../../utils/logger";
 import { EVMParser } from "../evmIndexer/evmParser";
+import { ContractType } from "../evmIndexer/evmTypes";
+import { getContract } from "../evmIndexer/utils";
 import type { IParser, IProcessor } from "../indexer";
 import { SubstrateParser } from "../substrateIndexer/substrateParser";
+
+import type { EnvVariables } from "./validator";
+
+const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export type DomainConfig = {
   domainData: Domain;
@@ -36,8 +43,16 @@ export type Domain = DomainSDK & {
   blockConfirmations: number;
 };
 
+export enum HandlerType {
+  ERC20 = "erc20",
+  ERC1155 = "erc1155",
+  PERMISSIONLESS_GENERIC = "permissionlessGeneric",
+  ERC721 = "erc721",
+  NATIVE = "native",
+}
+
 type Handler = {
-  type: ResourceType;
+  type: HandlerType;
   address: string;
 };
 
@@ -52,34 +67,30 @@ type Config = {
   rpcMap: Map<number, string>;
 };
 
-export async function getConfig(): Promise<Config> {
-  const sharedConfig = await fetchSharedConfig();
-  const rpcMap = createRpcMap();
+export type Token = {
+  symbol: string;
+  decimals: number;
+};
+
+export async function getConfig(envVars: EnvVariables): Promise<Config> {
+  const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
+  const rpcMap = createRpcMap(envVars.rpcUrls);
   const parserMap = await initializeParserMap(sharedConfig, rpcMap);
 
-  const domainConfig = getDomainConfig(sharedConfig);
-  const parser = getDomainParser(domainConfig, parserMap);
+  const domainConfig = getDomainConfig(sharedConfig, envVars.domainId);
+  const parser = getDomainParser(domainConfig.id, parserMap);
 
   parser.setParsers(parserMap);
 
   return { domain: domainConfig, parser, rpcMap: rpcMap };
 }
 
-// Fetch and validate the shared configuration
-export async function fetchSharedConfig(): Promise<SharedConfig> {
-  const sharedConfigURL = process.env.SHARED_CONFIG_URL;
-
-  if (!sharedConfigURL) {
-    throw new Error(
-      `Shared configuration URL is not defined in the environment.`,
-    );
-  }
-
+export async function fetchSharedConfig(url: string): Promise<SharedConfig> {
   try {
-    const response = await fetch(sharedConfigURL);
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch shared config from ${sharedConfigURL}, received status: ${response.status}`,
+        `Failed to fetch shared config from ${url}, received status: ${response.status}`,
       );
     }
     return (await response.json()) as SharedConfig;
@@ -92,32 +103,28 @@ export async function fetchSharedConfig(): Promise<SharedConfig> {
   }
 }
 
-// Create RPC URL map from environment configuration
-function createRpcMap(): Map<number, string> {
-  const rpcEnvVar = process.env.RPC_URL;
-
-  if (!rpcEnvVar) {
-    throw new Error("RPC_URL environment variable is not defined.");
-  }
-
-  const parsedResponse = JSON.parse(rpcEnvVar) as RpcUrlConfig;
+function createRpcMap(rpcUrls: string): Map<number, string> {
+  const parsedResponse = JSON.parse(rpcUrls) as RpcUrlConfig;
   const rpcUrlMap = new Map<number, string>();
 
   for (const { id, endpoint } of parsedResponse) {
     rpcUrlMap.set(id, endpoint);
   }
-
   return rpcUrlMap;
 }
 
-// Initialize parser map for all supported domains
 async function initializeParserMap(
   sharedConfig: SharedConfig,
   rpcMap: Map<number, string>,
 ): Promise<Map<number, IParser>> {
   const parserMap = new Map<number, IParser>();
-
+  const tokenMap = new Map<string, Token>();
   for (const domain of sharedConfig.domains) {
+    tokenMap.set(NATIVE_TOKEN_ADDRESS.toLowerCase(), {
+      symbol: domain.nativeTokenSymbol,
+      decimals: domain.nativeTokenDecimals,
+    });
+
     const rpcUrl = rpcMap.get(domain.id);
     if (!rpcUrl) {
       throw new Error(
@@ -126,7 +133,22 @@ async function initializeParserMap(
     }
     switch (domain.type) {
       case Network.EVM: {
-        parserMap.set(domain.id, new EVMParser(rpcUrl));
+        const provider = new ethers.JsonRpcProvider(rpcUrl);
+
+        for (const resource of domain.resources as EvmResource[]) {
+          if (resource.type == ResourceType.FUNGIBLE) {
+            const token = getContract(
+              provider,
+              domain.feeRouter,
+              ContractType.ERC20,
+            );
+            const symbol = (await token.symbol()) as string;
+            const decimals = Number(await token.decimals());
+
+            tokenMap.set(resource.address.toLowerCase(), { symbol, decimals });
+          }
+        }
+        parserMap.set(domain.id, new EVMParser(provider, tokenMap));
         break;
       }
       case Network.SUBSTRATE: {
@@ -141,33 +163,25 @@ async function initializeParserMap(
   return parserMap;
 }
 
-// Get the domain configuration based on environment domain ID
-function getDomainConfig(sharedConfig: SharedConfig): Domain {
-  const domainId = Number(process.env.DOMAIN_ID);
-
-  if (isNaN(domainId)) {
-    throw new Error(`DOMAIN_ID environment variable is invalid or not set.`);
-  }
-
+function getDomainConfig(sharedConfig: SharedConfig, domainId: number): Domain {
   const domainConfig = sharedConfig.domains.find(
     (domain) => domain.id === domainId,
   );
   if (!domainConfig) {
     throw new Error(`No configuration found for domain ID: ${domainId}`);
   }
-
   return domainConfig;
 }
 
 // Retrieve the parser for the specified domain
 function getDomainParser(
-  domainConfig: Domain,
+  domainID: number,
   parserMap: Map<number, IParser>,
 ): IParser {
-  const parser = parserMap.get(domainConfig.id);
+  const parser = parserMap.get(domainID);
 
   if (!parser) {
-    throw new Error(`Parser not initialized for domain ID: ${domainConfig.id}`);
+    throw new Error(`Parser not initialized for domain ID: ${domainID}`);
   }
 
   return parser;

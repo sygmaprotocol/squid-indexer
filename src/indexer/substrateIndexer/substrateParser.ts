@@ -5,15 +5,14 @@ SPDX-License-Identifier: LGPL-3.0-only
 
 import { randomUUID } from "crypto";
 
-import type { SubstrateResource } from "@buildwithsygma/sygma-sdk-core";
-import { ResourceType } from "@buildwithsygma/sygma-sdk-core";
-import type { BigNumber } from "@ethersproject/bignumber";
+import { ResourceType } from "@buildwithsygma/core";
+import type { SubstrateResource } from "@buildwithsygma/core";
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import type { MultiLocation } from "@polkadot/types/interfaces";
 import { decodeHex } from "@subsquid/evm-processor";
 import { assertNotNull } from "@subsquid/substrate-processor";
 
-import { decodeAmountOrTokenId, generateTransferID } from "../../utils";
+import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
 import type { IParser } from "../indexer";
@@ -90,7 +89,11 @@ export class SubstrateParser implements ISubstrateParser {
       depositData: decodedEvent.depositData,
       handlerResponse: decodedEvent.handlerResponse,
       transferType: resourceType,
-      amount: decodeAmountOrTokenId(decodedEvent.depositData, resource.decimals || 12, resource.type),
+      amount: decodeAmountOrTokenId(
+        decodedEvent.depositData,
+        resource.decimals || 12,
+        resource.type,
+      ),
     };
   }
 
@@ -176,31 +179,6 @@ export class SubstrateParser implements ISubstrateParser {
           "0x" + arrayifyData.subarray(64, 64 + recipientlen).toString("hex");
         break;
       }
-      case ResourceType.PERMISSIONLESS_GENERIC:
-        {
-          // 32 + 2 + 1 + 1 + 20 + 20
-          const lenExecuteFuncSignature = Number(
-            "0x" + arrayifyData.subarray(32, 34).toString("hex"),
-          );
-          const lenExecuteContractAddress = Number(
-            "0x" +
-              arrayifyData
-                .subarray(
-                  34 + lenExecuteFuncSignature,
-                  35 + lenExecuteFuncSignature,
-                )
-                .toString("hex"),
-          );
-          recipient =
-            "0x" +
-            arrayifyData
-              .subarray(
-                35 + lenExecuteFuncSignature,
-                35 + lenExecuteFuncSignature + lenExecuteContractAddress,
-              )
-              .toString("hex");
-        }
-        break;
       default:
         logger.error(`Unsupported resource type: ${resourceType}`);
         return "";

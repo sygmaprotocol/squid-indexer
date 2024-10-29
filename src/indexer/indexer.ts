@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import type { ResourceType } from "@buildwithsygma/sygma-sdk-core";
+import type { ResourceType } from "@buildwithsygma/core";
 import type {
   Log as _Log,
   Transaction as _Transaction,

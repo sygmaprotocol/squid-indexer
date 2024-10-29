@@ -40,8 +40,6 @@
   },
   "devDependencies": {
     "@buildwithsygma/core": "^1.4.0",
-    "@buildwithsygma/evm": "^1.5.0",
-    "@buildwithsygma/substrate": "^1.0.4",
     "@chainsafe/eslint-config": "^2.2.4",
     "@polkadot/types": "^12.2.1",
     "@subsquid/evm-typegen": "^4.0.0",

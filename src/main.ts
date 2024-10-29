@@ -3,23 +3,27 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 
-import { Network } from "@buildwithsygma/sygma-sdk-core";
+import { Network } from "@buildwithsygma/core";
 
 import { getConfig } from "./indexer/config";
+import { getEnv } from "./indexer/config/validator";
 import { EVMProcessor } from "./indexer/evmIndexer/evmProcessor";
 import { Indexer } from "./indexer/indexer";
 import { logger } from "./utils/logger";
 
 async function startProcessing(): Promise<void> {
-  const config = await getConfig();
+  const envVars = getEnv();
+  const config = await getConfig(envVars);
   let processor;
-  if (config.domain.type == Network.EVM) {
-    processor = new EVMProcessor(
-      config.parser,
-      config.rpcMap.get(config.domain.id)!,
-    );
-  } else {
-    throw new Error(`Unsupported domain type ${config.domain.type}`);
+  switch (config.domain.type) {
+    case Network.EVM:
+      processor = new EVMProcessor(
+        config.parser,
+        config.rpcMap.get(config.domain.id)!,
+      );
+      break;
+    default:
+      throw new Error(`Unsupported domain type ${config.domain.type}`);
   }
   const indexer = new Indexer(processor, config.domain);
   indexer.startProcessing();

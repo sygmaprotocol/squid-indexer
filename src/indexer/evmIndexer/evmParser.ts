@@ -5,17 +5,15 @@ SPDX-License-Identifier: LGPL-3.0-only
 
 import { randomUUID } from "crypto";
 
-import { ResourceType } from "@buildwithsygma/sygma-sdk-core";
-import ERC20Contract from "@openzeppelin/contracts/build/contracts/ERC20.json";
+import { ResourceType } from "@buildwithsygma/core";
 import type { Log } from "@subsquid/evm-processor";
 import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
 import type { BigNumberish, JsonRpcProvider, Provider } from "ethers";
-import { AbiCoder, Contract, ethers, formatUnits } from "ethers";
+import { AbiCoder, ethers, formatUnits } from "ethers";
 
-import * as FeeHandlerRouter from "../../abi/FeeHandlerRouter.json";
 import * as bridge from "../../abi/bridge";
 import { logger } from "../../utils/logger";
-import type { Domain } from "../config";
+import type { Domain, Token } from "../config";
 import type { IParser } from "../indexer";
 import type {
   DecodedDepositLog,
@@ -23,23 +21,27 @@ import type {
   DecodedProposalExecutionLog,
   FeeData,
 } from "../types";
+import { generateTransferID } from "../utils";
 
 import { ContractType } from "./evmTypes";
+import { getContract } from "./utils";
 
 type FeeDataResponse = {
   fee: string;
   tokenAddress: string;
 };
+
 export class EVMParser implements IParser {
-  private nativeTokenAddress = "0x0000000000000000000000000000000000000000";
   private STATIC_FEE_DATA = "0x00";
   private provider: JsonRpcProvider;
   private parsers!: Map<number, IParser>;
-  constructor(rpcUrl: string) {
-    this.provider = new ethers.JsonRpcProvider(rpcUrl);
+  private tokens: Map<string, Token>;
+  constructor(provider: JsonRpcProvider, tokens: Map<string, Token>) {
+    this.provider = provider;
+    this.tokens = tokens;
   }
 
-  public init(parsers: Map<number, IParser>): void {
+  public setParsers(parsers: Map<number, IParser>): void {
     this.parsers = parsers;
   }
   public async parseDeposit(
@@ -54,7 +56,8 @@ export class EVMParser implements IParser {
       );
     }
     const resource = fromDomain.resources.find(
-      (resource) => resource.resourceId == event.resourceID,
+      (resource) =>
+        resource.resourceId.toLowerCase() == event.resourceID.toLowerCase(),
     );
     if (!resource) {
       throw new Error(
@@ -67,7 +70,7 @@ export class EVMParser implements IParser {
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
     return {
-      id: this.generateTransferID(
+      id: generateTransferID(
         event.depositNonce.toString(),
         fromDomain.id.toString(),
         event.destinationDomainID.toString(),
@@ -88,7 +91,7 @@ export class EVMParser implements IParser {
         event.data,
         resourceDecimals,
         resourceType,
-      ) as string,
+      ),
       fee: await this.getFee(event, fromDomain, this.provider),
     };
   }
@@ -101,13 +104,12 @@ export class EVMParser implements IParser {
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
     return {
-      id: this.generateTransferID(
+      id: generateTransferID(
         event.depositNonce.toString(),
         event.originDomainID.toString(),
         toDomain.id.toString(),
       ),
       blockNumber: log.block.height,
-      from: log.transaction!.from,
       depositNonce: event.depositNonce,
       txHash: transaction.hash,
       timestamp: new Date(log.block.timestamp),
@@ -123,8 +125,12 @@ export class EVMParser implements IParser {
     const event = bridge.events.FailedHandlerExecution.decode(log);
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
+    const lowLevelDataBuffer = Buffer.from(event.lowLevelData, "hex");
+
+    const byteOffset = Math.max(lowLevelDataBuffer.length - 64, 0);
+    const length = lowLevelDataBuffer.length - byteOffset;
     return {
-      id: this.generateTransferID(
+      id: generateTransferID(
         event.depositNonce.toString(),
         event.originDomainID.toString(),
         toDomain.id.toString(),
@@ -134,7 +140,12 @@ export class EVMParser implements IParser {
       depositNonce: event.depositNonce,
       txHash: transaction.hash,
       message: ethers.decodeBytes32String(
-        "0x" + Buffer.from(event.lowLevelData).subarray(-64).toString(),
+        "0x" +
+          Buffer.from(
+            lowLevelDataBuffer.buffer,
+            lowLevelDataBuffer.byteOffset + byteOffset,
+            length,
+          ).toString("hex"),
       ),
       blockNumber: log.block.height,
       timestamp: new Date(log.block.timestamp),
@@ -155,29 +166,7 @@ export class EVMParser implements IParser {
         break;
       }
       case ResourceType.PERMISSIONLESS_GENERIC:
-        {
-          // 32 + 2 + 1 + 1 + 20 + 20
-          const lenExecuteFuncSignature = Number(
-            "0x" + arrayifyData.subarray(32, 34).toString("hex"),
-          );
-          const lenExecuteContractAddress = Number(
-            "0x" +
-              arrayifyData
-                .subarray(
-                  34 + lenExecuteFuncSignature,
-                  35 + lenExecuteFuncSignature,
-                )
-                .toString("hex"),
-          );
-          recipient =
-            "0x" +
-            arrayifyData
-              .subarray(
-                35 + lenExecuteFuncSignature,
-                35 + lenExecuteFuncSignature + lenExecuteContractAddress,
-              )
-              .toString("hex");
-        }
+        recipient = this.decodeGenericCall(arrayifyData);
         break;
       default:
         logger.error(`Unsupported resource type: ${resourceType}`);
@@ -186,13 +175,13 @@ export class EVMParser implements IParser {
     return recipient;
   }
 
-  private async getFee(
+  public async getFee(
     event: bridge.DepositEventArgs,
     fromDomain: Domain,
     provider: Provider,
   ): Promise<FeeData> {
     try {
-      const feeRouter = this.getContract(
+      const feeRouter = getContract(
         provider,
         fromDomain.feeRouter,
         ContractType.FEE_ROUTER,
@@ -207,26 +196,13 @@ export class EVMParser implements IParser {
         this.STATIC_FEE_DATA,
       )) as FeeDataResponse;
 
-      let tokenSymbol: string;
-      let decimals: number;
-      if (fee.tokenAddress != this.nativeTokenAddress) {
-        const token = this.getContract(
-          provider,
-          fee.tokenAddress,
-          ContractType.ERC20,
-        );
-        tokenSymbol = (await token.symbol()) as string;
-        decimals = Number(await token.decimals());
-      } else {
-        tokenSymbol = fromDomain.nativeTokenSymbol;
-        decimals = fromDomain.nativeTokenDecimals;
-      }
-
       return {
         id: randomUUID(),
         tokenAddress: fee.tokenAddress,
-        tokenSymbol: tokenSymbol,
-        decimals: decimals,
+        tokenSymbol:
+          this.tokens.get(fee.tokenAddress.toLowerCase())?.symbol || "",
+        decimals:
+          this.tokens.get(fee.tokenAddress.toLowerCase())?.decimals || 18,
         amount: fee.fee.toString(),
       };
     } catch (err) {
@@ -241,23 +217,11 @@ export class EVMParser implements IParser {
     }
   }
 
-  private getContract(
-    provider: Provider,
-    contractAddress: string,
-    contractType: ContractType,
-  ): Contract {
-    switch (contractType) {
-      case ContractType.ERC20:
-        return new Contract(contractAddress, ERC20Contract.abi, provider);
-      case ContractType.FEE_ROUTER:
-        return new Contract(contractAddress, FeeHandlerRouter.abi, provider);
-    }
-  }
   private decodeAmountsOrTokenId(
     data: string,
     decimals: number,
     resourceType: ResourceType,
-  ): string | Error {
+  ): string {
     switch (resourceType) {
       case ResourceType.FUNGIBLE: {
         const amount = AbiCoder.defaultAbiCoder().decode(
@@ -278,11 +242,26 @@ export class EVMParser implements IParser {
     }
   }
 
-  private generateTransferID(
-    depositNonce: string,
-    fromDomainID: string,
-    toDomainID: string,
-  ): string {
-    return depositNonce + "-" + fromDomainID + "-" + toDomainID;
+  private decodeGenericCall(genericCallData: Buffer): string {
+    // 32 + 2 + 1 + 1 + 20 + 20
+    const lenExecuteFuncSignature = Number(
+      "0x" + genericCallData.subarray(32, 34).toString("hex"),
+    );
+    const lenExecuteContractAddress = Number(
+      "0x" +
+        genericCallData
+          .subarray(34 + lenExecuteFuncSignature, 35 + lenExecuteFuncSignature)
+          .toString("hex"),
+    );
+    const recipient =
+      "0x" +
+      genericCallData
+        .subarray(
+          35 + lenExecuteFuncSignature,
+          35 + lenExecuteFuncSignature + lenExecuteContractAddress,
+        )
+        .toString("hex");
+
+    return recipient;
   }
 }

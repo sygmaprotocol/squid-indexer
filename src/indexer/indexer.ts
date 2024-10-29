@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import type { ResourceType } from "@buildwithsygma/sygma-sdk-core";
+import type { ResourceType } from "@buildwithsygma/core";
 import type {
   DataHandlerContext,
   EvmBatchProcessorFields,
@@ -31,7 +31,7 @@ import type {
 } from "./types";
 
 export interface IParser {
-  init(parsers: Map<number, IParser>): void;
+  setParsers(parsers: Map<number, IParser>): void;
   parseDeposit(log: Log, fromDomain: Domain): Promise<DecodedDepositLog>;
   parseProposalExecution(
     log: Log,

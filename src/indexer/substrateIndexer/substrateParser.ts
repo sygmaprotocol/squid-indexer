@@ -3,7 +3,7 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 
-import { ResourceType } from "@buildwithsygma/sygma-sdk-core";
+import { ResourceType } from "@buildwithsygma/core";
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import type { MultiLocation } from "@polkadot/types/interfaces";
 import { decodeHex } from "@subsquid/evm-processor";
@@ -34,31 +34,6 @@ export class SubstrateParser {
           "0x" + arrayifyData.subarray(64, 64 + recipientlen).toString("hex");
         break;
       }
-      case ResourceType.PERMISSIONLESS_GENERIC:
-        {
-          // 32 + 2 + 1 + 1 + 20 + 20
-          const lenExecuteFuncSignature = Number(
-            "0x" + arrayifyData.subarray(32, 34).toString("hex"),
-          );
-          const lenExecuteContractAddress = Number(
-            "0x" +
-              arrayifyData
-                .subarray(
-                  34 + lenExecuteFuncSignature,
-                  35 + lenExecuteFuncSignature,
-                )
-                .toString("hex"),
-          );
-          recipient =
-            "0x" +
-            arrayifyData
-              .subarray(
-                35 + lenExecuteFuncSignature,
-                35 + lenExecuteFuncSignature + lenExecuteContractAddress,
-              )
-              .toString("hex");
-        }
-        break;
       default:
         logger.error(`Unsupported resource type: ${resourceType}`);
         return "";

@@ -28,11 +28,6 @@ export class EVMProcessor implements IProcessor {
       })
       .setBlockRange({ from: domain.startBlock })
       .setFinalityConfirmation(domain.blockConfirmations)
-      .setFields({
-        log: {
-          topics: true,
-        },
-      })
       .addLog({
         address: [domain.bridge],
         topic0: [bridge.events.ProposalExecution.topic],

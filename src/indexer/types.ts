@@ -31,7 +31,6 @@ export type DecodedDepositLog = {
 export type DecodedProposalExecutionLog = {
   id: string;
   blockNumber: number;
-  from: string;
   depositNonce: bigint;
   txHash: string;
   timestamp: Date;

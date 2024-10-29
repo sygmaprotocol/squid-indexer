@@ -14,6 +14,8 @@ import {
   Resource,
   Transfer,
 } from "../model";
+import { ResourceType } from "@buildwithsygma/core";
+import { AbiCoder, BigNumberish, formatUnits } from "ethers";
 
 export async function initDatabase(): Promise<DataSource> {
   const dataSource = new DataSource({
@@ -36,4 +38,29 @@ export function generateTransferID(
   toDomainID: string,
 ): string {
   return depositNonce + "-" + fromDomainID + "-" + toDomainID;
+}
+
+export function decodeAmountOrTokenId(
+  data: string,
+  decimals: number,
+  resourceType: ResourceType,
+): string {
+  switch (resourceType) {
+    case ResourceType.FUNGIBLE: {
+      const amount = AbiCoder.defaultAbiCoder().decode(
+        ["uint256"],
+        data,
+      )[0] as BigNumberish;
+      return formatUnits(amount, decimals);
+    }
+    case ResourceType.NON_FUNGIBLE: {
+      const tokenId = AbiCoder.defaultAbiCoder().decode(
+        ["uint256"],
+        data,
+      )[0] as bigint;
+      return tokenId.toString();
+    }
+    default:
+      return "";
+  }
 }

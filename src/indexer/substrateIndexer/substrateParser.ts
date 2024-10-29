@@ -12,9 +12,8 @@ import { ApiPromise, WsProvider } from "@polkadot/api";
 import type { MultiLocation } from "@polkadot/types/interfaces";
 import { decodeHex } from "@subsquid/evm-processor";
 import { assertNotNull } from "@subsquid/substrate-processor";
-import { AbiCoder, formatEther } from "ethers";
 
-import { generateTransferID } from "../../utils";
+import { decodeAmountOrTokenId, generateTransferID } from "../../utils";
 import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
 import type { IParser } from "../indexer";
@@ -91,7 +90,7 @@ export class SubstrateParser implements ISubstrateParser {
       depositData: decodedEvent.depositData,
       handlerResponse: decodedEvent.handlerResponse,
       transferType: resourceType,
-      amount: this.getDecodedAmount(decodedEvent.depositData),
+      amount: decodeAmountOrTokenId(decodedEvent.depositData, resource.decimals || 12, resource.type),
     };
   }
 
@@ -218,13 +217,6 @@ export class SubstrateParser implements ISubstrateParser {
       }
     }
     return "";
-  }
-
-  private getDecodedAmount(depositData: string): string {
-    const abiCoder = AbiCoder.defaultAbiCoder();
-    const parsedAmount = `0x${depositData.substring(2).slice(0, 64)}`;
-    const decodedDepositData = abiCoder.decode(["uint256"], parsedAmount);
-    return formatEther((decodedDepositData[0] as BigNumber).toString());
   }
 
   private async createSubstrateProvider(): Promise<ApiPromise> {

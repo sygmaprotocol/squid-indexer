@@ -25,6 +25,7 @@ import type {
 } from "../types";
 
 import { ContractType } from "./evmTypes";
+import { decodeAmountOrTokenId, generateTransferID } from "../../utils";
 
 type FeeDataResponse = {
   fee: string;
@@ -67,7 +68,7 @@ export class EVMParser implements IParser {
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
     return {
-      id: this.generateTransferID(
+      id: generateTransferID(
         event.depositNonce.toString(),
         fromDomain.id.toString(),
         event.destinationDomainID.toString(),
@@ -84,11 +85,11 @@ export class EVMParser implements IParser {
       depositData: event.data,
       handlerResponse: event.handlerResponse,
       transferType: resourceType,
-      amount: this.decodeAmountsOrTokenId(
+      amount: decodeAmountOrTokenId(
         event.data,
         resourceDecimals,
         resourceType,
-      ) as string,
+      ),
       fee: await this.getFee(event, fromDomain, this.provider),
     };
   }
@@ -101,7 +102,7 @@ export class EVMParser implements IParser {
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
     return {
-      id: this.generateTransferID(
+      id: generateTransferID(
         event.depositNonce.toString(),
         event.originDomainID.toString(),
         toDomain.id.toString(),
@@ -123,7 +124,7 @@ export class EVMParser implements IParser {
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
     return {
-      id: this.generateTransferID(
+      id: generateTransferID(
         event.depositNonce.toString(),
         event.originDomainID.toString(),
         toDomain.id.toString(),
@@ -251,37 +252,5 @@ export class EVMParser implements IParser {
       case ContractType.FEE_ROUTER:
         return new Contract(contractAddress, FeeHandlerRouter.abi, provider);
     }
-  }
-  private decodeAmountsOrTokenId(
-    data: string,
-    decimals: number,
-    resourceType: ResourceType,
-  ): string | Error {
-    switch (resourceType) {
-      case ResourceType.FUNGIBLE: {
-        const amount = AbiCoder.defaultAbiCoder().decode(
-          ["uint256"],
-          data,
-        )[0] as BigNumberish;
-        return formatUnits(amount, decimals);
-      }
-      case ResourceType.NON_FUNGIBLE: {
-        const tokenId = AbiCoder.defaultAbiCoder().decode(
-          ["uint256"],
-          data,
-        )[0] as bigint;
-        return tokenId.toString();
-      }
-      default:
-        return "";
-    }
-  }
-
-  private generateTransferID(
-    depositNonce: string,
-    fromDomainID: string,
-    toDomainID: string,
-  ): string {
-    return depositNonce + "-" + fromDomainID + "-" + toDomainID;
   }
 }

@@ -11,7 +11,7 @@ import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
 import type { BigNumberish, JsonRpcProvider, Provider } from "ethers";
 import { AbiCoder, ethers, formatUnits } from "ethers";
 
-import * as bridge from "../../abi/bridge.ts";
+import * as bridge from "../../abi/bridge";
 import { logger } from "../../utils/logger";
 import type { Domain, Token } from "../config";
 import type { IParser } from "../indexer";
@@ -169,6 +169,8 @@ export class EVMParser implements IParser {
         logger.error(`Unsupported resource type: ${resourceType}`);
         return "";
     }
+
+    console.log(recipient);
     return recipient;
   }
 

@@ -7,7 +7,7 @@ import ERC20Contract from "@openzeppelin/contracts/build/contracts/ERC20.json";
 import type { Provider } from "ethers";
 import { Contract } from "ethers";
 
-import * as FeeHandlerRouter from "../../abi/FeeHandlerRouter.json";
+import * as FeeHandlerRouter from "../../abi/FeeHandlerRouterABI.json";
 
 import { ContractType } from "./evmTypes";
 

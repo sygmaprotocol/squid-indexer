@@ -9,7 +9,7 @@ import { JsonRpcProvider } from "ethers";
 import { EVMParser } from "../../src/indexer/evmIndexer/evmParser";
 import { Log } from "@subsquid/evm-processor";
 import { FeeHandlerType, Network, ResourceType } from "@buildwithsygma/core";
-import * as bridge from "../../src/abi/bridge.ts";
+import * as bridge from "../../src/abi/bridge";
 import { generateTransferID } from "../../src/indexer/utils";
 import { Domain, HandlerType, Token } from "../../src/indexer/config";
 import { IParser } from "../../src/indexer/indexer";

@@ -11,7 +11,7 @@ import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
 import type { JsonRpcProvider, Provider } from "ethers";
 import { ethers } from "ethers";
 
-import * as bridge from "../../abi/bridge.ts";
+import * as bridge from "../../abi/bridge";
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { logger } from "../../utils/logger";
 import type { Domain, Token } from "../config";

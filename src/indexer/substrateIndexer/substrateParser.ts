@@ -7,7 +7,7 @@ import { randomUUID } from "crypto";
 
 import { ResourceType } from "@buildwithsygma/core";
 import type { SubstrateResource } from "@buildwithsygma/core";
-import { ApiPromise, WsProvider } from "@polkadot/api";
+import type { ApiPromise } from "@polkadot/api";
 import type { MultiLocation } from "@polkadot/types/interfaces";
 import { decodeHex } from "@subsquid/evm-processor";
 import { assertNotNull } from "@subsquid/substrate-processor";
@@ -31,20 +31,15 @@ export interface ISubstrateParser extends IParser {
 }
 
 export class SubstrateParser implements ISubstrateParser {
-  private rpcUrl: string;
-  private provider!: ApiPromise;
+  private provider: ApiPromise;
   private parsers!: Map<number, IParser>;
 
-  constructor(rpcUrl: string) {
-    this.rpcUrl = rpcUrl;
+  constructor(provider: ApiPromise) {
+    this.provider = provider;
   }
 
   public setParsers(parsers: Map<number, IParser>): void {
     this.parsers = parsers;
-  }
-
-  public async initializeSubstrateProvider(): Promise<void> {
-    this.provider = await this.createSubstrateProvider();
   }
 
   public parseDeposit(event: Event, fromDomain: Domain): DecodedDepositLog {
@@ -161,7 +156,7 @@ export class SubstrateParser implements ISubstrateParser {
       amount: decodedEvent.feeAmount.toString().replace(/,/g, ""),
       decimals: resource.decimals || 0,
       tokenAddress: JSON.stringify(decodedEvent.feeAssetId),
-      tokenSymbol: resource.assetName,
+      tokenSymbol: resource.symbol || "",
       txIdentifier: extrinsic.id,
     };
   }
@@ -195,13 +190,5 @@ export class SubstrateParser implements ISubstrateParser {
       }
     }
     return "";
-  }
-
-  private async createSubstrateProvider(): Promise<ApiPromise> {
-    const wsProvider = new WsProvider(this.rpcUrl);
-    const api = await ApiPromise.create({
-      provider: wsProvider,
-    });
-    return api;
   }
 }

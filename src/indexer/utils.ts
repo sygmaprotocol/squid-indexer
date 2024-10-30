@@ -1,3 +1,7 @@
+/*
+The Licensed Work is (c) 2024 Sygma
+SPDX-License-Identifier: LGPL-3.0-only
+*/
 import { ResourceType } from "@buildwithsygma/core";
 import type { BigNumberish } from "ethers";
 import { AbiCoder, formatUnits } from "ethers";

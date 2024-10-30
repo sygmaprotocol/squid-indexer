@@ -17,6 +17,7 @@ import { ContractType } from "../evmIndexer/evmTypes";
 import { getContract } from "../evmIndexer/utils";
 import type { IParser, IProcessor } from "../indexer";
 import { SubstrateParser } from "../substrateIndexer/substrateParser";
+import { createSubstrateProvider } from "../substrateIndexer/utils";
 
 import type { EnvVariables } from "./validator";
 
@@ -136,7 +137,10 @@ async function initializeParserMap(
         const provider = new ethers.JsonRpcProvider(rpcUrl);
 
         for (const resource of domain.resources as EvmResource[]) {
-          if (resource.type == ResourceType.FUNGIBLE && resource.address != NATIVE_TOKEN_ADDRESS) {
+          if (
+            resource.type == ResourceType.FUNGIBLE &&
+            resource.address != NATIVE_TOKEN_ADDRESS
+          ) {
             const token = getContract(
               provider,
               resource.address,
@@ -152,8 +156,8 @@ async function initializeParserMap(
         break;
       }
       case Network.SUBSTRATE: {
-        const parser = new SubstrateParser(rpcUrl);
-        await parser.initializeSubstrateProvider();
+        const provider = await createSubstrateProvider(rpcUrl);
+        const parser = new SubstrateParser(provider);
         parserMap.set(domain.id, parser);
         break;
       }

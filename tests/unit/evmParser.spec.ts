@@ -2,6 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
+
 import { expect } from "chai";
 import sinon from "sinon";
 import { JsonRpcProvider } from "ethers";
@@ -82,7 +83,7 @@ describe("EVMParser", () => {
         destinationDomainID: 3,
         resourceID: "0x0000000000000000000000000000000000000000000000000000000000000300",
         user: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        data: "0x0000000000000000000000000000000000000000000000000000000000056b330004ea287d1514d7d5e7d7ead31e783df01760fbfad249704aab14149a17fa0a2824ea855ec6ad3eab3aa2516ec6626d4c697669755f5465737430325f333432320000000000000000000000000000000000000000000000000000009a17fa0a2824ea855ec6ad3eab3aa2516ec6626d",
+        data: "0x0000000000000000000000000000000000000000000000000162ea9c8f924d3c00000000000000000000000000000000000000000000000000000000000000149a17fa0a2824ea855ec6ad3eab3aa2516ec6626d",
         handlerResponse: "",
       };
       sinon.stub(bridge.events.Deposit, "decode").returns(event);
@@ -109,6 +110,8 @@ describe("EVMParser", () => {
         txHash: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
         timestamp: new Date(1633072800),
         transferType: ResourceType.FUNGIBLE,
+        amount: '0.0999000999000999',
+        destination: '0x9a17fa0a2824ea855ec6ad3eab3aa2516ec6626d',
         fee: {
           id: "fee-id",
           tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",

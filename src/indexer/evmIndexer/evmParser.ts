@@ -18,7 +18,7 @@ import type { Domain, Token } from "../config";
 import type { IParser } from "../indexer";
 import type {
   DecodedDepositLog,
-  DecodedFailedHandlerExecution,
+  DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   FeeData,
 } from "../types";
@@ -30,6 +30,7 @@ type FeeDataResponse = {
   fee: string;
   tokenAddress: string;
 };
+
 export class EVMParser implements IParser {
   private STATIC_FEE_DATA = "0x00";
   private provider: JsonRpcProvider;
@@ -116,7 +117,7 @@ export class EVMParser implements IParser {
   public parseFailedHandlerExecution(
     log: Log,
     toDomain: Domain,
-  ): DecodedFailedHandlerExecution {
+  ): DecodedFailedHandlerExecutionLog {
     const event = bridge.events.FailedHandlerExecution.decode(log);
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 

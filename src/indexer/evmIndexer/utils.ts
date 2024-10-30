@@ -2,6 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
+
 import ERC20Contract from "@openzeppelin/contracts/build/contracts/ERC20.json";
 import type { Provider } from "ethers";
 import { Contract } from "ethers";

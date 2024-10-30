@@ -15,7 +15,7 @@ import type { Domain } from "../config";
 import type { DecodedEvents, IProcessor } from "../indexer";
 import type {
   DecodedDepositLog,
-  DecodedFailedHandlerExecution,
+  DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   FeeCollectedData,
 } from "../types";
@@ -73,7 +73,7 @@ export class SubstrateProcessor implements IProcessor {
   ): DecodedEvents {
     const deposits: DecodedDepositLog[] = [];
     const executions: DecodedProposalExecutionLog[] = [];
-    const failedHandlerExecutions: DecodedFailedHandlerExecution[] = [];
+    const failedHandlerExecutions: DecodedFailedHandlerExecutionLog[] = [];
     const fees: FeeCollectedData[] = [];
     for (const block of ctx.blocks) {
       for (const event of block.events) {

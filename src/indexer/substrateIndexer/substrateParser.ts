@@ -20,7 +20,7 @@ import type { Event } from "../substrateIndexer/substrateProcessor";
 import type {
   DecodedDepositLog,
   DecodedProposalExecutionLog,
-  DecodedFailedHandlerExecution,
+  DecodedFailedHandlerExecutionLog,
   FeeCollectedData,
 } from "../types";
 
@@ -117,7 +117,7 @@ export class SubstrateParser implements ISubstrateParser {
   public parseFailedHandlerExecution(
     event: Event,
     toDomain: Domain,
-  ): DecodedFailedHandlerExecution {
+  ): DecodedFailedHandlerExecutionLog {
     const decodedEvent =
       events.sygmaBridge.failedHandlerExecution.v1250.decode(event);
     const extrinsic = assertNotNull(event.extrinsic, "Missing extrinsic");

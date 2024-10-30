@@ -14,7 +14,7 @@ import type { Domain } from "../config";
 import type { DecodedEvents, IParser, IProcessor } from "../indexer";
 import type {
   DecodedDepositLog,
-  DecodedFailedHandlerExecution,
+  DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
 } from "../types";
 
@@ -61,7 +61,7 @@ export class EVMProcessor implements IProcessor {
   ): Promise<DecodedEvents> {
     const deposits: DecodedDepositLog[] = [];
     const executions: DecodedProposalExecutionLog[] = [];
-    const failedHandlerExecutions: DecodedFailedHandlerExecution[] = [];
+    const failedHandlerExecutions: DecodedFailedHandlerExecutionLog[] = [];
     for (const block of ctx.blocks) {
       for (const log of block.logs) {
         if (log.topics[0] === bridge.events.Deposit.topic) {

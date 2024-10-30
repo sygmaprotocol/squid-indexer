@@ -204,6 +204,7 @@ describe("EVMParser", () => {
         id: generateTransferID("1", "2", "3"),
         blockNumber: 1,
         depositNonce: BigInt(1),
+        timestamp: new Date(1633072800),
         txHash: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
         fromDomainID: 2,
         toDomainID: 3,

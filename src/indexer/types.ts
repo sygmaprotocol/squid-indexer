@@ -32,7 +32,7 @@ export type DecodedProposalExecutionLog = {
   toDomainID: number;
 };
 
-export type DecodedFailedHandlerExecution = {
+export type DecodedFailedHandlerExecutionLog = {
   id: string;
   fromDomainID: number;
   toDomainID: number;

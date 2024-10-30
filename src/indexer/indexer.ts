@@ -31,7 +31,7 @@ import type {
 } from "./substrateIndexer/substrateProcessor";
 import type {
   DecodedDepositLog,
-  DecodedFailedHandlerExecution,
+  DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   FeeCollectedData,
 } from "./types";
@@ -49,7 +49,7 @@ export interface IParser {
   parseFailedHandlerExecution(
     log: Log | Event,
     toDomain: Domain,
-  ): DecodedFailedHandlerExecution;
+  ): DecodedFailedHandlerExecutionLog;
   parseDestination(hexData: string, resourceType: ResourceType): string;
 }
 
@@ -66,7 +66,7 @@ export interface IProcessor {
 export type DecodedEvents = {
   deposits: DecodedDepositLog[];
   executions: DecodedProposalExecutionLog[];
-  failedHandlerExecutions: DecodedFailedHandlerExecution[];
+  failedHandlerExecutions: DecodedFailedHandlerExecutionLog[];
   fees: FeeCollectedData[];
 };
 export class Indexer {
@@ -200,7 +200,7 @@ export class Indexer {
 
   public async storeFailedExecutions(
     ctx: Context | ProcessorContext<Store>,
-    failedExecutionsData: DecodedFailedHandlerExecution[],
+    failedExecutionsData: DecodedFailedHandlerExecutionLog[],
   ): Promise<void> {
     const failedExecutions = new Map<string, Execution>();
     const transfers = new Map<string, Transfer>();

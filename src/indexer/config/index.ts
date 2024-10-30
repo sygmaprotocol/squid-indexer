@@ -174,10 +174,10 @@ function getDomainConfig(sharedConfig: SharedConfig, domainId: number): Domain {
   if (!domainConfig) {
     throw new Error(`No configuration found for domain ID: ${domainId}`);
   }
+
   return domainConfig;
 }
 
-// Retrieve the parser for the specified domain
 function getDomainParser(
   domainID: number,
   parserMap: Map<number, IParser>,

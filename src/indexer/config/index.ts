@@ -111,6 +111,7 @@ function createRpcMap(rpcUrls: string): Map<number, string> {
   for (const { id, endpoint } of parsedResponse) {
     rpcUrlMap.set(id, endpoint);
   }
+
   return rpcUrlMap;
 }
 
@@ -157,8 +158,7 @@ async function initializeParserMap(
       }
       case Network.SUBSTRATE: {
         const provider = await createSubstrateProvider(rpcUrl);
-        const parser = new SubstrateParser(provider);
-        parserMap.set(domain.id, parser);
+        parserMap.set(domain.id, new SubstrateParser(provider));
         break;
       }
     }

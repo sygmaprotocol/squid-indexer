@@ -11,7 +11,7 @@ import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
 import type { JsonRpcProvider, Provider } from "ethers";
 import { ethers } from "ethers";
 
-import * as bridge from "../../abi/bridge";
+import * as bridge from "../../abi/bridge.ts";
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { logger } from "../../utils/logger";
 import type { Domain, Token } from "../config";
@@ -120,10 +120,14 @@ export class EVMParser implements IParser {
     const event = bridge.events.FailedHandlerExecution.decode(log);
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
-    const lowLevelDataBuffer = Buffer.from(event.lowLevelData, "hex");
-
-    const byteOffset = Math.max(lowLevelDataBuffer.length - 64, 0);
-    const length = lowLevelDataBuffer.length - byteOffset;
+    let errMsg;
+    try {
+      errMsg = ethers.decodeBytes32String(
+        "0x" + Buffer.from(event.lowLevelData).subarray(-64).toString(),
+      );
+    } catch (err) {
+      errMsg = "Unknown error type, raw data:" + event.lowLevelData.toString();
+    }
 
     return {
       id: generateTransferID(
@@ -135,14 +139,7 @@ export class EVMParser implements IParser {
       toDomainID: toDomain.id,
       depositNonce: event.depositNonce,
       txHash: transaction.hash,
-      message: ethers.decodeBytes32String(
-        "0x" +
-          Buffer.from(
-            lowLevelDataBuffer.buffer,
-            lowLevelDataBuffer.byteOffset + byteOffset,
-            length,
-          ).toString("hex"),
-      ),
+      message: errMsg,
       blockNumber: log.block.height,
       timestamp: new Date(log.block.timestamp),
     };

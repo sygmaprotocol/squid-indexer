@@ -5,6 +5,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { DataSource } from "typeorm";
 import { SnakeNamingStrategy } from "typeorm-naming-strategies";
 
+import type { DbConfig } from "../indexer/config/validator";
 import {
   Account,
   Deposit,
@@ -15,25 +16,17 @@ import {
   Transfer,
 } from "../model";
 
-export async function initDatabase(): Promise<DataSource> {
+export async function initDatabase(dbConfig: DbConfig): Promise<DataSource> {
   const dataSource = new DataSource({
     type: "postgres",
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    port: parseInt(process.env.DB_PORT || ""),
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASS,
+    host: dbConfig.host,
+    database: dbConfig.name,
+    port: dbConfig.port,
+    username: dbConfig.username,
+    password: dbConfig.password,
     entities: [Domain, Transfer, Resource, Deposit, Execution, Account, Fee],
     namingStrategy: new SnakeNamingStrategy(),
   });
   await dataSource.initialize();
   return dataSource;
-}
-
-export function generateTransferID(
-  depositNonce: string,
-  fromDomainID: string,
-  toDomainID: string,
-): string {
-  return depositNonce + "-" + fromDomainID + "-" + toDomainID;
 }

@@ -4,16 +4,17 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import type { EntityManager } from "typeorm";
 
-import type { Domain as DomainConfig } from "./config";
-import { getSharedConfig } from "./config";
+import type { Domain as DomainConfig } from "./indexer/config";
+import { fetchSharedConfig } from "./indexer/config";
+import { getEnv } from "./indexer/config/validator";
 import { Domain, Resource } from "./model";
 import { initDatabase } from "./utils";
 import { logger } from "./utils/logger";
 
 async function main(): Promise<void> {
-  const dataSource = await initDatabase();
-
-  const sharedConfig = await getSharedConfig();
+  const envVars = getEnv();
+  const dataSource = await initDatabase(envVars.dbConfig);
+  const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
 
   await insertDomains(sharedConfig.domains, dataSource.manager);
   await dataSource.destroy();

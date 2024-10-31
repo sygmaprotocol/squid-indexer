@@ -51,7 +51,9 @@ export class SubstrateParser implements ISubstrateParser {
       );
     }
     const resource = fromDomain.resources.find(
-      (resource) => resource.resourceId.toLowerCase() == decodedEvent.resourceId.toLowerCase(),
+      (resource) =>
+        resource.resourceId.toLowerCase() ==
+        decodedEvent.resourceId.toLowerCase(),
     );
     if (!resource) {
       throw new Error(
@@ -114,7 +116,7 @@ export class SubstrateParser implements ISubstrateParser {
       toDomainID: toDomain.id,
     };
   }
-  
+
   public parseFailedHandlerExecution(
     event: Event,
     toDomain: Domain,
@@ -142,7 +144,9 @@ export class SubstrateParser implements ISubstrateParser {
   public parseFee(log: Event, fromDomain: Domain): FeeCollectedData {
     const decodedEvent = events.sygmaBridge.feeCollected.v1260.decode(log);
     const resource = fromDomain.resources.find(
-      (resource) => resource.resourceId.toLowerCase() == decodedEvent.resourceId.toLowerCase(),
+      (resource) =>
+        resource.resourceId.toLowerCase() ==
+        decodedEvent.resourceId.toLowerCase(),
     ) as SubstrateResource;
     if (!resource) {
       throw new Error(

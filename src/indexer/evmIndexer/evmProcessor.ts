@@ -49,8 +49,8 @@ export class EVMProcessor implements IProcessor {
         transaction: true,
       });
 
-    if (process.env.DOMAIN_GATEWAY) {
-      evmProcessor.setGateway(process.env.DOMAIN_GATEWAY);
+    if (domain.gateway) {
+      evmProcessor.setGateway(domain.gateway);
     }
     return evmProcessor;
   }

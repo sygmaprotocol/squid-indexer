@@ -42,6 +42,7 @@ export type Domain = DomainSDK & {
   startBlock: number;
   resources: Array<Resource>;
   blockConfirmations: number;
+  gateway?: string;
 };
 
 export enum HandlerType {
@@ -78,7 +79,11 @@ export async function getConfig(envVars: EnvVariables): Promise<Config> {
   const rpcMap = createRpcMap(envVars.rpcUrls);
   const parserMap = await initializeParserMap(sharedConfig, rpcMap);
 
-  const domainConfig = getDomainConfig(sharedConfig, envVars.domainId);
+  const domainConfig = getDomainConfig(
+    sharedConfig,
+    envVars.domainId,
+    envVars.domainGateway,
+  );
   const parser = getDomainParser(domainConfig.id, parserMap);
 
   parser.setParsers(parserMap);
@@ -167,14 +172,18 @@ async function initializeParserMap(
   return parserMap;
 }
 
-function getDomainConfig(sharedConfig: SharedConfig, domainId: number): Domain {
+function getDomainConfig(
+  sharedConfig: SharedConfig,
+  domainId: number,
+  domainGateway: string,
+): Domain {
   const domainConfig = sharedConfig.domains.find(
     (domain) => domain.id === domainId,
   );
   if (!domainConfig) {
     throw new Error(`No configuration found for domain ID: ${domainId}`);
   }
-
+  domainConfig.gateway = domainGateway;
   return domainConfig;
 }
 

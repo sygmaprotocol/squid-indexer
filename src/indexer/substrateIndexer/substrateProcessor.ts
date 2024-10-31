@@ -61,8 +61,8 @@ export class SubstrateProcessor implements IProcessor {
         extrinsic: true,
       })
       .setFields(this.fieldSelection);
-    if (process.env.DOMAIN_GATEWAY) {
-      substrateProcessor.setGateway(process.env.DOMAIN_GATEWAY);
+    if (domain.gateway) {
+      substrateProcessor.setGateway(domain.gateway);
     }
     return substrateProcessor;
   }

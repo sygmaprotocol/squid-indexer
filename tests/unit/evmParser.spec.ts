@@ -127,27 +127,6 @@ describe("EVMParser", () => {
       const fromDomain: Domain = {
         id: 2,
         chainId: 11155111,
-        caipId: "eip155:11155111",
-        name: "sepolia",
-        type: Network.EVM,
-        bridge: "0x4CF326d3817558038D1DEF9e76b727202c3E8492",
-        handlers: [
-          {
-            type: HandlerType.ERC20, 
-            address: "0x0d4fB069753bdf1C5aB48302e9744BF222A9F4e8"
-          }
-        ],
-        nativeTokenSymbol: "eth",
-        nativeTokenDecimals: 18,
-        blockConfirmations: 5,
-        startBlock: 5703542,
-        feeRouter: "0xD277478b4684Ed8594d5eb5B228AA7aDbA59df43",
-        feeHandlers: [
-          {
-            address: "0x356B7B3C25355325CcBFBCF00a82895F93f086b7",
-            type: FeeHandlerType.BASIC
-          }
-        ],
         resources: [
           {
             resourceId: "0x0000000000000000000000000000000000000000000000000000000000000300",
@@ -158,11 +137,46 @@ describe("EVMParser", () => {
             decimals: 18
           },
         ]
-      };
+      } as Domain;
 
       const event = {
         depositNonce: BigInt(1),
         destinationDomainID: 999,
+        resourceID: "0x1234567890abcdef1234567890abcdef12345678",
+        user: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
+        data: "0x...",
+        handlerResponse: "",
+      };
+      sinon.stub(bridge.events.Deposit, "decode").returns(event);
+
+      try {
+        await parser.parseDeposit(log, fromDomain);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error);
+      }
+    });
+
+    it("should throw an error if resource is not found", async () => {
+      const log: Log = { block: { height: 1, timestamp: 1633072800 }, transaction: {} } as any;
+      const fromDomain: Domain = {
+        id: 2,
+        chainId: 11155111,
+        resources: [
+          {
+            resourceId: "0x0000000000000000000000000000000000000000000000000000000000000300",
+            caip19: "eip155:11155111/erc20:0x7d58589b6C1Ba455c4060a3563b9a0d447Bef9af",
+            type: ResourceType.FUNGIBLE,
+            address: "0x7d58589b6C1Ba455c4060a3563b9a0d447Bef9af",
+            symbol: "ERC20LRTest",
+            decimals: 18
+          },
+        ]
+      } as Domain;
+
+      const event = {
+        depositNonce: BigInt(1),
+        destinationDomainID: 3,
         resourceID: "0x1234567890abcdef1234567890abcdef12345678",
         user: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
         data: "0x...",

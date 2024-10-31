@@ -100,7 +100,7 @@ describe("Substrate parser", () => {
       });
     });
 
-    it("should throw an error if the destination parser is not found", () => {
+    it("should throw an error if destination parser is not found", () => {
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "00", hash: "0x00" },
@@ -109,17 +109,6 @@ describe("Substrate parser", () => {
       const fromDomain: Domain = {
         id: 4,
         chainId: 5,
-        caipId: "polkadot:5",
-        name: "Sygma standalone pallet",
-        type: Network.SUBSTRATE,
-        bridge: "",
-        handlers: [],
-        nativeTokenSymbol: "syg",
-        nativeTokenDecimals: 12,
-        blockConfirmations: 2,
-        startBlock: 5,
-        feeRouter: "",
-        feeHandlers: [],
         resources: [
           {
             resourceId:
@@ -131,11 +120,54 @@ describe("Substrate parser", () => {
             decimals: 12,
           },
         ],
-      };
+      } as Domain;
 
       const decodedEvent = {
-        destDomainId: 2,
+        destDomainId: 999,
         resourceId: "0x00",
+        depositNonce: BigInt(0),
+        sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
+        transferType: ResourceType.FUNGIBLE as any,
+        depositData: "",
+        handlerResponse: "",
+      };
+      sinon
+        .stub(events.sygmaBridge.deposit.v1250, "decode")
+        .returns(decodedEvent);
+
+      try {
+        parser.parseDeposit(event, fromDomain);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error);
+      }
+    });
+
+    it("should throw an error if resource is not found", () => {
+      let event: Event = {
+        block: { height: 1, timestamp: 1633072800 },
+        extrinsic: { id: "00", hash: "0x00" },
+      } as Event;
+
+      const fromDomain: Domain = {
+        id: 4,
+        chainId: 5,
+        resources: [
+          {
+            resourceId:
+              "0x0000000000000000000000000000000000000000000000000000000000000300",
+            caip19: "polkadot:5",
+            type: ResourceType.FUNGIBLE,
+            address: "",
+            symbol: "PHA",
+            decimals: 12,
+          },
+        ],
+      } as Domain;
+
+      const decodedEvent = {
+        destDomainId: 1,
+        resourceId: "0x1234567890abcdef1234567890abcdef12345678",
         depositNonce: BigInt(0),
         sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
         transferType: ResourceType.FUNGIBLE as any,
@@ -281,6 +313,52 @@ describe("Substrate parser", () => {
         tokenSymbol: "PHA",
         txIdentifier: "0000000001-0ea58-000001",
       });
+    });
+
+    it("should throw an error if resource is not found", () => {
+      let event: Event = {
+        block: { height: 1, timestamp: 1633072800 },
+        extrinsic: { id: "00", hash: "0x00" },
+      } as Event;
+
+      const fromDomain: Domain = {
+        id: 4,
+        chainId: 5,
+        resources: [
+          {
+            resourceId:
+              "0x0000000000000000000000000000000000000000000000000000000000000300",
+            caip19: "polkadot:5",
+            type: ResourceType.FUNGIBLE,
+            address: "",
+            symbol: "PHA",
+            decimals: 12,
+          },
+        ],
+      } as Domain;
+
+      const decodedEvent = {
+        feePayer: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
+        destDomainId: 1,
+        resourceId:
+          "0x1234567890abcdef1234567890abcdef12345678",
+        feeAmount: BigInt(10),
+        feeAssetId: {
+          __kind: "Concrete",
+          value: { parents: 1, interior: { __kind: "X3", value: {} } },
+        } as V3AssetId,
+      };
+
+      sinon
+        .stub(events.sygmaBridge.feeCollected.v1260, "decode")
+        .returns(decodedEvent);
+
+      try {
+        parser.parseFee(event, fromDomain);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error);
+      }
     });
   });
 

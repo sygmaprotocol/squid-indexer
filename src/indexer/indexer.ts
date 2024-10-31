@@ -114,10 +114,8 @@ export class Indexer {
       if (!accounts.has(d.sender)) {
         accounts.set(d.sender, new Account({ id: d.sender }));
       }
-      if (d.fee) {
-        if (!fees.has(d.fee.id)) {
-          fees.set(d.fee.id, new Fee(d.fee));
-        }
+      if (!fees.has(d.fee.id)) {
+        fees.set(d.fee.id, new Fee(d.fee));
       }
     }
 

@@ -19,7 +19,7 @@ export type DecodedDepositLog = {
   transferType: string;
   amount: string;
   senderStatus?: string;
-  fee?: FeeData;
+  fee: FeeData;
 };
 
 export type DecodedProposalExecutionLog = {

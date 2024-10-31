@@ -91,6 +91,13 @@ export class SubstrateParser implements ISubstrateParser {
         resource.decimals || 12,
         resource.type,
       ),
+      fee: {
+        id: randomUUID(),
+        amount: "50",
+        decimals: resource.decimals || 0,
+        tokenAddress: "",
+        tokenSymbol: resource.symbol || "",
+      },
     };
   }
 

@@ -61,7 +61,7 @@ export class SubstrateParser implements ISubstrateParser {
       );
     }
 
-    const resourceType = resource.type || "";
+    const resourceType = resource.type ?? "";
 
     const extrinsic = assertNotNull(event.extrinsic, "Missing extrinsic");
 
@@ -82,21 +82,21 @@ export class SubstrateParser implements ISubstrateParser {
       fromDomainID: fromDomain.id,
       resourceID: resource.resourceId,
       txHash: extrinsic.id,
-      timestamp: new Date(event.block.timestamp || ""),
+      timestamp: new Date(event.block.timestamp ?? ""),
       depositData: decodedEvent.depositData,
       handlerResponse: decodedEvent.handlerResponse,
       transferType: resourceType,
       amount: decodeAmountOrTokenId(
         decodedEvent.depositData,
-        resource.decimals || 12,
+        resource.decimals ?? 12,
         resource.type,
       ),
       fee: {
         id: randomUUID(),
         amount: "50",
-        decimals: resource.decimals || 0,
+        decimals: resource.decimals ?? 0,
         tokenAddress: "",
-        tokenSymbol: resource.symbol || "",
+        tokenSymbol: resource.symbol ?? "",
       },
     };
   }
@@ -118,7 +118,7 @@ export class SubstrateParser implements ISubstrateParser {
       blockNumber: event.block.height,
       depositNonce: decodedEvent.depositNonce,
       txHash: extrinsic.id,
-      timestamp: new Date(event.block.timestamp || ""),
+      timestamp: new Date(event.block.timestamp ?? ""),
       fromDomainID: decodedEvent.originDomainId,
       toDomainID: toDomain.id,
     };
@@ -154,7 +154,7 @@ export class SubstrateParser implements ISubstrateParser {
       (resource) =>
         resource.resourceId.toLowerCase() ==
         decodedEvent.resourceId.toLowerCase(),
-    ) as SubstrateResource;
+    ) as SubstrateResource | undefined;
     if (!resource) {
       throw new Error(
         `Resource with ID ${decodedEvent.resourceId} not found in shared configuration`,
@@ -165,10 +165,10 @@ export class SubstrateParser implements ISubstrateParser {
 
     return {
       id: randomUUID(),
-      amount: decodedEvent.feeAmount.toString().replace(/,/g, ""),
-      decimals: resource.decimals || 0,
+      amount: decodedEvent.feeAmount.toString().replaceAll(",", ""),
+      decimals: resource.decimals ?? 0,
       tokenAddress: JSON.stringify(decodedEvent.feeAssetId),
-      tokenSymbol: resource.symbol || "",
+      tokenSymbol: resource.symbol ?? "",
       txIdentifier: extrinsic.id,
     };
   }

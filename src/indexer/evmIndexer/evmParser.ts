@@ -64,8 +64,8 @@ export class EVMParser implements IParser {
         `Resource with ID ${event.resourceID} not found in shared configuration`,
       );
     }
-    const resourceType = resource.type || "";
-    const resourceDecimals = resource.decimals || 18;
+    const resourceType = resource.type ?? "";
+    const resourceDecimals = resource.decimals ?? 18;
 
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
@@ -194,9 +194,9 @@ export class EVMParser implements IParser {
         id: randomUUID(),
         tokenAddress: fee.tokenAddress,
         tokenSymbol:
-          this.tokens.get(fee.tokenAddress.toLowerCase())?.symbol || "",
+          this.tokens.get(fee.tokenAddress.toLowerCase())?.symbol ?? "",
         decimals:
-          this.tokens.get(fee.tokenAddress.toLowerCase())?.decimals || 18,
+          this.tokens.get(fee.tokenAddress.toLowerCase())?.decimals ?? 18,
         amount: fee.fee.toString(),
       };
     } catch (err) {

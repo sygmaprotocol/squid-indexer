@@ -8,20 +8,20 @@ import { randomUUID } from "crypto";
 import { ResourceType } from "@buildwithsygma/core";
 import type { Log } from "@subsquid/evm-processor";
 import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
-import type { BigNumberish, JsonRpcProvider, Provider } from "ethers";
-import { AbiCoder, ethers, formatUnits } from "ethers";
+import type { JsonRpcProvider, Provider } from "ethers";
+import { ethers } from "ethers";
 
 import * as bridge from "../../abi/bridge";
+import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { logger } from "../../utils/logger";
 import type { Domain, Token } from "../config";
 import type { IParser } from "../indexer";
 import type {
   DecodedDepositLog,
-  DecodedFailedHandlerExecution,
+  DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   FeeData,
 } from "../types";
-import { generateTransferID } from "../utils";
 
 import { ContractType } from "./evmTypes";
 import { getContract } from "./utils";
@@ -64,8 +64,8 @@ export class EVMParser implements IParser {
         `Resource with ID ${event.resourceID} not found in shared configuration`,
       );
     }
-    const resourceType = resource.type || "";
-    const resourceDecimals = resource.decimals || 18;
+    const resourceType = resource.type ?? "";
+    const resourceDecimals = resource.decimals ?? 18;
 
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
@@ -87,11 +87,7 @@ export class EVMParser implements IParser {
       depositData: event.data,
       handlerResponse: event.handlerResponse,
       transferType: resourceType,
-      amount: this.decodeAmountsOrTokenId(
-        event.data,
-        resourceDecimals,
-        resourceType,
-      ),
+      amount: decodeAmountOrTokenId(event.data, resourceDecimals, resourceType),
       fee: await this.getFee(event, fromDomain, this.provider),
     };
   }
@@ -121,7 +117,7 @@ export class EVMParser implements IParser {
   public parseFailedHandlerExecution(
     log: Log,
     toDomain: Domain,
-  ): DecodedFailedHandlerExecution {
+  ): DecodedFailedHandlerExecutionLog {
     const event = bridge.events.FailedHandlerExecution.decode(log);
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
@@ -133,6 +129,7 @@ export class EVMParser implements IParser {
     } catch (err) {
       errMsg = "Unknown error type, raw data:" + event.lowLevelData.toString();
     }
+
     return {
       id: generateTransferID(
         event.depositNonce.toString(),
@@ -169,8 +166,6 @@ export class EVMParser implements IParser {
         logger.error(`Unsupported resource type: ${resourceType}`);
         return "";
     }
-
-    console.log(recipient);
     return recipient;
   }
 
@@ -199,9 +194,9 @@ export class EVMParser implements IParser {
         id: randomUUID(),
         tokenAddress: fee.tokenAddress,
         tokenSymbol:
-          this.tokens.get(fee.tokenAddress.toLowerCase())?.symbol || "",
+          this.tokens.get(fee.tokenAddress.toLowerCase())?.symbol ?? "",
         decimals:
-          this.tokens.get(fee.tokenAddress.toLowerCase())?.decimals || 18,
+          this.tokens.get(fee.tokenAddress.toLowerCase())?.decimals ?? 18,
         amount: fee.fee.toString(),
       };
     } catch (err) {
@@ -213,31 +208,6 @@ export class EVMParser implements IParser {
         decimals: 0,
         amount: "0",
       };
-    }
-  }
-
-  private decodeAmountsOrTokenId(
-    data: string,
-    decimals: number,
-    resourceType: ResourceType,
-  ): string {
-    switch (resourceType) {
-      case ResourceType.FUNGIBLE: {
-        const amount = AbiCoder.defaultAbiCoder().decode(
-          ["uint256"],
-          data,
-        )[0] as BigNumberish;
-        return formatUnits(amount, decimals);
-      }
-      case ResourceType.NON_FUNGIBLE: {
-        const tokenId = AbiCoder.defaultAbiCoder().decode(
-          ["uint256"],
-          data,
-        )[0] as bigint;
-        return tokenId.toString();
-      }
-      default:
-        return "";
     }
   }
 

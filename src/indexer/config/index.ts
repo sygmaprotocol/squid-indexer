@@ -16,6 +16,8 @@ import { EVMParser } from "../evmIndexer/evmParser";
 import { ContractType } from "../evmIndexer/evmTypes";
 import { getContract } from "../evmIndexer/utils";
 import type { IParser, IProcessor } from "../indexer";
+import { SubstrateParser } from "../substrateIndexer/substrateParser";
+import { createSubstrateProvider } from "../substrateIndexer/utils";
 
 import type { EnvVariables } from "./validator";
 
@@ -40,6 +42,7 @@ export type Domain = DomainSDK & {
   startBlock: number;
   resources: Array<Resource>;
   blockConfirmations: number;
+  gateway?: string;
 };
 
 export enum HandlerType {
@@ -76,7 +79,11 @@ export async function getConfig(envVars: EnvVariables): Promise<Config> {
   const rpcMap = createRpcMap(envVars.rpcUrls);
   const parserMap = await initializeParserMap(sharedConfig, rpcMap);
 
-  const domainConfig = getDomainConfig(sharedConfig, envVars.domainId);
+  const domainConfig = getDomainConfig(
+    sharedConfig,
+    envVars.domainId,
+    envVars.domainGateway,
+  );
   const parser = getDomainParser(domainConfig.id, parserMap);
 
   parser.setParsers(parserMap);
@@ -125,46 +132,58 @@ async function initializeParserMap(
       decimals: domain.nativeTokenDecimals,
     });
 
-    if (domain.type === Network.EVM) {
-      const rpcUrl = rpcMap.get(domain.id);
-      if (!rpcUrl) {
-        throw new Error(
-          `Unsupported or missing RPC URL for domain ID: ${domain.id}`,
-        );
-      }
-      const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const rpcUrl = rpcMap.get(domain.id);
+    if (!rpcUrl) {
+      throw new Error(
+        `Unsupported or missing RPC URL for domain ID: ${domain.id}`,
+      );
+    }
+    switch (domain.type) {
+      case Network.EVM: {
+        const provider = new ethers.JsonRpcProvider(rpcUrl);
 
-      for (const resource of domain.resources as EvmResource[]) {
-        if (
-          resource.type == ResourceType.FUNGIBLE &&
-          resource.address !== NATIVE_TOKEN_ADDRESS
-        ) {
-          const token = getContract(
-            provider,
-            resource.address,
-            ContractType.ERC20,
-          );
-          const symbol = (await token.symbol()) as string;
-          const decimals = Number(await token.decimals());
+        for (const resource of domain.resources as EvmResource[]) {
+          if (
+            resource.type == ResourceType.FUNGIBLE &&
+            resource.address != NATIVE_TOKEN_ADDRESS
+          ) {
+            const token = getContract(
+              provider,
+              resource.address,
+              ContractType.ERC20,
+            );
+            const symbol = (await token.symbol()) as string;
+            const decimals = Number(await token.decimals());
 
-          tokenMap.set(resource.address.toLowerCase(), { symbol, decimals });
+            tokenMap.set(resource.address.toLowerCase(), { symbol, decimals });
+          }
         }
+        parserMap.set(domain.id, new EVMParser(provider, tokenMap));
+        break;
       }
-      parserMap.set(domain.id, new EVMParser(provider, tokenMap));
+      case Network.SUBSTRATE: {
+        const provider = await createSubstrateProvider(rpcUrl);
+        parserMap.set(domain.id, new SubstrateParser(provider));
+        break;
+      }
     }
   }
 
   return parserMap;
 }
 
-function getDomainConfig(sharedConfig: SharedConfig, domainId: number): Domain {
+function getDomainConfig(
+  sharedConfig: SharedConfig,
+  domainId: number,
+  domainGateway: string,
+): Domain {
   const domainConfig = sharedConfig.domains.find(
     (domain) => domain.id === domainId,
   );
   if (!domainConfig) {
     throw new Error(`No configuration found for domain ID: ${domainId}`);
   }
-
+  domainConfig.gateway = domainGateway;
   return domainConfig;
 }
 

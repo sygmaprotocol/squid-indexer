@@ -3,22 +3,174 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 
+import { randomUUID } from "crypto";
+
 import { ResourceType } from "@buildwithsygma/core";
-import { ApiPromise, WsProvider } from "@polkadot/api";
+import type { SubstrateResource } from "@buildwithsygma/core";
+import type { ApiPromise } from "@polkadot/api";
 import type { MultiLocation } from "@polkadot/types/interfaces";
 import { decodeHex } from "@subsquid/evm-processor";
+import { assertNotNull } from "@subsquid/substrate-processor";
 
+import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { logger } from "../../utils/logger";
+import type { Domain } from "../config";
+import type { IParser } from "../indexer";
+import type { Event } from "../substrateIndexer/substrateProcessor";
+import type {
+  DecodedDepositLog,
+  DecodedProposalExecutionLog,
+  DecodedFailedHandlerExecutionLog,
+  FeeCollectedData,
+} from "../types";
 
-export class SubstrateParser {
-  private provider!: ApiPromise;
+import { events } from "./types";
 
-  public async init(rpcUrl: string): Promise<void> {
-    const wsProvider = new WsProvider(rpcUrl);
-    const api = await ApiPromise.create({
-      provider: wsProvider,
-    });
-    this.provider = api;
+export interface ISubstrateParser extends IParser {
+  parseFee(log: Event, fromDomain: Domain): FeeCollectedData;
+}
+
+export class SubstrateParser implements ISubstrateParser {
+  private provider: ApiPromise;
+  private parsers!: Map<number, IParser>;
+
+  constructor(provider: ApiPromise) {
+    this.provider = provider;
+  }
+
+  public setParsers(parsers: Map<number, IParser>): void {
+    this.parsers = parsers;
+  }
+
+  public parseDeposit(event: Event, fromDomain: Domain): DecodedDepositLog {
+    const decodedEvent = events.sygmaBridge.deposit.v1250.decode(event);
+    const destinationParser = this.parsers.get(decodedEvent.destDomainId);
+    if (!destinationParser) {
+      throw new Error(
+        `Destination domain id ${decodedEvent.destDomainId} not supported`,
+      );
+    }
+    const resource = fromDomain.resources.find(
+      (resource) =>
+        resource.resourceId.toLowerCase() ==
+        decodedEvent.resourceId.toLowerCase(),
+    );
+    if (!resource) {
+      throw new Error(
+        `Resource with ID ${decodedEvent.resourceId} not found in shared configuration`,
+      );
+    }
+
+    const resourceType = resource.type ?? "";
+
+    const extrinsic = assertNotNull(event.extrinsic, "Missing extrinsic");
+
+    return {
+      id: generateTransferID(
+        decodedEvent.depositNonce.toString(),
+        fromDomain.id.toString(),
+        decodedEvent.destDomainId.toString(),
+      ),
+      blockNumber: event.block.height,
+      depositNonce: decodedEvent.depositNonce,
+      toDomainID: decodedEvent.destDomainId,
+      sender: decodedEvent.sender,
+      destination: destinationParser.parseDestination(
+        decodedEvent.depositData,
+        resourceType,
+      ),
+      fromDomainID: fromDomain.id,
+      resourceID: resource.resourceId,
+      txHash: extrinsic.id,
+      timestamp: new Date(event.block.timestamp ?? ""),
+      depositData: decodedEvent.depositData,
+      handlerResponse: decodedEvent.handlerResponse,
+      transferType: resourceType,
+      amount: decodeAmountOrTokenId(
+        decodedEvent.depositData,
+        resource.decimals ?? 12,
+        resource.type,
+      ),
+      fee: {
+        id: randomUUID(),
+        amount: "50",
+        decimals: resource.decimals ?? 0,
+        tokenAddress: "",
+        tokenSymbol: resource.symbol ?? "",
+      },
+    };
+  }
+
+  public parseProposalExecution(
+    event: Event,
+    toDomain: Domain,
+  ): DecodedProposalExecutionLog {
+    const decodedEvent =
+      events.sygmaBridge.proposalExecution.v1250.decode(event);
+    const extrinsic = assertNotNull(event.extrinsic, "Missing extrinsic");
+
+    return {
+      id: generateTransferID(
+        decodedEvent.depositNonce.toString(),
+        decodedEvent.originDomainId.toString(),
+        toDomain.id.toString(),
+      ),
+      blockNumber: event.block.height,
+      depositNonce: decodedEvent.depositNonce,
+      txHash: extrinsic.id,
+      timestamp: new Date(event.block.timestamp ?? ""),
+      fromDomainID: decodedEvent.originDomainId,
+      toDomainID: toDomain.id,
+    };
+  }
+
+  public parseFailedHandlerExecution(
+    event: Event,
+    toDomain: Domain,
+  ): DecodedFailedHandlerExecutionLog {
+    const decodedEvent =
+      events.sygmaBridge.failedHandlerExecution.v1250.decode(event);
+    const extrinsic = assertNotNull(event.extrinsic, "Missing extrinsic");
+
+    return {
+      id: generateTransferID(
+        decodedEvent.depositNonce.toString(),
+        decodedEvent.originDomainId.toString(),
+        toDomain.id.toString(),
+      ),
+      fromDomainID: decodedEvent.originDomainId,
+      toDomainID: toDomain.id,
+      depositNonce: decodedEvent.depositNonce,
+      txHash: extrinsic.id,
+      message: decodedEvent.error,
+      blockNumber: event.block.height,
+      timestamp: new Date(event.block.timestamp!),
+    };
+  }
+
+  public parseFee(log: Event, fromDomain: Domain): FeeCollectedData {
+    const decodedEvent = events.sygmaBridge.feeCollected.v1260.decode(log);
+    const resource = fromDomain.resources.find(
+      (resource) =>
+        resource.resourceId.toLowerCase() ==
+        decodedEvent.resourceId.toLowerCase(),
+    ) as SubstrateResource | undefined;
+    if (!resource) {
+      throw new Error(
+        `Resource with ID ${decodedEvent.resourceId} not found in shared configuration`,
+      );
+    }
+
+    const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
+
+    return {
+      id: randomUUID(),
+      amount: decodedEvent.feeAmount.toString().replaceAll(",", ""),
+      decimals: resource.decimals ?? 0,
+      tokenAddress: JSON.stringify(decodedEvent.feeAssetId),
+      tokenSymbol: resource.symbol ?? "",
+      txIdentifier: extrinsic.id,
+    };
   }
 
   public parseDestination(hexData: string, resourceType: ResourceType): string {

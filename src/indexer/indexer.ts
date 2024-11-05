@@ -4,13 +4,12 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import type { ResourceType } from "@buildwithsygma/core";
 import type {
-  DataHandlerContext,
-  EvmBatchProcessorFields,
   Log as _Log,
   Transaction as _Transaction,
   EvmBatchProcessor,
   Log,
 } from "@subsquid/evm-processor";
+import type { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import type { Store } from "@subsquid/typeorm-store";
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 
@@ -24,35 +23,51 @@ import {
 } from "../model";
 
 import type { Domain } from "./config";
+import type { Context } from "./evmIndexer/evmProcessor";
+import type {
+  Event,
+  Fields,
+  ProcessorContext,
+} from "./substrateIndexer/substrateProcessor";
 import type {
   DecodedDepositLog,
-  DecodedFailedHandlerExecution,
+  DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
+  FeeCollectedData,
 } from "./types";
 
 export interface IParser {
   setParsers(parsers: Map<number, IParser>): void;
-  parseDeposit(log: Log, fromDomain: Domain): Promise<DecodedDepositLog>;
+  parseDeposit(
+    log: Log | Event,
+    fromDomain: Domain,
+  ): Promise<DecodedDepositLog> | DecodedDepositLog;
   parseProposalExecution(
-    log: Log,
+    log: Log | Event,
     toDomain: Domain,
   ): DecodedProposalExecutionLog;
   parseFailedHandlerExecution(
-    log: Log,
+    log: Log | Event,
     toDomain: Domain,
-  ): DecodedFailedHandlerExecution;
+  ): DecodedFailedHandlerExecutionLog;
   parseDestination(hexData: string, resourceType: ResourceType): string;
 }
 
 export interface IProcessor {
-  processEvents(ctx: Context, domain: Domain): Promise<DecodedEvents>;
-  getProcessor(domain: Domain): EvmBatchProcessor;
+  processEvents(
+    ctx: Context | ProcessorContext<Store>,
+    domain: Domain,
+  ): Promise<DecodedEvents> | DecodedEvents;
+  getProcessor(
+    domain: Domain,
+  ): EvmBatchProcessor | SubstrateBatchProcessor<Fields>;
 }
 
 export type DecodedEvents = {
   deposits: DecodedDepositLog[];
   executions: DecodedProposalExecutionLog[];
-  failedHandlerExecutions: DecodedFailedHandlerExecution[];
+  failedHandlerExecutions: DecodedFailedHandlerExecutionLog[];
+  fees: FeeCollectedData[];
 };
 export class Indexer {
   private domain: Domain;
@@ -81,12 +96,13 @@ export class Indexer {
           ctx,
           decodedEvents.failedHandlerExecutions,
         );
+        await this.storeFees(ctx, decodedEvents.fees);
       },
     );
   }
 
   public async storeDeposits(
-    ctx: Context,
+    ctx: Context | ProcessorContext<Store>,
     depositsData: DecodedDepositLog[],
   ): Promise<void> {
     const accounts = new Map<string, Account>();
@@ -144,7 +160,7 @@ export class Indexer {
   }
 
   public async storeExecutions(
-    ctx: Context,
+    ctx: Context | ProcessorContext<Store>,
     executionsData: DecodedProposalExecutionLog[],
   ): Promise<void> {
     const executions = new Map<string, Execution>();
@@ -181,8 +197,8 @@ export class Indexer {
   }
 
   public async storeFailedExecutions(
-    ctx: Context,
-    failedExecutionsData: DecodedFailedHandlerExecution[],
+    ctx: Context | ProcessorContext<Store>,
+    failedExecutionsData: DecodedFailedHandlerExecutionLog[],
   ): Promise<void> {
     const failedExecutions = new Map<string, Execution>();
     const transfers = new Map<string, Transfer>();
@@ -217,7 +233,40 @@ export class Indexer {
     await ctx.store.upsert([...failedExecutions.values()]);
     await ctx.store.upsert([...transfers.values()]);
   }
-}
 
-export type Fields = EvmBatchProcessorFields<EvmBatchProcessor>;
-export type Context = DataHandlerContext<Store, Fields>;
+  public async storeFees(
+    ctx: Context | ProcessorContext<Store>,
+    feeCollectedData: FeeCollectedData[],
+  ): Promise<void> {
+    const fees = new Map<string, Fee>();
+    for (const f of feeCollectedData) {
+      if (!fees.has(f.id)) {
+        const fee = new Fee({
+          id: f.id,
+          amount: f.amount,
+          decimals: f.decimals,
+          tokenAddress: f.tokenAddress,
+          tokenSymbol: f.tokenSymbol,
+        });
+        fees.set(f.id, fee);
+      }
+    }
+    await ctx.store.upsert([...fees.values()]);
+
+    const transfersToUpdate = new Map<string, Transfer>();
+    for (const f of feeCollectedData) {
+      const transfer = await ctx.store.findOne(Transfer, {
+        where: {
+          deposit: {
+            txHash: f.txIdentifier,
+          },
+        },
+      });
+      if (transfer) {
+        transfer.fee = fees.get(f.id);
+        transfersToUpdate.set(transfer.id, transfer);
+      }
+    }
+    await ctx.store.upsert([...transfersToUpdate.values()]);
+  }
+}

@@ -1,0 +1,14 @@
+{
+    "outDir": "src/indexer/substrateIndexer/types",
+    "specVersions": "https://v2.archive.subsquid.io/metadata/phala",
+    "pallets": {
+      "SygmaBridge": {
+        "events": [
+          "Deposit",
+          "ProposalExecution",
+          "FailedHandlerExecution",
+          "FeeCollected"
+        ]
+      }
+    }
+}

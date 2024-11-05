@@ -3,12 +3,6 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 
-export type DepositEvent = {
-  destinationDomainID: number;
-  resourceID: string;
-  depositNonce: bigint;
-  data: string;
-};
 export type DecodedDepositLog = {
   id: string;
   blockNumber: number;
@@ -38,7 +32,7 @@ export type DecodedProposalExecutionLog = {
   toDomainID: number;
 };
 
-export type DecodedFailedHandlerExecution = {
+export type DecodedFailedHandlerExecutionLog = {
   id: string;
   fromDomainID: number;
   toDomainID: number;
@@ -55,4 +49,8 @@ export type FeeData = {
   tokenSymbol: string;
   amount: string;
   decimals: number;
+};
+
+export type FeeCollectedData = FeeData & {
+  txIdentifier: string;
 };

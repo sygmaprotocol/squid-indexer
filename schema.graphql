@@ -1,22 +1,10 @@
 type Transfer @entity {
   id: ID!
-  depositNonce: BigInt!
-  resource: Resource
-  resourceID: String
-  fromDomain: Domain!
-  fromDomainID: Int!
-  toDomain: Domain
-  toDomainID: Int
-  destination: String
-  amount: String
   status: TransferStatus!
+  depositID: String
   deposit: Deposit @unique
+  executionID: String
   execution: Execution @unique
-  fee: Fee @unique
-  account: Account
-  accountID: String
-  message: String
-  usdValue: Float
 }
 
 type Deposit @entity {
@@ -28,6 +16,19 @@ type Deposit @entity {
   depositData: String!
   timestamp: DateTime
   handlerResponse: String!
+  feeID: String
+  fee: Fee @unique
+  accountID: String 
+  account: Account 
+  depositNonce: String
+  resource: Resource!
+  resourceID: String
+  fromDomainID: String
+  fromDomain: Domain!
+  toDomainID: String
+  toDomain: Domain!
+  destination: String
+  amount: String!
 }
 
 type Execution @entity {
@@ -35,7 +36,8 @@ type Execution @entity {
   transfer: Transfer @derivedFrom(field: "execution")
   txHash: String!
   timestamp: DateTime
-  blockNumber: String! 
+  blockNumber: String!
+  message: String
 }
 
 enum TransferStatus {
@@ -47,29 +49,32 @@ enum TransferStatus {
 type Account @entity {
   id: ID!
   addressStatus: String
-  transfers: [Transfer!] @derivedFrom(field: "account")
+  transfers: [Deposit!] @derivedFrom(field: "account")
 }
 
 type Resource @entity {
   id: ID!
   type: String!
   decimals: Int
-  transfers: [Transfer!] @derivedFrom(field: "resource")
-}
+  tokenAddress: String!
+  tokenSymbol: String!
+  deposit: [Deposit!] @derivedFrom(field: "resource")
+  }
 
 type Domain @entity {
   id: ID!
   name: String!
-  lastIndexedBlock: String!
-  transfersFrom: [Transfer!] @derivedFrom(field: "fromDomain")
-  transfersTo: [Transfer!] @derivedFrom(field: "toDomain")
+  fromDomain: [Deposit!] @derivedFrom(field: "fromDomain")
+  toDomain: [Deposit!] @derivedFrom(field: "toDomain")
+  fee: [Fee!] @derivedFrom(field: "domain")
 }
 
 type Fee @entity {
   id: ID! 
   amount: String!
-  tokenAddress: String!
-  tokenSymbol: String!
-  decimals: Int
-  transfer: Transfer @derivedFrom(field: "fee")
+  resourceID: String
+  resource: Resource!
+  transfer: Deposit @derivedFrom(field: "fee")
+  domainID: String
+  domain: Domain!
 }

@@ -3,7 +3,7 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
-import {Transfer} from "./transfer.model"
+import {Deposit} from "./deposit.model"
 
 @Entity_()
 export class Resource {
@@ -20,6 +20,12 @@ export class Resource {
     @Column_("int4", {nullable: true})
     decimals!: number | undefined | null
 
-    @OneToMany_(() => Transfer, e => e.resource)
-    transfers!: Transfer[]
+    @Column_("text", {nullable: false})
+    tokenAddress!: string
+
+    @Column_("text", {nullable: false})
+    tokenSymbol!: string
+
+    @OneToMany_(() => Deposit, e => e.resource)
+    deposit!: Deposit[]
 }

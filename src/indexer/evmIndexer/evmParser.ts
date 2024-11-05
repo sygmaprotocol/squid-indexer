@@ -12,9 +12,10 @@ import type { BigNumberish, JsonRpcProvider, Provider } from "ethers";
 import { AbiCoder, ethers, formatUnits } from "ethers";
 
 import * as bridge from "../../abi/bridge";
+import { Domain, Resource } from "../../model";
 import { logger } from "../../utils/logger";
-import type { Domain, Token } from "../config";
-import type { IParser } from "../indexer";
+import type { Domain as DomainType, Token } from "../config";
+import type { Context, IParser } from "../indexer";
 import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecution,
@@ -46,27 +47,25 @@ export class EVMParser implements IParser {
   }
   public async parseDeposit(
     log: Log,
-    fromDomain: Domain,
-  ): Promise<DecodedDepositLog> {
+    fromDomain: DomainType,
+    ctx: Context,
+  ): Promise<DecodedDepositLog | null> {
     const event = bridge.events.Deposit.decode(log);
     const destinationParser = this.parsers.get(event.destinationDomainID);
     if (!destinationParser) {
-      throw new Error(
+      logger.error(
         `Destination domain id ${event.destinationDomainID} not supported`,
       );
+      return null;
     }
-    const resource = fromDomain.resources.find(
-      (resource) =>
-        resource.resourceId.toLowerCase() == event.resourceID.toLowerCase(),
-    );
-    if (!resource) {
-      throw new Error(
-        `Resource with ID ${event.resourceID} not found in shared configuration`,
-      );
-    }
-    const resourceType = resource.type || "";
-    const resourceDecimals = resource.decimals || 18;
 
+    const resource = await ctx.store.findOne(Resource, {
+      where: { id: event.resourceID.toLowerCase() },
+    });
+    if (!resource) {
+      logger.error(`Unsupported resource: ${event.resourceID.toLowerCase()}`);
+      return null;
+    }
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
     return {
@@ -76,32 +75,44 @@ export class EVMParser implements IParser {
         event.destinationDomainID.toString(),
       ),
       blockNumber: log.block.height,
-      depositNonce: event.depositNonce,
-      toDomainID: event.destinationDomainID,
+      depositNonce: event.depositNonce.toString(),
+      toDomainID: event.destinationDomainID.toString(),
       sender: transaction.from,
-      destination: destinationParser.parseDestination(event.data, resourceType),
-      fromDomainID: fromDomain.id,
-      resourceID: resource.resourceId,
+      destination: destinationParser.parseDestination(
+        event.data,
+        resource.type as ResourceType,
+      ),
+      fromDomainID: fromDomain.id.toString(),
+      resourceID: resource.id,
       txHash: transaction.hash,
       timestamp: new Date(log.block.timestamp),
       depositData: event.data,
       handlerResponse: event.handlerResponse,
-      transferType: resourceType,
+      transferType: resource.type,
       amount: this.decodeAmountsOrTokenId(
         event.data,
-        resourceDecimals,
-        resourceType,
+        resource.decimals!,
+        resource.type as ResourceType,
       ),
       fee: await this.getFee(event, fromDomain, this.provider),
     };
   }
 
-  public parseProposalExecution(
+  public async parseProposalExecution(
     log: Log,
-    toDomain: Domain,
-  ): DecodedProposalExecutionLog {
+    toDomain: DomainType,
+    ctx: Context,
+  ): Promise<DecodedProposalExecutionLog | null> {
     const event = bridge.events.ProposalExecution.decode(log);
     const transaction = assertNotNull(log.transaction, "Missing transaction");
+
+    const fromDomain = await ctx.store.findOne(Domain, {
+      where: { id: event.originDomainID.toString() },
+    });
+    if (!fromDomain) {
+      logger.error(`Source domain id ${event.originDomainID} not supported`);
+      return null;
+    }
 
     return {
       id: generateTransferID(
@@ -110,21 +121,28 @@ export class EVMParser implements IParser {
         toDomain.id.toString(),
       ),
       blockNumber: log.block.height,
-      depositNonce: event.depositNonce,
+      depositNonce: event.depositNonce.toString(),
       txHash: transaction.hash,
       timestamp: new Date(log.block.timestamp),
-      fromDomainID: event.originDomainID,
-      toDomainID: toDomain.id,
+      fromDomainID: fromDomain.id,
+      toDomainID: toDomain.id.toString(),
     };
   }
 
-  public parseFailedHandlerExecution(
+  public async parseFailedHandlerExecution(
     log: Log,
-    toDomain: Domain,
-  ): DecodedFailedHandlerExecution {
+    toDomain: DomainType,
+    ctx: Context,
+  ): Promise<DecodedFailedHandlerExecution | null> {
     const event = bridge.events.FailedHandlerExecution.decode(log);
     const transaction = assertNotNull(log.transaction, "Missing transaction");
-
+    const fromDomain = await ctx.store.findOne(Domain, {
+      where: { id: event.originDomainID.toString() },
+    });
+    if (!fromDomain) {
+      logger.error(`Source domain id ${event.originDomainID} not supported`);
+      return null;
+    }
     let errMsg;
     try {
       errMsg = ethers.decodeBytes32String(
@@ -139,9 +157,9 @@ export class EVMParser implements IParser {
         event.originDomainID.toString(),
         toDomain.id.toString(),
       ),
-      fromDomainID: event.originDomainID,
-      toDomainID: toDomain.id,
-      depositNonce: event.depositNonce,
+      fromDomainID: event.originDomainID.toString(),
+      toDomainID: toDomain.id.toString(),
+      depositNonce: event.depositNonce.toString(),
       txHash: transaction.hash,
       message: errMsg,
       blockNumber: log.block.height,
@@ -176,7 +194,7 @@ export class EVMParser implements IParser {
 
   public async getFee(
     event: bridge.DepositEventArgs,
-    fromDomain: Domain,
+    fromDomain: DomainType,
     provider: Provider,
   ): Promise<FeeData> {
     try {

@@ -2,6 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
+import type { EvmResource, SubstrateResource } from "@buildwithsygma/core";
 import type { EntityManager } from "typeorm";
 
 import type { Domain as DomainConfig } from "./indexer/config";
@@ -29,18 +30,23 @@ async function insertDomains(
       Domain,
       {
         id: domain.id.toString(),
-        lastIndexedBlock: domain.startBlock.toString(),
         name: domain.name,
       },
       ["id"],
     );
-    for (const resource of domain.resources) {
+    for (const resource of domain.resources as Array<
+      EvmResource | SubstrateResource
+    >) {
       await manager.upsert(
         Resource,
         {
           id: resource.resourceId,
           type: resource.type,
           decimals: resource.decimals,
+          tokenAddress:
+            "address" in resource
+              ? resource.address
+              : resource.assetID?.toString(),
         },
         ["id"],
       );

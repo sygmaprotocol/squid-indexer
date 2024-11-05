@@ -2,8 +2,9 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
-import {Transfer} from "./transfer.model"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Resource} from "./resource.model"
+import {Domain} from "./domain.model"
 
 @Entity_()
 export class Fee {
@@ -17,13 +18,18 @@ export class Fee {
     @Column_("text", {nullable: false})
     amount!: string
 
-    @Column_("text", {nullable: false})
-    tokenAddress!: string
+    @Column_("text", {nullable: true})
+    resourceID!: string | undefined | null
 
-    @Column_("text", {nullable: false})
-    tokenSymbol!: string
+    @Index_()
+    @ManyToOne_(() => Resource, {nullable: true})
+    resource!: Resource
 
-    @Column_("int4", {nullable: true})
-    decimals!: number | undefined | null
 
+    @Column_("text", {nullable: true})
+    domainID!: string | undefined | null
+
+    @Index_()
+    @ManyToOne_(() => Domain, {nullable: true})
+    domain!: Domain
 }

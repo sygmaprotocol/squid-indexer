@@ -60,15 +60,30 @@ export class EVMProcessor implements IProcessor {
     for (const block of ctx.blocks) {
       for (const log of block.logs) {
         if (log.topics[0] === bridge.events.Deposit.topic) {
-          deposits.push(await this.parser.parseDeposit(log, domain));
+          const deposit = await this.parser.parseDeposit(log, domain, ctx);
+          if (deposit) {
+            deposits.push(deposit);
+          }
         } else if (log.topics[0] === bridge.events.ProposalExecution.topic) {
-          executions.push(this.parser.parseProposalExecution(log, domain));
+          const execution = await this.parser.parseProposalExecution(
+            log,
+            domain,
+            ctx,
+          );
+          if (execution) {
+            executions.push(execution);
+          }
         } else if (
           log.topics[0] === bridge.events.FailedHandlerExecution.topic
         ) {
-          failedHandlerExecutions.push(
-            this.parser.parseFailedHandlerExecution(log, domain),
+          const failedExecution = await this.parser.parseFailedHandlerExecution(
+            log,
+            domain,
+            ctx,
           );
+          if (failedExecution) {
+            failedHandlerExecutions.push(failedExecution);
+          }
         }
       }
     }

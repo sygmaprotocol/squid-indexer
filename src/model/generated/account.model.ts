@@ -3,7 +3,7 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
-import {Transfer} from "./transfer.model"
+import {Deposit} from "./deposit.model"
 
 @Entity_()
 export class Account {
@@ -17,6 +17,6 @@ export class Account {
     @Column_("text", {nullable: true})
     addressStatus!: string | undefined | null
 
-    @OneToMany_(() => Transfer, e => e.account)
-    transfers!: Transfer[]
+    @OneToMany_(() => Deposit, e => e.account)
+    transfers!: Deposit[]
 }

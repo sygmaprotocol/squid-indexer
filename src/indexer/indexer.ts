@@ -32,15 +32,21 @@ import type {
 
 export interface IParser {
   setParsers(parsers: Map<number, IParser>): void;
-  parseDeposit(log: Log, fromDomain: Domain): Promise<DecodedDepositLog>;
+  parseDeposit(
+    log: Log,
+    fromDomain: Domain,
+    ctx: Context,
+  ): Promise<DecodedDepositLog | null>;
   parseProposalExecution(
     log: Log,
     toDomain: Domain,
-  ): DecodedProposalExecutionLog;
+    ctx: Context,
+  ): Promise<DecodedProposalExecutionLog | null>;
   parseFailedHandlerExecution(
     log: Log,
     toDomain: Domain,
-  ): DecodedFailedHandlerExecution;
+    ctx: Context,
+  ): Promise<DecodedFailedHandlerExecution | null>;
   parseDestination(hexData: string, resourceType: ResourceType): string;
 }
 
@@ -115,21 +121,20 @@ export class Indexer {
         depositData: d.depositData,
         timestamp: d.timestamp,
         handlerResponse: d.handlerResponse,
-      });
-
-      const transfer = new Transfer({
-        id: d.id,
-        depositNonce: d.depositNonce,
+        depositNonce: d.depositNonce.toString(),
         amount: d.amount,
         destination: d.destination,
-        status: TransferStatus.pending,
-        message: "",
         resourceID: d.resourceID,
         fromDomainID: d.fromDomainID,
         toDomainID: d.toDomainID,
         accountID: d.sender,
-        deposit: deposit,
         fee: new Fee(d.fee),
+      });
+
+      const transfer = new Transfer({
+        id: d.id,
+        status: TransferStatus.pending,
+        deposit: deposit,
       });
 
       if (!deposits.has(d.id)) {
@@ -155,17 +160,12 @@ export class Indexer {
         id: e.id,
         timestamp: e.timestamp,
         txHash: e.txHash,
+        message: "",
       });
 
       const transfer = new Transfer({
         id: e.id,
-        depositNonce: e.depositNonce,
-        amount: null,
-        destination: null,
         status: TransferStatus.executed,
-        message: "",
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
         execution: execution,
       });
 
@@ -192,17 +192,12 @@ export class Indexer {
         id: e.id,
         timestamp: e.timestamp,
         txHash: e.txHash,
+        message: e.message,
       });
 
       const transfer = new Transfer({
         id: e.id,
-        depositNonce: e.depositNonce,
-        amount: null,
-        destination: null,
         status: TransferStatus.failed,
-        message: e.message,
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
         execution: failedExecution,
       });
 

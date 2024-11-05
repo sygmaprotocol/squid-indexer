@@ -12,11 +12,11 @@ export type DepositEvent = {
 export type DecodedDepositLog = {
   id: string;
   blockNumber: number;
-  depositNonce: bigint;
-  toDomainID: number;
+  depositNonce: string;
+  toDomainID: string;
   sender: string;
   destination: string;
-  fromDomainID: number;
+  fromDomainID: string;
   resourceID: string;
   txHash: string;
   timestamp: Date;
@@ -31,18 +31,18 @@ export type DecodedDepositLog = {
 export type DecodedProposalExecutionLog = {
   id: string;
   blockNumber: number;
-  depositNonce: bigint;
+  depositNonce: string;
   txHash: string;
   timestamp: Date;
-  fromDomainID: number;
-  toDomainID: number;
+  fromDomainID: string;
+  toDomainID: string;
 };
 
 export type DecodedFailedHandlerExecution = {
   id: string;
-  fromDomainID: number;
-  toDomainID: number;
-  depositNonce: bigint;
+  fromDomainID: string;
+  toDomainID: string;
+  depositNonce: string;
   message: string;
   txHash: string;
   blockNumber: number;

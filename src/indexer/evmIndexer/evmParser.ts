@@ -71,15 +71,13 @@ export class EVMParser implements IParser {
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
     const fee = await this.getFee(event, fromDomain, this.provider);
-    console.log(fee.tokenAddress);
-    console.log(fromDomain.id);
     const feeResource = await ctx.store.findOne(Resource, {
       where: {
         tokenAddress: fee.tokenAddress,
         domainID: fromDomain.id.toString(),
       },
     });
-    console.log(feeResource);
+
     if (!feeResource) {
       logger.error(`Unsupported resource: ${event.resourceID.toLowerCase()}`);
       return null;

@@ -114,7 +114,6 @@ const mockSourceDomain = {
 
       const result = await parser.parseDeposit(event, fromDomain, ctx);
 
-      console.log(result)
       expect(result).to.deep.include({
         decodedDepositLog: {
           id: '1-4-1',
@@ -268,8 +267,6 @@ const mockSourceDomain = {
         .returns(decodedEvent);
 
       const result = await parser.parseProposalExecution(event, toDomain, ctx);
-
-      console.log(result)
       expect(result).to.deep.include({
         id: generateTransferID("1", "1", "4"),
         blockNumber: 1,
@@ -401,8 +398,6 @@ const mockSourceDomain = {
         .returns(decodedEvent);
 
       const result = await parser.parseFee(event, fromDomain, ctx);
-
-      console.log(result)
       expect(result).to.deep.include({
         id: result?.id,
         amount: '10',

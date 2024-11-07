@@ -11,7 +11,7 @@ import { Log } from "@subsquid/evm-processor";
 import { FeeHandlerType, Network, ResourceType } from "@buildwithsygma/core";
 import * as bridge from "../../src/abi/bridge";
 import { generateTransferID } from "../../src/indexer/utils";
-import { Domain as DomainType, HandlerType, Token } from "../../src/indexer/config";
+import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
 import {IParser } from "../../src/indexer/indexer";
 import {Context} from "../../src/indexer/evmIndexer/evmProcessor"
 import { Domain, Resource } from "../../src/model";
@@ -19,7 +19,6 @@ import { Domain, Resource } from "../../src/model";
 describe("EVMParser", () => {
   let provider: sinon.SinonStubbedInstance<JsonRpcProvider>;
   let parser: EVMParser;
-  let tokens: Map<string, Token>;
   let ctx: Context;
   // Mock Data
 const mockResource = {
@@ -127,7 +126,6 @@ const mockSourceDomain = {
 
       const result = await parser.parseDeposit(log, fromDomain, ctx);
 
-      console.log(result)
       expect(result).to.deep.include(
         {
         decodedDepositLog: {

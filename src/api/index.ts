@@ -16,11 +16,10 @@ App.init()
         .then(() => {
           nodeCleanup.uninstall();
         })
-        .catch((error) =>{
-          logger.error("Error occurred while stopping the app", error); 
-          process.exit(1); 
-        }
-        );
+        .catch((error) => {
+          logger.error("Error occurred while stopping the app", error);
+          process.exit(1);
+        });
     });
     await app.start();
   })

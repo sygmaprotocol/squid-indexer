@@ -4,14 +4,12 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import type { ResourceType } from "@buildwithsygma/core";
 import type {
-  DataHandlerContext,
-  EvmBatchProcessorFields,
   Log as _Log,
   Transaction as _Transaction,
   EvmBatchProcessor,
   Log,
 } from "@subsquid/evm-processor";
-import type { Store } from "@subsquid/typeorm-store";
+import type { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 
 import {
@@ -22,43 +20,60 @@ import {
   Fee,
   TransferStatus,
 } from "../model";
+import { logger } from "../utils/logger";
 
 import type { Domain } from "./config";
+import type { Context as EvmContext } from "./evmIndexer/evmProcessor";
+import type {
+  Event,
+  Fields,
+  Context as SubstrateContext,
+} from "./substrateIndexer/substrateProcessor";
 import type {
   DecodedDepositLog,
-  DecodedFailedHandlerExecution,
+  DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
+  FeeCollectedData,
 } from "./types";
 
 export interface IParser {
   setParsers(parsers: Map<number, IParser>): void;
   parseDeposit(
-    log: Log,
+    log: Log | Event,
     fromDomain: Domain,
-    ctx: Context,
-  ): Promise<DecodedDepositLog | null>;
+    ctx: EvmContext | SubstrateContext,
+  ): Promise<{
+    decodedDepositLog: DecodedDepositLog;
+    decodedFeeLog: FeeCollectedData;
+  } | null>;
   parseProposalExecution(
-    log: Log,
+    log: Log | Event,
     toDomain: Domain,
-    ctx: Context,
+    ctx: EvmContext | SubstrateContext,
   ): Promise<DecodedProposalExecutionLog | null>;
   parseFailedHandlerExecution(
-    log: Log,
+    log: Log | Event,
     toDomain: Domain,
-    ctx: Context,
-  ): Promise<DecodedFailedHandlerExecution | null>;
+    ctx: EvmContext | SubstrateContext,
+  ): Promise<DecodedFailedHandlerExecutionLog | null>;
   parseDestination(hexData: string, resourceType: ResourceType): string;
 }
 
 export interface IProcessor {
-  processEvents(ctx: Context, domain: Domain): Promise<DecodedEvents>;
-  getProcessor(domain: Domain): EvmBatchProcessor;
+  processEvents(
+    ctx: EvmContext | SubstrateContext,
+    domain: Domain,
+  ): Promise<DecodedEvents> | DecodedEvents;
+  getProcessor(
+    domain: Domain,
+  ): EvmBatchProcessor | SubstrateBatchProcessor<Fields>;
 }
 
 export type DecodedEvents = {
   deposits: DecodedDepositLog[];
   executions: DecodedProposalExecutionLog[];
-  failedHandlerExecutions: DecodedFailedHandlerExecution[];
+  failedHandlerExecutions: DecodedFailedHandlerExecutionLog[];
+  fees: FeeCollectedData[];
 };
 export class Indexer {
   private domain: Domain;
@@ -87,12 +102,13 @@ export class Indexer {
           ctx,
           decodedEvents.failedHandlerExecutions,
         );
+        await this.storeFees(ctx, decodedEvents.fees);
       },
     );
   }
 
   public async storeDeposits(
-    ctx: Context,
+    ctx: EvmContext | SubstrateContext,
     depositsData: DecodedDepositLog[],
   ): Promise<void> {
     const accounts = new Map<string, Account>();
@@ -103,9 +119,6 @@ export class Indexer {
     for (const d of depositsData) {
       if (!accounts.has(d.sender)) {
         accounts.set(d.sender, new Account({ id: d.sender }));
-      }
-      if (!fees.has(d.fee.id)) {
-        fees.set(d.fee.id, new Fee(d.fee));
       }
     }
 
@@ -128,7 +141,6 @@ export class Indexer {
         fromDomainID: d.fromDomainID,
         toDomainID: d.toDomainID,
         accountID: d.sender,
-        fee: new Fee(d.fee),
       });
 
       const transfer = new Transfer({
@@ -149,7 +161,7 @@ export class Indexer {
   }
 
   public async storeExecutions(
-    ctx: Context,
+    ctx: EvmContext | SubstrateContext,
     executionsData: DecodedProposalExecutionLog[],
   ): Promise<void> {
     const executions = new Map<string, Execution>();
@@ -181,8 +193,8 @@ export class Indexer {
   }
 
   public async storeFailedExecutions(
-    ctx: Context,
-    failedExecutionsData: DecodedFailedHandlerExecution[],
+    ctx: EvmContext | SubstrateContext,
+    failedExecutionsData: DecodedFailedHandlerExecutionLog[],
   ): Promise<void> {
     const failedExecutions = new Map<string, Execution>();
     const transfers = new Map<string, Transfer>();
@@ -212,7 +224,32 @@ export class Indexer {
     await ctx.store.upsert([...failedExecutions.values()]);
     await ctx.store.upsert([...transfers.values()]);
   }
-}
 
-export type Fields = EvmBatchProcessorFields<EvmBatchProcessor>;
-export type Context = DataHandlerContext<Store, Fields>;
+  public async storeFees(
+    ctx: EvmContext | SubstrateContext,
+    feeCollectedData: FeeCollectedData[],
+  ): Promise<void> {
+    for (const f of feeCollectedData) {
+      const deposit = await ctx.store.findOne(Deposit, {
+        where: { txHash: f.txIdentifier },
+      });
+      if (!deposit) {
+        logger.warn(
+          `Deposit for fee with txHash: ${f.txIdentifier} not found, skipping...`,
+        );
+        continue;
+      }
+      await ctx.store.insert(
+        new Fee({
+          id: f.id,
+          amount: f.amount,
+          resourceID: f.resourceID,
+          depositID: deposit?.id,
+          domainID: f.domainID,
+        }),
+      );
+      deposit.feeID = f.id;
+      await ctx.store.upsert(deposit);
+    }
+  }
+}

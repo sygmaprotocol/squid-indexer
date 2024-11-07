@@ -9,6 +9,8 @@ import { getConfig } from "./indexer/config";
 import { getEnv } from "./indexer/config/validator";
 import { EVMProcessor } from "./indexer/evmIndexer/evmProcessor";
 import { Indexer } from "./indexer/indexer";
+import type { ISubstrateParser } from "./indexer/substrateIndexer/substrateParser";
+import { SubstrateProcessor } from "./indexer/substrateIndexer/substrateProcessor";
 import { logger } from "./utils/logger";
 
 async function startProcessing(): Promise<void> {
@@ -16,12 +18,20 @@ async function startProcessing(): Promise<void> {
   const config = await getConfig(envVars);
   let processor;
   switch (config.domain.type) {
-    case Network.EVM:
+    case Network.EVM: {
       processor = new EVMProcessor(
         config.parser,
         config.rpcMap.get(config.domain.id)!,
       );
       break;
+    }
+    case Network.SUBSTRATE: {
+      processor = new SubstrateProcessor(
+        config.parser as ISubstrateParser,
+        config.rpcMap.get(config.domain.id)!,
+      );
+      break;
+    }
     default:
       throw new Error(`Unsupported domain type ${config.domain.type}`);
   }

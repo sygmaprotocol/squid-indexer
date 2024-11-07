@@ -1,9 +1,6 @@
-/*
-The Licensed Work is (c) 2024 Sygma
-SPDX-License-Identifier: LGPL-3.0-only
-*/
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import {Deposit} from "./deposit.model"
+import {Domain} from "./domain.model"
 
 @Entity_()
 export class Resource {
@@ -28,4 +25,11 @@ export class Resource {
 
     @OneToMany_(() => Deposit, e => e.resource)
     deposit!: Deposit[]
+
+    @Column_("text", {nullable: true})
+    domainID!: string | undefined | null
+
+    @Index_()
+    @ManyToOne_(() => Domain, {nullable: true})
+    domain!: Domain | undefined | null
 }

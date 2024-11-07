@@ -8,22 +8,23 @@ import { randomUUID } from "crypto";
 import { ResourceType } from "@buildwithsygma/core";
 import type { Log } from "@subsquid/evm-processor";
 import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
-import type { BigNumberish, JsonRpcProvider, Provider } from "ethers";
-import { AbiCoder, ethers, formatUnits } from "ethers";
+import type { JsonRpcProvider, Provider } from "ethers";
+import { ethers } from "ethers";
 
 import * as bridge from "../../abi/bridge";
+import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { Domain, Resource } from "../../model";
 import { logger } from "../../utils/logger";
-import type { Domain as DomainType, Token } from "../config";
-import type { Context, IParser } from "../indexer";
+import type { Domain as DomainType } from "../config";
+import type { IParser } from "../indexer";
 import type {
   DecodedDepositLog,
-  DecodedFailedHandlerExecution,
   DecodedProposalExecutionLog,
-  FeeData,
+  DecodedFailedHandlerExecutionLog,
+  FeeCollectedData,
 } from "../types";
-import { generateTransferID } from "../utils";
 
+import type { Context } from "./evmProcessor";
 import { ContractType } from "./evmTypes";
 import { getContract } from "./utils";
 
@@ -36,10 +37,8 @@ export class EVMParser implements IParser {
   private STATIC_FEE_DATA = "0x00";
   private provider: JsonRpcProvider;
   private parsers!: Map<number, IParser>;
-  private tokens: Map<string, Token>;
-  constructor(provider: JsonRpcProvider, tokens: Map<string, Token>) {
+  constructor(provider: JsonRpcProvider) {
     this.provider = provider;
-    this.tokens = tokens;
   }
 
   public setParsers(parsers: Map<number, IParser>): void {
@@ -49,7 +48,10 @@ export class EVMParser implements IParser {
     log: Log,
     fromDomain: DomainType,
     ctx: Context,
-  ): Promise<DecodedDepositLog | null> {
+  ): Promise<{
+    decodedDepositLog: DecodedDepositLog;
+    decodedFeeLog: FeeCollectedData;
+  } | null> {
     const event = bridge.events.Deposit.decode(log);
     const destinationParser = this.parsers.get(event.destinationDomainID);
     if (!destinationParser) {
@@ -68,33 +70,56 @@ export class EVMParser implements IParser {
     }
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
+    const fee = await this.getFee(event, fromDomain, this.provider);
+    console.log(fee.tokenAddress);
+    console.log(fromDomain.id);
+    const feeResource = await ctx.store.findOne(Resource, {
+      where: {
+        tokenAddress: fee.tokenAddress,
+        domainID: fromDomain.id.toString(),
+      },
+    });
+    console.log(feeResource);
+    if (!feeResource) {
+      logger.error(`Unsupported resource: ${event.resourceID.toLowerCase()}`);
+      return null;
+    }
     return {
-      id: generateTransferID(
-        event.depositNonce.toString(),
-        fromDomain.id.toString(),
-        event.destinationDomainID.toString(),
-      ),
-      blockNumber: log.block.height,
-      depositNonce: event.depositNonce.toString(),
-      toDomainID: event.destinationDomainID.toString(),
-      sender: transaction.from,
-      destination: destinationParser.parseDestination(
-        event.data,
-        resource.type as ResourceType,
-      ),
-      fromDomainID: fromDomain.id.toString(),
-      resourceID: resource.id,
-      txHash: transaction.hash,
-      timestamp: new Date(log.block.timestamp),
-      depositData: event.data,
-      handlerResponse: event.handlerResponse,
-      transferType: resource.type,
-      amount: this.decodeAmountsOrTokenId(
-        event.data,
-        resource.decimals!,
-        resource.type as ResourceType,
-      ),
-      fee: await this.getFee(event, fromDomain, this.provider),
+      decodedDepositLog: {
+        id: generateTransferID(
+          event.depositNonce.toString(),
+          fromDomain.id.toString(),
+          event.destinationDomainID.toString(),
+        ),
+        blockNumber: log.block.height,
+        depositNonce: event.depositNonce.toString(),
+        toDomainID: event.destinationDomainID.toString(),
+        sender: transaction.from,
+        destination: destinationParser.parseDestination(
+          event.data,
+          resource.type as ResourceType,
+        ),
+        fromDomainID: fromDomain.id.toString(),
+        resourceID: resource.id,
+        txHash: transaction.hash,
+        timestamp: new Date(log.block.timestamp),
+        depositData: event.data,
+        handlerResponse: event.handlerResponse,
+        transferType: resource.type,
+        amount: decodeAmountOrTokenId(
+          event.data,
+          resource.decimals!,
+          resource.type as ResourceType,
+        ),
+      },
+      decodedFeeLog: {
+        id: randomUUID(),
+        amount: fee.amount,
+        resourceID: feeResource?.id,
+        tokenAddress: feeResource.tokenAddress,
+        domainID: fromDomain.id.toString(),
+        txIdentifier: transaction.hash,
+      },
     };
   }
 
@@ -133,7 +158,7 @@ export class EVMParser implements IParser {
     log: Log,
     toDomain: DomainType,
     ctx: Context,
-  ): Promise<DecodedFailedHandlerExecution | null> {
+  ): Promise<DecodedFailedHandlerExecutionLog | null> {
     const event = bridge.events.FailedHandlerExecution.decode(log);
     const transaction = assertNotNull(log.transaction, "Missing transaction");
     const fromDomain = await ctx.store.findOne(Domain, {
@@ -151,6 +176,7 @@ export class EVMParser implements IParser {
     } catch (err) {
       errMsg = "Unknown error type, raw data:" + event.lowLevelData.toString();
     }
+
     return {
       id: generateTransferID(
         event.depositNonce.toString(),
@@ -187,8 +213,6 @@ export class EVMParser implements IParser {
         logger.error(`Unsupported resource type: ${resourceType}`);
         return "";
     }
-
-    console.log(recipient);
     return recipient;
   }
 
@@ -196,7 +220,7 @@ export class EVMParser implements IParser {
     event: bridge.DepositEventArgs,
     fromDomain: DomainType,
     provider: Provider,
-  ): Promise<FeeData> {
+  ): Promise<{ amount: string; tokenAddress: string }> {
     try {
       const feeRouter = getContract(
         provider,
@@ -214,48 +238,15 @@ export class EVMParser implements IParser {
       )) as FeeDataResponse;
 
       return {
-        id: randomUUID(),
         tokenAddress: fee.tokenAddress,
-        tokenSymbol:
-          this.tokens.get(fee.tokenAddress.toLowerCase())?.symbol || "",
-        decimals:
-          this.tokens.get(fee.tokenAddress.toLowerCase())?.decimals || 18,
         amount: fee.fee.toString(),
       };
     } catch (err) {
       logger.error("Calculating fee failed", err);
       return {
-        id: randomUUID(),
         tokenAddress: "",
-        tokenSymbol: "",
-        decimals: 0,
         amount: "0",
       };
-    }
-  }
-
-  private decodeAmountsOrTokenId(
-    data: string,
-    decimals: number,
-    resourceType: ResourceType,
-  ): string {
-    switch (resourceType) {
-      case ResourceType.FUNGIBLE: {
-        const amount = AbiCoder.defaultAbiCoder().decode(
-          ["uint256"],
-          data,
-        )[0] as BigNumberish;
-        return formatUnits(amount, decimals);
-      }
-      case ResourceType.NON_FUNGIBLE: {
-        const tokenId = AbiCoder.defaultAbiCoder().decode(
-          ["uint256"],
-          data,
-        )[0] as bigint;
-        return tokenId.toString();
-      }
-      default:
-        return "";
     }
   }
 

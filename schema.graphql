@@ -49,7 +49,7 @@ enum TransferStatus {
 type Account @entity {
   id: ID!
   addressStatus: String
-  transfers: [Deposit!] @derivedFrom(field: "account")
+  deposits: [Deposit!] @derivedFrom(field: "account")
 }
 
 type Resource @entity {
@@ -59,6 +59,8 @@ type Resource @entity {
   tokenAddress: String!
   tokenSymbol: String!
   deposit: [Deposit!] @derivedFrom(field: "resource")
+  domainID: String
+  domain: Domain
   }
 
 type Domain @entity {
@@ -67,14 +69,16 @@ type Domain @entity {
   fromDomain: [Deposit!] @derivedFrom(field: "fromDomain")
   toDomain: [Deposit!] @derivedFrom(field: "toDomain")
   fee: [Fee!] @derivedFrom(field: "domain")
+  resource: [Resource!] @derivedFrom(field: "domain")
 }
 
 type Fee @entity {
   id: ID! 
   amount: String!
   resourceID: String
-  resource: Resource!
-  transfer: Deposit @derivedFrom(field: "fee")
+  resource: Resource! @unique
+  depositID: String
+  deposit: Deposit @unique
   domainID: String
-  domain: Domain!
+  domain: Domain! @unique
 }

@@ -17,7 +17,6 @@ import {
   Account,
   Deposit,
   Execution,
-  Fee,
   TransferStatus,
 } from "../model";
 import { logger } from "../utils/logger";
@@ -112,7 +111,6 @@ export class Indexer {
     depositsData: DecodedDepositLog[],
   ): Promise<void> {
     const accounts = new Map<string, Account>();
-    const fees = new Map<string, Fee>();
     const deposits = new Map<string, Deposit>();
     const transfers = new Map<string, Transfer>();
 
@@ -123,7 +121,6 @@ export class Indexer {
     }
 
     await ctx.store.upsert([...accounts.values()]);
-    await ctx.store.upsert([...fees.values()]);
 
     for (const d of depositsData) {
       const deposit = new Deposit({
@@ -229,27 +226,29 @@ export class Indexer {
     ctx: EvmContext | SubstrateContext,
     feeCollectedData: FeeCollectedData[],
   ): Promise<void> {
+    const fees = [];
+    const deposits = [];
     for (const f of feeCollectedData) {
       const deposit = await ctx.store.findOne(Deposit, {
         where: { txHash: f.txIdentifier },
       });
       if (!deposit) {
         logger.warn(
-          `Deposit for fee with txHash: ${f.txIdentifier} not found, skipping...`,
+          `Deposit for the fee with txHash: ${f.txIdentifier} not found, skipping...`,
         );
         continue;
       }
-      await ctx.store.insert(
-        new Fee({
-          id: f.id,
-          amount: f.amount,
-          resourceID: f.resourceID,
-          depositID: deposit?.id,
-          domainID: f.domainID,
-        }),
-      );
+      fees.push({
+        id: f.id,
+        amount: f.amount,
+        resourceID: f.resourceID,
+        depositID: deposit?.id,
+        domainID: f.domainID,
+      });
       deposit.feeID = f.id;
-      await ctx.store.upsert(deposit);
+      deposits.push(deposit);
     }
+    await ctx.store.upsert(fees);
+    await ctx.store.upsert(deposits);
   }
 }

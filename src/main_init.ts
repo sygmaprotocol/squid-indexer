@@ -37,31 +37,34 @@ async function insertDomains(
       ["id"],
     );
     let isNativeInserted = false;
-    for (const resource of domain.resources) {
-      const rsrc = {
-        id: resource.resourceId,
-        type: resource.type,
-        decimals: resource.decimals,
-        tokenSymbol: resource.symbol,
-        tokenAddress:
-          "address" in resource
-            ? resource.address
-            : resource.assetID?.toString(),
+    for (const r of domain.resources) {
+      const resource = {
+        id: r.resourceId,
+        type: r.type,
+        decimals: r.decimals,
+        tokenSymbol: r.symbol,
+        tokenAddress: "address" in r ? r.address : r.assetID?.toString(),
+        domainID: domain.id.toString(),
       };
-      await manager.upsert(Resource, rsrc, ["id"]);
-      if (rsrc.tokenAddress == NATIVE_TOKEN_ADDRESS) {
+      await manager.upsert(Resource, resource, ["id", "domainID"]);
+      if (resource.tokenAddress == NATIVE_TOKEN_ADDRESS) {
         isNativeInserted = true;
       }
     }
     // if native token is not defined in resources in shared-config, insert default native token
     if (!isNativeInserted && domain.type == Network.EVM) {
-      await manager.insert(Resource, {
-        id: "0x00",
-        type: ResourceType.FUNGIBLE,
-        decimals: domain.nativeTokenDecimals,
-        tokenSymbol: domain.nativeTokenSymbol,
-        tokenAddress: NATIVE_TOKEN_ADDRESS,
-      });
+      await manager.upsert(
+        Resource,
+        {
+          id: "0x00",
+          type: ResourceType.FUNGIBLE,
+          decimals: domain.nativeTokenDecimals,
+          tokenSymbol: domain.nativeTokenSymbol,
+          tokenAddress: NATIVE_TOKEN_ADDRESS,
+          domainID: domain.id.toString(),
+        },
+        ["id", "domainID"],
+      );
     }
   }
 }

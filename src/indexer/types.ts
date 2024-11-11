@@ -42,14 +42,10 @@ export type DecodedFailedHandlerExecutionLog = {
   timestamp: Date;
 };
 
-export type FeeData = {
+export type FeeCollectedData = {
   id: string;
-  tokenAddress: string;
   amount: string;
   resourceID: string;
   domainID: string;
-};
-
-export type FeeCollectedData = FeeData & {
   txIdentifier: string;
 };

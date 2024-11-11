@@ -1,7 +1,8 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, OneToMany as OneToMany_, ManyToOne as ManyToOne_} from "typeorm"
 import {Deposit} from "./deposit.model"
 import {Domain} from "./domain.model"
 
+@Index_(["id", "domainID"], {unique: true})
 @Entity_()
 export class Resource {
     constructor(props?: Partial<Resource>) {

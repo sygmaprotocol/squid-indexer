@@ -15,16 +15,10 @@ export class Transfer {
     @Column_("varchar", {length: 8, nullable: false})
     status!: TransferStatus
 
-    @Column_("text", {nullable: true})
-    depositID!: string | undefined | null
-
     @Index_({unique: true})
     @OneToOne_(() => Deposit, {nullable: true})
     @JoinColumn_()
     deposit!: Deposit | undefined | null
-
-    @Column_("text", {nullable: true})
-    executionID!: string | undefined | null
 
     @Index_({unique: true})
     @OneToOne_(() => Execution, {nullable: true})

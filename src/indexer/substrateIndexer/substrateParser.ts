@@ -106,7 +106,6 @@ export class SubstrateParser implements ISubstrateParser {
         amount: "50",
         domainID: fromDomain.id.toString(),
         resourceID: resource.id,
-        tokenAddress: "",
         txIdentifier: extrinsic.id,
       },
     };
@@ -193,7 +192,6 @@ export class SubstrateParser implements ISubstrateParser {
       id: randomUUID(),
       amount: event.feeAmount.toString().replaceAll(",", ""),
       domainID: fromDomain.id.toString(),
-      tokenAddress: resource.tokenAddress,
       resourceID: resource.id,
       txIdentifier: extrinsic.id,
     };

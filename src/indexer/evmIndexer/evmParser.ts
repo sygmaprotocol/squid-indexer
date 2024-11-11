@@ -61,9 +61,10 @@ export class EVMParser implements IParser {
       return null;
     }
 
-    const resource = await ctx.store.findOne(Resource, {
-      where: { id: event.resourceID.toLowerCase() },
-    });
+    const resource = fromDomain.resources.find(
+      (resource) =>
+        resource.resourceId.toLowerCase() == event.resourceID.toLowerCase(),
+    );
     if (!resource) {
       logger.error(`Unsupported resource: ${event.resourceID.toLowerCase()}`);
       return null;
@@ -98,7 +99,7 @@ export class EVMParser implements IParser {
           resource.type as ResourceType,
         ),
         fromDomainID: fromDomain.id.toString(),
-        resourceID: resource.id,
+        resourceID: resource.resourceId,
         txHash: transaction.hash,
         timestamp: new Date(log.block.timestamp),
         depositData: event.data,
@@ -114,7 +115,6 @@ export class EVMParser implements IParser {
         id: randomUUID(),
         amount: fee.amount,
         resourceID: feeResource?.id,
-        tokenAddress: feeResource.tokenAddress,
         domainID: fromDomain.id.toString(),
         txIdentifier: transaction.hash,
       },

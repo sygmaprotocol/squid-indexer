@@ -1,9 +1,7 @@
 type Transfer @entity {
   id: ID!
   status: TransferStatus!
-  depositID: String
   deposit: Deposit @unique
-  executionID: String
   execution: Execution @unique
 }
 
@@ -52,7 +50,7 @@ type Account @entity {
   deposits: [Deposit!] @derivedFrom(field: "account")
 }
 
-type Resource @entity {
+type Resource @entity @index(fields: ["id", "domainID"], unique: true){
   id: ID!
   type: String!
   decimals: Int

@@ -14,7 +14,6 @@ type Deposit @entity {
   depositData: String!
   timestamp: DateTime
   handlerResponse: String!
-  feeID: String
   fee: Fee @unique
   accountID: String 
   account: Account 
@@ -50,15 +49,13 @@ type Account @entity {
   deposits: [Deposit!] @derivedFrom(field: "account")
 }
 
-type Resource @entity @index(fields: ["id", "domainID"], unique: true){
+type Resource @entity {
   id: ID!
   type: String!
   decimals: Int
   tokenAddress: String!
   tokenSymbol: String!
   deposit: [Deposit!] @derivedFrom(field: "resource")
-  domainID: String
-  domain: Domain
   }
 
 type Domain @entity {
@@ -67,16 +64,15 @@ type Domain @entity {
   fromDomain: [Deposit!] @derivedFrom(field: "fromDomain")
   toDomain: [Deposit!] @derivedFrom(field: "toDomain")
   fee: [Fee!] @derivedFrom(field: "domain")
-  resource: [Resource!] @derivedFrom(field: "domain")
 }
 
 type Fee @entity {
   id: ID! 
   amount: String!
   resourceID: String
-  resource: Resource! @unique
+  resource: Resource!
   depositID: String
-  deposit: Deposit @unique
+  deposit: Deposit 
   domainID: String
-  domain: Domain! @unique
+  domain: Domain! 
 }

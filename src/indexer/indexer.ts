@@ -18,6 +18,7 @@ import {
   Deposit,
   Execution,
   TransferStatus,
+  Fee,
 } from "../model";
 import { logger } from "../utils/logger";
 
@@ -226,8 +227,8 @@ export class Indexer {
     ctx: EvmContext | SubstrateContext,
     feeCollectedData: FeeCollectedData[],
   ): Promise<void> {
-    const fees = [];
-    const deposits = [];
+    const fees = new Map<string, Fee>();
+    const deposits = new Map<string, Deposit>();
     for (const f of feeCollectedData) {
       const deposit = await ctx.store.findOne(Deposit, {
         where: { txHash: f.txIdentifier },
@@ -238,17 +239,21 @@ export class Indexer {
         );
         continue;
       }
-      fees.push({
-        id: f.id,
-        amount: f.amount,
-        resourceID: f.resourceID,
-        depositID: deposit?.id,
-        domainID: f.domainID,
-      });
-      deposit.feeID = f.id;
-      deposits.push(deposit);
+      if (!fees.has(f.id)) {
+        const fee = new Fee({
+          id: f.id,
+          amount: f.amount,
+          resourceID: f.resourceID,
+          depositID: deposit.id,
+          domainID: f.domainID,
+        });
+        deposit.fee = fee;
+
+        fees.set(f.id, fee);
+        deposits.set(deposit.id, deposit);
+      }
     }
-    await ctx.store.upsert(fees);
-    await ctx.store.upsert(deposits);
+    await ctx.store.upsert([...fees.values()]);
+    await ctx.store.upsert([...deposits.values()]);
   }
 }

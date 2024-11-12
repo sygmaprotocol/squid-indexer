@@ -5,6 +5,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 
 import { randomUUID } from "crypto";
 
+import type { EvmResource } from "@buildwithsygma/core";
 import { ResourceType } from "@buildwithsygma/core";
 import type { Log } from "@subsquid/evm-processor";
 import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
@@ -61,7 +62,9 @@ export class EVMParser implements IParser {
       return null;
     }
 
-    const resource = fromDomain.resources.find(
+    const resources: EvmResource[] = fromDomain.resources as EvmResource[];
+
+    const resource = resources.find(
       (resource) =>
         resource.resourceId.toLowerCase() == event.resourceID.toLowerCase(),
     );
@@ -72,16 +75,22 @@ export class EVMParser implements IParser {
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
     const fee = await this.getFee(event, fromDomain, this.provider);
-    const feeResource = await ctx.store.findOne(Resource, {
-      where: {
-        tokenAddress: fee.tokenAddress,
-        domainID: fromDomain.id.toString(),
-      },
-    });
+    let feeResource: EvmResource | Resource | undefined;
+    feeResource = resources.find(
+      (resource) =>
+        resource.address.toLowerCase() == fee.tokenAddress.toLowerCase(),
+    );
 
     if (!feeResource) {
-      logger.error(`Unsupported resource: ${event.resourceID.toLowerCase()}`);
-      return null;
+      feeResource = await ctx.store.findOne(Resource, {
+        where: {
+          id: `Native-${fromDomain.id}`,
+        },
+      });
+      if (!feeResource) {
+        logger.error(`Unsupported resource: ${event.resourceID.toLowerCase()}`);
+        return null;
+      }
     }
     return {
       decodedDepositLog: {
@@ -114,7 +123,8 @@ export class EVMParser implements IParser {
       decodedFeeLog: {
         id: randomUUID(),
         amount: fee.amount,
-        resourceID: feeResource?.id,
+        resourceID:
+          "address" in feeResource ? feeResource.resourceId : feeResource.id,
         domainID: fromDomain.id.toString(),
         txIdentifier: transaction.hash,
       },

@@ -1,8 +1,6 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, OneToMany as OneToMany_, ManyToOne as ManyToOne_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
 import {Deposit} from "./deposit.model"
-import {Domain} from "./domain.model"
 
-@Index_(["id", "domainID"], {unique: true})
 @Entity_()
 export class Resource {
     constructor(props?: Partial<Resource>) {
@@ -26,11 +24,4 @@ export class Resource {
 
     @OneToMany_(() => Deposit, e => e.resource)
     deposit!: Deposit[]
-
-    @Column_("text", {nullable: true})
-    domainID!: string | undefined | null
-
-    @Index_()
-    @ManyToOne_(() => Domain, {nullable: true})
-    domain!: Domain | undefined | null
 }

@@ -33,9 +33,6 @@ export class Deposit {
     @Column_("text", {nullable: false})
     handlerResponse!: string
 
-    @Column_("text", {nullable: true})
-    feeID!: string | undefined | null
-
     @Index_({unique: true})
     @OneToOne_(() => Fee, {nullable: true})
     @JoinColumn_()

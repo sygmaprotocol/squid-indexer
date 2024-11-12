@@ -43,10 +43,10 @@ async function insertDomains(
         type: r.type,
         decimals: r.decimals,
         tokenSymbol: r.symbol,
-        tokenAddress: "address" in r ? r.address : r.xcmMultiAssetId?.toString(),
-        domainID: domain.id.toString(),
+        tokenAddress:
+          "address" in r ? r.address : JSON.stringify(r.xcmMultiAssetId),
       };
-      await manager.upsert(Resource, resource, ["id", "domainID"]);
+      await manager.upsert(Resource, resource, ["id"]);
       if (resource.tokenAddress == NATIVE_TOKEN_ADDRESS) {
         isNativeInserted = true;
       }
@@ -56,14 +56,13 @@ async function insertDomains(
       await manager.upsert(
         Resource,
         {
-          id: "0x00",
+          id: `Native-${domain.id}`,
           type: ResourceType.FUNGIBLE,
           decimals: domain.nativeTokenDecimals,
           tokenSymbol: domain.nativeTokenSymbol,
           tokenAddress: NATIVE_TOKEN_ADDRESS,
-          domainID: domain.id.toString(),
         },
-        ["id", "domainID"],
+        ["id"],
       );
     }
   }

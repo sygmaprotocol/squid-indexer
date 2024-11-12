@@ -1,16 +1,15 @@
-module.exports = class Data1730990710963 {
-    name = 'Data1730990710963'
+module.exports = class Data1731422509854 {
+    name = 'Data1731422509854'
 
     async up(db) {
+        await db.query(`CREATE TABLE "resource" ("id" character varying NOT NULL, "type" text NOT NULL, "decimals" integer, "token_address" text NOT NULL, "token_symbol" text NOT NULL, CONSTRAINT "PK_e2894a5867e06ae2e8889f1173f" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "domain" ("id" character varying NOT NULL, "name" text NOT NULL, CONSTRAINT "PK_27e3ec3ea0ae02c8c5bceab3ba9" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE TABLE "resource" ("id" character varying NOT NULL, "type" text NOT NULL, "decimals" integer, "token_address" text NOT NULL, "token_symbol" text NOT NULL, "domain_id" character varying, CONSTRAINT "PK_e2894a5867e06ae2e8889f1173f" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE INDEX "IDX_53e8f7c9ae9edd694e92cb4b1c" ON "resource" ("domain_id") `)
-        await db.query(`CREATE TABLE "fee" ("id" character varying NOT NULL, "amount" text NOT NULL, "resource_id" character varying, "deposit_id" character varying, "domain_id" character varying, CONSTRAINT "REL_5f095787af11a4198dc472ad7c" UNIQUE ("resource_id"), CONSTRAINT "REL_a81285659ab5f86b08e7776700" UNIQUE ("deposit_id"), CONSTRAINT "REL_dab28f6cfe8ff03f1da38f0d79" UNIQUE ("domain_id"), CONSTRAINT "PK_ee7e51cc563615bc60c2b234635" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE UNIQUE INDEX "IDX_5f095787af11a4198dc472ad7c" ON "fee" ("resource_id") `)
-        await db.query(`CREATE UNIQUE INDEX "IDX_a81285659ab5f86b08e7776700" ON "fee" ("deposit_id") `)
-        await db.query(`CREATE UNIQUE INDEX "IDX_dab28f6cfe8ff03f1da38f0d79" ON "fee" ("domain_id") `)
+        await db.query(`CREATE TABLE "fee" ("id" character varying NOT NULL, "amount" text NOT NULL, "resource_id" character varying, "deposit_id" character varying, "domain_id" character varying, CONSTRAINT "PK_ee7e51cc563615bc60c2b234635" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE INDEX "IDX_5f095787af11a4198dc472ad7c" ON "fee" ("resource_id") `)
+        await db.query(`CREATE INDEX "IDX_a81285659ab5f86b08e7776700" ON "fee" ("deposit_id") `)
+        await db.query(`CREATE INDEX "IDX_dab28f6cfe8ff03f1da38f0d79" ON "fee" ("domain_id") `)
         await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "address_status" text, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE TABLE "deposit" ("id" character varying NOT NULL, "type" text NOT NULL, "tx_hash" text NOT NULL, "block_number" text NOT NULL, "deposit_data" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE, "handler_response" text NOT NULL, "fee_id" character varying, "account_id" character varying, "deposit_nonce" text, "resource_id" character varying, "from_domain_id" character varying, "to_domain_id" character varying, "destination" text, "amount" text NOT NULL, CONSTRAINT "REL_f59479ebb45249bbdd5c12f75e" UNIQUE ("fee_id"), CONSTRAINT "PK_6654b4be449dadfd9d03a324b61" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "deposit" ("id" character varying NOT NULL, "type" text NOT NULL, "tx_hash" text NOT NULL, "block_number" text NOT NULL, "deposit_data" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE, "handler_response" text NOT NULL, "account_id" character varying, "deposit_nonce" text, "resource_id" character varying, "from_domain_id" character varying, "to_domain_id" character varying, "destination" text, "amount" text NOT NULL, "fee_id" character varying, CONSTRAINT "REL_f59479ebb45249bbdd5c12f75e" UNIQUE ("fee_id"), CONSTRAINT "PK_6654b4be449dadfd9d03a324b61" PRIMARY KEY ("id"))`)
         await db.query(`CREATE UNIQUE INDEX "IDX_f59479ebb45249bbdd5c12f75e" ON "deposit" ("fee_id") `)
         await db.query(`CREATE INDEX "IDX_9ced91570695137ec1d60c1a61" ON "deposit" ("account_id") `)
         await db.query(`CREATE INDEX "IDX_268f596937633ed18ea80fb27f" ON "deposit" ("resource_id") `)
@@ -20,7 +19,6 @@ module.exports = class Data1730990710963 {
         await db.query(`CREATE TABLE "transfer" ("id" character varying NOT NULL, "status" character varying(8) NOT NULL, "deposit_id" character varying, "execution_id" character varying, CONSTRAINT "REL_0832a6ad200eac838da26a9961" UNIQUE ("deposit_id"), CONSTRAINT "REL_4b62ae14edfb27605cd911db59" UNIQUE ("execution_id"), CONSTRAINT "PK_fd9ddbdd49a17afcbe014401295" PRIMARY KEY ("id"))`)
         await db.query(`CREATE UNIQUE INDEX "IDX_0832a6ad200eac838da26a9961" ON "transfer" ("deposit_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_4b62ae14edfb27605cd911db59" ON "transfer" ("execution_id") `)
-        await db.query(`ALTER TABLE "resource" ADD CONSTRAINT "FK_53e8f7c9ae9edd694e92cb4b1c9" FOREIGN KEY ("domain_id") REFERENCES "domain"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "fee" ADD CONSTRAINT "FK_5f095787af11a4198dc472ad7c6" FOREIGN KEY ("resource_id") REFERENCES "resource"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "fee" ADD CONSTRAINT "FK_a81285659ab5f86b08e77767007" FOREIGN KEY ("deposit_id") REFERENCES "deposit"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "fee" ADD CONSTRAINT "FK_dab28f6cfe8ff03f1da38f0d793" FOREIGN KEY ("domain_id") REFERENCES "domain"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
@@ -34,9 +32,8 @@ module.exports = class Data1730990710963 {
     }
 
     async down(db) {
-        await db.query(`DROP TABLE "domain"`)
         await db.query(`DROP TABLE "resource"`)
-        await db.query(`DROP INDEX "public"."IDX_53e8f7c9ae9edd694e92cb4b1c"`)
+        await db.query(`DROP TABLE "domain"`)
         await db.query(`DROP TABLE "fee"`)
         await db.query(`DROP INDEX "public"."IDX_5f095787af11a4198dc472ad7c"`)
         await db.query(`DROP INDEX "public"."IDX_a81285659ab5f86b08e7776700"`)
@@ -52,7 +49,6 @@ module.exports = class Data1730990710963 {
         await db.query(`DROP TABLE "transfer"`)
         await db.query(`DROP INDEX "public"."IDX_0832a6ad200eac838da26a9961"`)
         await db.query(`DROP INDEX "public"."IDX_4b62ae14edfb27605cd911db59"`)
-        await db.query(`ALTER TABLE "resource" DROP CONSTRAINT "FK_53e8f7c9ae9edd694e92cb4b1c9"`)
         await db.query(`ALTER TABLE "fee" DROP CONSTRAINT "FK_5f095787af11a4198dc472ad7c6"`)
         await db.query(`ALTER TABLE "fee" DROP CONSTRAINT "FK_a81285659ab5f86b08e77767007"`)
         await db.query(`ALTER TABLE "fee" DROP CONSTRAINT "FK_dab28f6cfe8ff03f1da38f0d793"`)

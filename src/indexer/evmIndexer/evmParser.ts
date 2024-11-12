@@ -88,7 +88,7 @@ export class EVMParser implements IParser {
         },
       });
       if (!feeResource) {
-        logger.error(`Unsupported resource: ${event.resourceID.toLowerCase()}`);
+        logger.error(`Unsupported fee resource with address: ${fee.tokenAddress}`);
         return null;
       }
     }

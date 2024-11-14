@@ -12,14 +12,13 @@ import type { FastifyInstance } from "fastify";
 import fastify from "fastify";
 import fastifyHealthCheck from "fastify-healthcheck";
 import type { DataSource } from "typeorm";
-import dbPlugin from "typeorm-fastify-plugin";
 
 import { initDatabase } from "../utils";
 import { logger } from "../utils/logger";
 
-import { config as envPluginConfig } from "./config";
+import { config as envPluginConfig } from "./config/env.config";
+import { SWAGGER_CONFIG, SWAGGER_UI_CONFIG } from "./config/swagger.config";
 import { routesPlugin } from "./services/plugins/routes";
-import { SWAGGER_CONFIG, SWAGGER_UI_CONFIG } from "./services/swagger";
 
 export class App {
   public readonly instance: FastifyInstance;
@@ -33,14 +32,17 @@ export class App {
       logger: true,
       return503OnClosing: true,
     });
+    await instance.register(fastifyEnv, envPluginConfig);
+
     const app = new App(instance);
+
+    await app.initDb();
     await app.registerPlugins();
     return app;
   }
 
   public async start(): Promise<void> {
     try {
-      await this.initDb();
       await this.instance.ready();
       logger.info(this.instance.printRoutes());
       return new Promise((resolve, reject) => {
@@ -95,20 +97,18 @@ export class App {
   }
 
   private async registerPlugins(): Promise<void> {
-    await this.instance.register(fastifyEnv, envPluginConfig);
     await this.instance.after();
+    await this.instance.register(fastifyCors, {
+      origin: this.instance.config.CORS_ORIGIN,
+    });
     await this.instance.register(fastifyCompress, {
       global: true,
       encodings: ["gzip", "deflate"],
-    });
-    await this.instance.register(fastifyCors, {
-      origin: this.instance.config.CORS_ORIGIN,
     });
     await this.instance.register(fastifyHelmet);
     await this.instance.register(fastifySwagger, SWAGGER_CONFIG);
     await this.instance.register(fastifySwaggerUi, SWAGGER_UI_CONFIG);
     await this.instance.register(routesPlugin);
-    await this.instance.register(dbPlugin, { connection: this.instance.db });
     await this.instance.register(fastifyHealthCheck, {
       healthcheckUrl: "/health",
       exposeUptime: true,

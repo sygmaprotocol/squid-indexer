@@ -5,14 +5,15 @@ SPDX-License-Identifier: LGPL-3.0-only
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { DataSource } from "typeorm";
 
+import { logger } from "../../utils/logger";
 import type {
   ITransfer,
   ITransferByDomain,
   ITransferBySender,
+  ITransferByTransferType,
   ITransferByTxHash,
 } from "../interfaces";
 import { TransfersService } from "../services/dataAccess/transfers.service";
-import { handleError } from "../services/utils";
 
 export class TransfersController {
   private transfersService: TransfersService;
@@ -32,42 +33,44 @@ export class TransfersController {
         { status: status },
         { page, limit },
       );
-      void reply.status(200).send(transfersResult);
+      await reply.status(200).send(transfersResult);
     } catch (error) {
-      handleError(reply, error, "Error occurred when fetching all transfers.");
+      logger.error("Error occurred when fetching all transfers", error);
+      await reply.status(500).send({ error: "Internal server error" });
     }
   }
 
   public async getTransferByTxHash(
     {
       params: { txHash },
-      query: { domainID, page, limit },
+      query: { type, domainID, page, limit },
     }: FastifyRequest<{
       Params: ITransferByTxHash;
-      Querystring: ITransferByDomain;
+      Querystring: ITransferByDomain & ITransferByTransferType;
     }>,
     reply: FastifyReply,
   ): Promise<void> {
     try {
       const transfer = await this.transfersService.findTransfersByTxHash(
         txHash,
+        type,
         domainID,
         { page, limit },
       );
-      void reply.status(200).send(transfer);
+      await reply.status(200).send(transfer);
     } catch (error) {
-      handleError(
-        reply,
+      logger.error(
+        "Error occurred when fetching transfer by transaction hash",
         error,
-        "Error occurred when fetching transfer by transaction hash and domainID.",
       );
+      await reply.status(500).send({ error: "Internal server error" });
     }
   }
 
   public async getTransfersBySender(
     {
       params: { senderAddress },
-      query: { page, limit, status },
+      query: { page, limit },
     }: FastifyRequest<{ Params: ITransferBySender; Querystring: ITransfer }>,
     reply: FastifyReply,
   ): Promise<void> {
@@ -75,16 +78,15 @@ export class TransfersController {
       const transfers =
         await this.transfersService.findTransfersBySenderAddress(
           senderAddress,
-          status,
           { page, limit },
         );
-      void reply.status(200).send(transfers);
+      await reply.status(200).send(transfers);
     } catch (error) {
-      handleError(
-        reply,
+      logger.error(
+        "Error occurred when fetching transfers by sender address",
         error,
-        "Error occurred when fetching transfers by sender address.",
       );
+      await reply.status(500).send({ error: "Internal server error" });
     }
   }
 }

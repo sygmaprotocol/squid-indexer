@@ -4,9 +4,8 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import type { DataSource, FindOptionsWhere, Repository } from "typeorm";
 
-import type { TransferStatus } from "../../../model";
-import { Deposit, Transfer } from "../../../model";
-import { getTransferQueryParams } from "../utils";
+import { Transfer } from "../../../model";
+import { TransferType } from "../../interfaces";
 
 export type Pagination = {
   page: number;
@@ -15,10 +14,8 @@ export type Pagination = {
 
 export class TransfersService {
   private transfersRepository: Repository<Transfer>;
-  private depositRepository: Repository<Deposit>;
   constructor(dataSource: DataSource) {
     this.transfersRepository = dataSource.getRepository(Transfer);
-    this.depositRepository = dataSource.getRepository(Deposit);
   }
 
   private calculatePaginationParams(paginationParams: Pagination): {
@@ -51,8 +48,15 @@ export class TransfersService {
           timestamp: "DESC",
         },
       },
-      relations: ["deposit", "execution"],
-      select: { ...getTransferQueryParams() },
+      relations: [
+        "deposit",
+        "execution",
+        "deposit.resource",
+        "deposit.fee",
+        "deposit.account",
+        "deposit.fromDomain",
+        "deposit.toDomain",
+      ],
     });
 
     return transfers;
@@ -60,21 +64,24 @@ export class TransfersService {
 
   public async findTransfersByTxHash(
     txHash: string,
+    type: TransferType,
     domainID: number,
     paginationParams: Pagination,
   ): Promise<Transfer[]> {
-    let where: FindOptionsWhere<Transfer>;
-
-    if (domainID === undefined) {
-      where = { deposit: { txHash: txHash } };
-    } else {
-      where = {
-        deposit: {
-          txHash: txHash,
-          //fromDomainID: domainID,
-        },
-      };
-    }
+    const where: FindOptionsWhere<Transfer> =
+      type === TransferType.Deposit
+        ? {
+            deposit: {
+              txHash: txHash,
+              ...(domainID && { fromDomain: { id: domainID.toString() } }),
+            },
+          }
+        : {
+            execution: { txHash: txHash },
+            ...(domainID && {
+              //deposit: { fromDomain: { id: domainID.toString() } },
+            }),
+          };
 
     const transfers = this.findTransfers(where, paginationParams);
 
@@ -83,14 +90,12 @@ export class TransfersService {
 
   public async findTransfersBySenderAddress(
     sender: string,
-    status: TransferStatus | undefined,
     paginationParams: Pagination,
   ): Promise<Transfer[]> {
     const where: FindOptionsWhere<Transfer> = {
       deposit: {
         //accountID: sender,
       },
-      status: status,
     };
 
     const transfers = this.findTransfers(where, paginationParams);

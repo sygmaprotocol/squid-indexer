@@ -14,7 +14,7 @@ export const config: FastifyEnvOptions = {
       },
       SERVER_PORT: {
         type: "number",
-        default: 3000,
+        default: 8000,
       },
       CORS_ORIGIN: {
         type: "string",

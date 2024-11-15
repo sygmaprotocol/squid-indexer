@@ -45,20 +45,9 @@ export class App {
     try {
       await this.instance.ready();
       logger.info(this.instance.printRoutes());
-      return new Promise((resolve, reject) => {
-        this.instance.listen(
-          {
-            port: this.instance.config.SERVER_PORT,
-            host: this.instance.config.SERVER_ADDRESS,
-          },
-          (error) => {
-            if (error) {
-              logger.error("Failed to start server: ", error);
-              reject();
-            }
-            resolve();
-          },
-        );
+      await this.instance.listen({
+        port: this.instance.config.SERVER_PORT,
+        host: this.instance.config.SERVER_ADDRESS,
       });
     } catch (error) {
       logger.error("Error occurred during app startup: ", error);
@@ -97,7 +86,6 @@ export class App {
   }
 
   private async registerPlugins(): Promise<void> {
-    await this.instance.after();
     await this.instance.register(fastifyCors, {
       origin: this.instance.config.CORS_ORIGIN,
     });

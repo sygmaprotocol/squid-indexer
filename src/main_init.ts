@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import { Network, ResourceType } from "@buildwithsygma/core";
+import { ResourceType } from "@buildwithsygma/core";
 import type { EntityManager } from "typeorm";
 
 import type { Domain as DomainConfig } from "./indexer/config";
@@ -43,28 +43,26 @@ async function insertDomains(
         type: r.type,
         decimals: r.decimals,
         tokenSymbol: r.symbol,
-        tokenAddress: "address" in r ? r.address : r.xcmMultiAssetId?.toString(),
+        tokenAddress:
+          "address" in r ? r.address : JSON.stringify(r.xcmMultiAssetId),
         domainID: domain.id.toString(),
       };
-      await manager.upsert(Resource, resource, ["id", "domainID"]);
-      if (resource.tokenAddress == NATIVE_TOKEN_ADDRESS) {
+      await manager.upsert(Resource, resource, ["tokenAddress", "domainID"]);
+      if (resource.tokenAddress == NATIVE_TOKEN_ADDRESS || r.native) {
         isNativeInserted = true;
       }
     }
     // if native token is not defined in resources in shared-config, insert default native token
-    if (!isNativeInserted && domain.type == Network.EVM) {
-      await manager.upsert(
-        Resource,
-        {
-          id: "0x00",
-          type: ResourceType.FUNGIBLE,
-          decimals: domain.nativeTokenDecimals,
-          tokenSymbol: domain.nativeTokenSymbol,
-          tokenAddress: NATIVE_TOKEN_ADDRESS,
-          domainID: domain.id.toString(),
-        },
-        ["id", "domainID"],
-      );
+    if (!isNativeInserted) {
+      await manager.insert(Resource, {
+        type: ResourceType.FUNGIBLE,
+        // use here hash of the token symbol
+        resourceID: "0x00",
+        decimals: domain.nativeTokenDecimals,
+        tokenSymbol: domain.nativeTokenSymbol,
+        tokenAddress: NATIVE_TOKEN_ADDRESS,
+        domainID: domain.id.toString(),
+      });
     }
   }
 }

@@ -50,8 +50,9 @@ type Account @entity {
   deposits: [Deposit!] @derivedFrom(field: "account")
 }
 
-type Resource @entity @index(fields: ["id", "domainID"], unique: true){
+type Resource @entity @index(fields: ["resourceID", "domainID"], unique: true) {
   id: ID!
+  resourceID: String! # New field
   type: String!
   decimals: Int
   tokenAddress: String!
@@ -59,7 +60,7 @@ type Resource @entity @index(fields: ["id", "domainID"], unique: true){
   deposit: [Deposit!] @derivedFrom(field: "resource")
   domainID: String
   domain: Domain
-  }
+}
 
 type Domain @entity {
   id: ID!

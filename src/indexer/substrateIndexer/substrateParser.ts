@@ -62,7 +62,10 @@ export class SubstrateParser implements ISubstrateParser {
       return null;
     }
     const resource = await ctx.store.findOne(Resource, {
-      where: { id: event.resourceId.toLowerCase() },
+      where: {
+        resourceID: event.resourceId.toLowerCase(),
+        domainID: fromDomain.id.toString(),
+      },
     });
     if (!resource) {
       logger.error(`Unsupported resource: ${event.resourceId.toLowerCase()}`);
@@ -179,7 +182,10 @@ export class SubstrateParser implements ISubstrateParser {
   ): Promise<FeeCollectedData | null> {
     const event = events.sygmaBridge.feeCollected.v1260.decode(log);
     const resource = await ctx.store.findOne(Resource, {
-      where: { id: event.resourceId.toLowerCase() },
+      where: {
+        resourceID: event.resourceId.toLowerCase(),
+        domainID: fromDomain.id.toString(),
+      },
     });
     if (!resource) {
       logger.error(`Unsupported resource: ${event.resourceId.toLowerCase()}`);

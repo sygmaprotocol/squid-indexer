@@ -35,10 +35,12 @@ export type Domain = DomainSDK & {
   nativeTokenSymbol: string;
   nativeTokenDecimals: number;
   startBlock: number;
-  resources: Array<Resource>;
+  resources: Array<ExtendedResource>;
   blockConfirmations: number;
   gateway?: string;
 };
+
+export type ExtendedResource = Resource & { native?: boolean };
 
 export enum HandlerType {
   ERC20 = "erc20",

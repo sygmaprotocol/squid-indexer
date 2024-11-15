@@ -2,7 +2,7 @@ import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, I
 import {Deposit} from "./deposit.model"
 import {Domain} from "./domain.model"
 
-@Index_(["id", "domainID"], {unique: true})
+@Index_(["resourceID", "domainID"], {unique: true})
 @Entity_()
 export class Resource {
     constructor(props?: Partial<Resource>) {
@@ -11,6 +11,9 @@ export class Resource {
 
     @PrimaryColumn_()
     id!: string
+
+    @Column_("text", {nullable: false})
+    resourceID!: string
 
     @Column_("text", {nullable: false})
     type!: string

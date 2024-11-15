@@ -85,6 +85,7 @@ export class EVMParser implements IParser {
       feeResource = await ctx.store.findOne(Resource, {
         where: {
           id: `Native-${fromDomain.id}`,
+          tokenAddress: fee.tokenAddress,
         },
       });
       if (!feeResource) {

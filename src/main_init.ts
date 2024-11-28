@@ -39,7 +39,7 @@ async function insertDomains(
     let isNativeInserted = false;
     for (const r of domain.resources) {
       const resource = {
-        id: r.resourceId,
+        resourceID: r.resourceId,
         type: r.type,
         decimals: r.decimals,
         tokenSymbol: r.symbol,
@@ -56,7 +56,6 @@ async function insertDomains(
     if (!isNativeInserted) {
       await manager.insert(Resource, {
         type: ResourceType.FUNGIBLE,
-        // use here hash of the token symbol
         resourceID: "0x00",
         decimals: domain.nativeTokenDecimals,
         tokenSymbol: domain.nativeTokenSymbol,

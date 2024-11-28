@@ -1,15 +1,15 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, OneToMany as OneToMany_, ManyToOne as ManyToOne_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryGeneratedColumn, Index as Index_, OneToMany as OneToMany_, ManyToOne as ManyToOne_} from "typeorm"
 import {Deposit} from "./deposit.model"
 import {Domain} from "./domain.model"
 
-@Index_(["resourceID", "domainID"], {unique: true})
+@Index_(["tokenAddress", "domainID"], {unique: true})
 @Entity_()
 export class Resource {
     constructor(props?: Partial<Resource>) {
         Object.assign(this, props)
     }
 
-    @PrimaryColumn_()
+    @PrimaryGeneratedColumn("uuid")
     id!: string
 
     @Column_("text", {nullable: false})

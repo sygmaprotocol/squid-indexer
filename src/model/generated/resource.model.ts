@@ -1,3 +1,7 @@
+/*
+The Licensed Work is (c) 2024 Sygma
+SPDX-License-Identifier: LGPL-3.0-only
+*/
 import {Entity as Entity_, Column as Column_, PrimaryGeneratedColumn, Index as Index_, OneToMany as OneToMany_, ManyToOne as ManyToOne_} from "typeorm"
 import {Deposit} from "./deposit.model"
 import {Domain} from "./domain.model"

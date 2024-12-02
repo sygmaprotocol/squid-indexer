@@ -1,16 +1,17 @@
-module.exports = class Data1732788491324 {
-    name = 'Data1732788491324'
+module.exports = class Data1733151848610 {
+    name = 'Data1733151848610'
 
     async up(db) {
         await db.query(`CREATE TABLE "domain" ("id" character varying NOT NULL, "name" text NOT NULL, CONSTRAINT "PK_27e3ec3ea0ae02c8c5bceab3ba9" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE TABLE "resource" ("id" character varying NOT NULL, "type" text NOT NULL, "decimals" integer, "token_address" text NOT NULL, "token_symbol" text NOT NULL, "domain_id" character varying, CONSTRAINT "PK_e2894a5867e06ae2e8889f1173f" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "resource" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "resource_id" text NOT NULL, "type" text NOT NULL, "decimals" integer, "token_address" text NOT NULL, "token_symbol" text NOT NULL, "domain_id" character varying, CONSTRAINT "PK_e2894a5867e06ae2e8889f1173f" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_53e8f7c9ae9edd694e92cb4b1c" ON "resource" ("domain_id") `)
-        await db.query(`CREATE TABLE "fee" ("id" character varying NOT NULL, "amount" text NOT NULL, "resource_id" character varying, "deposit_id" character varying, "domain_id" character varying, CONSTRAINT "REL_5f095787af11a4198dc472ad7c" UNIQUE ("resource_id"), CONSTRAINT "REL_a81285659ab5f86b08e7776700" UNIQUE ("deposit_id"), CONSTRAINT "REL_dab28f6cfe8ff03f1da38f0d79" UNIQUE ("domain_id"), CONSTRAINT "PK_ee7e51cc563615bc60c2b234635" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE UNIQUE INDEX "IDX_3886f295f15dc067c4b4c37dd6" ON "resource" ("token_address", "domain_id") `)
+        await db.query(`CREATE TABLE "fee" ("id" character varying NOT NULL, "amount" text NOT NULL, "resource_id" uuid, "deposit_id" character varying, "domain_id" character varying, CONSTRAINT "REL_5f095787af11a4198dc472ad7c" UNIQUE ("resource_id"), CONSTRAINT "REL_a81285659ab5f86b08e7776700" UNIQUE ("deposit_id"), CONSTRAINT "REL_dab28f6cfe8ff03f1da38f0d79" UNIQUE ("domain_id"), CONSTRAINT "PK_ee7e51cc563615bc60c2b234635" PRIMARY KEY ("id"))`)
         await db.query(`CREATE UNIQUE INDEX "IDX_5f095787af11a4198dc472ad7c" ON "fee" ("resource_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_a81285659ab5f86b08e7776700" ON "fee" ("deposit_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_dab28f6cfe8ff03f1da38f0d79" ON "fee" ("domain_id") `)
         await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "address_status" text, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE TABLE "deposit" ("id" character varying NOT NULL, "type" text NOT NULL, "tx_hash" text NOT NULL, "block_number" text NOT NULL, "deposit_data" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE, "handler_response" text NOT NULL, "fee_id" character varying, "account_id" character varying, "deposit_nonce" text, "resource_id" character varying, "from_domain_id" character varying, "to_domain_id" character varying, "destination" text, "amount" text NOT NULL, CONSTRAINT "REL_f59479ebb45249bbdd5c12f75e" UNIQUE ("fee_id"), CONSTRAINT "PK_6654b4be449dadfd9d03a324b61" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "deposit" ("id" character varying NOT NULL, "type" text NOT NULL, "tx_hash" text NOT NULL, "block_number" text NOT NULL, "deposit_data" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE, "handler_response" text NOT NULL, "fee_id" character varying, "account_id" character varying, "deposit_nonce" text, "resource_id" uuid, "from_domain_id" character varying, "to_domain_id" character varying, "destination" text, "amount" text NOT NULL, CONSTRAINT "REL_f59479ebb45249bbdd5c12f75e" UNIQUE ("fee_id"), CONSTRAINT "PK_6654b4be449dadfd9d03a324b61" PRIMARY KEY ("id"))`)
         await db.query(`CREATE UNIQUE INDEX "IDX_f59479ebb45249bbdd5c12f75e" ON "deposit" ("fee_id") `)
         await db.query(`CREATE INDEX "IDX_9ced91570695137ec1d60c1a61" ON "deposit" ("account_id") `)
         await db.query(`CREATE INDEX "IDX_268f596937633ed18ea80fb27f" ON "deposit" ("resource_id") `)
@@ -37,6 +38,7 @@ module.exports = class Data1732788491324 {
         await db.query(`DROP TABLE "domain"`)
         await db.query(`DROP TABLE "resource"`)
         await db.query(`DROP INDEX "public"."IDX_53e8f7c9ae9edd694e92cb4b1c"`)
+        await db.query(`DROP INDEX "public"."IDX_3886f295f15dc067c4b4c37dd6"`)
         await db.query(`DROP TABLE "fee"`)
         await db.query(`DROP INDEX "public"."IDX_5f095787af11a4198dc472ad7c"`)
         await db.query(`DROP INDEX "public"."IDX_a81285659ab5f86b08e7776700"`)

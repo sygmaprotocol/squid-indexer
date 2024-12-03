@@ -65,6 +65,8 @@ type Resource @entity @index(fields: ["tokenAddress", "domainID"], unique: true)
 type Domain @entity {
   id: ID!
   name: String!
+  iconUrl: String
+  explorerUrl: String
   fromDomain: [Deposit!] @derivedFrom(field: "fromDomain")
   toDomain: [Deposit!] @derivedFrom(field: "toDomain")
   fee: [Fee!] @derivedFrom(field: "domain")

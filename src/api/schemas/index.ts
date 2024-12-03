@@ -33,6 +33,8 @@ export const domainSchema = {
   properties: {
     id: { type: "string", format: "ObjectId", example: "1" },
     name: { type: "string", example: "Ethereum" },
+    iconUrl: { type: "string", example: "https://example.com/icon1.png" },
+    explorerUrl: { type: "string", example: "https://explorer.com/1" },
   },
 };
 

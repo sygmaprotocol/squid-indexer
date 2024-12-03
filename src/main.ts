@@ -6,7 +6,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { Network } from "@buildwithsygma/core";
 
 import { getConfig } from "./indexer/config";
-import { getEnv } from "./indexer/config/validator";
+import { getIndexerEnv } from "./indexer/config/validator";
 import { EVMProcessor } from "./indexer/evmIndexer/evmProcessor";
 import { Indexer } from "./indexer/indexer";
 import type { ISubstrateParser } from "./indexer/substrateIndexer/substrateParser";
@@ -14,7 +14,7 @@ import { SubstrateProcessor } from "./indexer/substrateIndexer/substrateProcesso
 import { logger } from "./utils/logger";
 
 async function startProcessing(): Promise<void> {
-  const envVars = getEnv();
+  const envVars = getIndexerEnv();
   const config = await getConfig(envVars);
   let processor;
   switch (config.domain.type) {

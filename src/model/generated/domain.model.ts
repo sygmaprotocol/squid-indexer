@@ -19,6 +19,12 @@ export class Domain {
     @StringColumn_({nullable: false})
     name!: string
 
+    @StringColumn_({nullable: true})
+    iconUrl!: string | undefined | null
+
+    @StringColumn_({nullable: true})
+    explorerUrl!: string | undefined | null
+
     @OneToMany_(() => Deposit, e => e.fromDomain)
     fromDomain!: Deposit[]
 

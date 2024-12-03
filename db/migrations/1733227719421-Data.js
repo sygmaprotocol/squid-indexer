@@ -1,8 +1,8 @@
-module.exports = class Data1733221754942 {
-    name = 'Data1733221754942'
+module.exports = class Data1733227719421 {
+    name = 'Data1733227719421'
 
     async up(db) {
-        await db.query(`CREATE TABLE "domain" ("id" character varying NOT NULL, "name" text NOT NULL, CONSTRAINT "PK_27e3ec3ea0ae02c8c5bceab3ba9" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "domain" ("id" character varying NOT NULL, "name" text NOT NULL, "icon_url" text, "explorer_url" text, CONSTRAINT "PK_27e3ec3ea0ae02c8c5bceab3ba9" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "resource" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "resource_id" text NOT NULL, "type" text NOT NULL, "decimals" integer, "token_address" text NOT NULL, "token_symbol" text NOT NULL, "domain_id" character varying, CONSTRAINT "PK_e2894a5867e06ae2e8889f1173f" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_53e8f7c9ae9edd694e92cb4b1c" ON "resource" ("domain_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_3886f295f15dc067c4b4c37dd6" ON "resource" ("token_address", "domain_id") `)

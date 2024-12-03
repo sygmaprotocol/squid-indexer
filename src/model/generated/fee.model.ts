@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import {Resource} from "./resource.model"
 import {Deposit} from "./deposit.model"
 import {Domain} from "./domain.model"
@@ -22,24 +22,21 @@ export class Fee {
     @Column_("text", {nullable: true})
     resourceID!: string | undefined | null
 
-    @Index_({unique: true})
-    @OneToOne_(() => Resource, {nullable: true})
-    @JoinColumn_()
+    @Index_()
+    @ManyToOne_(() => Resource, {nullable: true})
     resource!: Resource
 
     @Column_("text", {nullable: true})
     depositID!: string | undefined | null
 
-    @Index_({unique: true})
-    @OneToOne_(() => Deposit, {nullable: true})
-    @JoinColumn_()
+    @Index_()
+    @ManyToOne_(() => Deposit, {nullable: true})
     deposit!: Deposit | undefined | null
 
     @Column_("text", {nullable: true})
     domainID!: string | undefined | null
 
-    @Index_({unique: true})
-    @OneToOne_(() => Domain, {nullable: true})
-    @JoinColumn_()
+    @Index_()
+    @ManyToOne_(() => Domain, {nullable: true})
     domain!: Domain
 }

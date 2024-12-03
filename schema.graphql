@@ -75,9 +75,9 @@ type Fee @entity {
   id: ID! 
   amount: String!
   resourceID: String
-  resource: Resource! @unique
+  resource: Resource!
   depositID: String
-  deposit: Deposit @unique
+  deposit: Deposit
   domainID: String
-  domain: Domain! @unique
+  domain: Domain!
 }

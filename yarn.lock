@@ -5161,7 +5161,7 @@ fastify-healthcheck@^4.4.0:
   dependencies:
     "@fastify/under-pressure" "^8.2.0"
 
-fastify-plugin@^4.0.0, fastify-plugin@^4.2.1, fastify-plugin@^4.5.0, fastify-plugin@^4.5.1:
+fastify-plugin@^4.0.0, fastify-plugin@^4.2.1, fastify-plugin@^4.5.0:
   version "4.5.1"
   resolved "https://registry.yarnpkg.com/fastify-plugin/-/fastify-plugin-4.5.1.tgz#44dc6a3cc2cce0988bc09e13f160120bbd91dbee"
   integrity sha512-stRHYGeuqpEZTL1Ef0Ovr2ltazUT9g844X5z/zEBFLG8RYlpDiOCIG+ATvYEp+/zmc7sN29mcIMp8gvYplYPIQ==
@@ -8596,14 +8596,6 @@ typedarray-to-buffer@^3.1.5:
   integrity sha512-zdu8XMNEDepKKR+XYOXAVPtWui0ly0NtohUscw+UmaHiAWT8hrV1rr//H6V+0DvJ3OQ19S979M0laLfX8rm82Q==
   dependencies:
     is-typedarray "^1.0.0"
-
-typeorm-fastify-plugin@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/typeorm-fastify-plugin/-/typeorm-fastify-plugin-2.0.1.tgz#0d2ce6e48083144ce69f1f7fca46c9bba4164ac7"
-  integrity sha512-e0gHC/Cbp8OdBYPZqR5inJ2spSGlkQUe5+KbEc2bEVrE3NESicwcwyC10D+czT5eSYMxJ4dALo3sgWHhg3RePA==
-  dependencies:
-    fastify-plugin "^4.5.1"
-    typeorm "^0.3.20"
 
 typeorm-naming-strategies@^4.1.0:
   version "4.1.0"

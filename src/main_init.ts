@@ -2,6 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
+import { ResourceType } from "@buildwithsygma/core";
 import type { EntityManager } from "typeorm";
 
 import type { Domain as DomainConfig } from "./indexer/config";
@@ -10,6 +11,8 @@ import { getEnv } from "./indexer/config/validator";
 import { Domain, Resource } from "./model";
 import { initDatabase } from "./utils";
 import { logger } from "./utils/logger";
+
+const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 async function main(): Promise<void> {
   const envVars = getEnv();
@@ -29,21 +32,36 @@ async function insertDomains(
       Domain,
       {
         id: domain.id.toString(),
-        lastIndexedBlock: domain.startBlock.toString(),
         name: domain.name,
       },
       ["id"],
     );
-    for (const resource of domain.resources) {
-      await manager.upsert(
-        Resource,
-        {
-          id: resource.resourceId,
-          type: resource.type,
-          decimals: resource.decimals,
-        },
-        ["id"],
-      );
+    let isNativeInserted = false;
+    for (const r of domain.resources) {
+      const resource = {
+        resourceID: r.resourceId,
+        type: r.type,
+        decimals: r.decimals,
+        tokenSymbol: r.symbol,
+        tokenAddress:
+          "address" in r ? r.address : JSON.stringify(r.xcmMultiAssetId),
+        domainID: domain.id.toString(),
+      };
+      await manager.upsert(Resource, resource, ["tokenAddress", "domainID"]);
+      if (resource.tokenAddress == NATIVE_TOKEN_ADDRESS || r.native) {
+        isNativeInserted = true;
+      }
+    }
+    // if native token is not defined in resources in shared-config, insert default native token
+    if (!isNativeInserted) {
+      await manager.insert(Resource, {
+        type: ResourceType.FUNGIBLE,
+        resourceID: "0x00",
+        decimals: domain.nativeTokenDecimals,
+        tokenSymbol: domain.nativeTokenSymbol,
+        tokenAddress: NATIVE_TOKEN_ADDRESS,
+        domainID: domain.id.toString(),
+      });
     }
   }
 }

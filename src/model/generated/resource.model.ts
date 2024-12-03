@@ -2,24 +2,43 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
-import {Transfer} from "./transfer.model"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, StringColumn as StringColumn_, IntColumn as IntColumn_, OneToMany as OneToMany_, ManyToOne as ManyToOne_} from "@subsquid/typeorm-store"
+import {Deposit} from "./deposit.model"
+import {Domain} from "./domain.model"
+import { PrimaryGeneratedColumn } from "typeorm"
 
+@Index_(["tokenAddress", "domainID"], {unique: true})
 @Entity_()
 export class Resource {
     constructor(props?: Partial<Resource>) {
         Object.assign(this, props)
     }
 
-    @PrimaryColumn_()
+    @PrimaryGeneratedColumn("uuid")
     id!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
+    resourceID!: string
+
+    @StringColumn_({nullable: false})
     type!: string
 
-    @Column_("int4", {nullable: true})
+    @IntColumn_({nullable: true})
     decimals!: number | undefined | null
 
-    @OneToMany_(() => Transfer, e => e.resource)
-    transfers!: Transfer[]
+    @StringColumn_({nullable: false})
+    tokenAddress!: string
+
+    @StringColumn_({nullable: false})
+    tokenSymbol!: string
+
+    @OneToMany_(() => Deposit, e => e.resource)
+    deposit!: Deposit[]
+
+    @StringColumn_({nullable: true})
+    domainID!: string | undefined | null
+
+    @Index_()
+    @ManyToOne_(() => Domain, {nullable: true})
+    domain!: Domain | undefined | null
 }

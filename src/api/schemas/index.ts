@@ -10,6 +10,11 @@ export const resourceSchema = {
     id: {
       type: "string",
       format: "ObjectId",
+      example: "1ffe10e3-c16c-4fdb-a357-380accf1eb66",
+    },
+    resourceID: {
+      type: "string",
+      format: "ObjectId",
       example:
         "0x0000000000000000000000000000000000000000000000000000000000000001",
     },
@@ -44,10 +49,8 @@ export const feeSchema = {
     resourceID: {
       type: "string",
       format: "ObjectId",
-      example:
-        "0x0000000000000000000000000000000000000000000000000000000000000001",
+      example: "1ffe10e3-c16c-4fdb-a357-380accf1eb66",
     },
-    domainID: { type: "string", format: "ObjectId", example: "1" },
   },
 };
 

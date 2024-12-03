@@ -67,10 +67,10 @@ export class SubstrateProcessor implements IProcessor {
     return substrateProcessor;
   }
 
-  public processEvents(
-    ctx: ProcessorContext<Store>,
+  public async processEvents(
+    ctx: Context,
     domain: Domain,
-  ): DecodedEvents {
+  ): Promise<DecodedEvents> {
     const deposits: DecodedDepositLog[] = [];
     const executions: DecodedProposalExecutionLog[] = [];
     const failedHandlerExecutions: DecodedFailedHandlerExecutionLog[] = [];
@@ -78,19 +78,40 @@ export class SubstrateProcessor implements IProcessor {
     for (const block of ctx.blocks) {
       for (const event of block.events) {
         if (event.name == events.sygmaBridge.deposit.name) {
-          deposits.push(
-            this.parser.parseDeposit(event, domain) as DecodedDepositLog,
-          );
+          const deposit = await this.parser.parseDeposit(event, domain, ctx);
+          if (deposit) {
+            deposits.push(deposit.decodedDepositLog);
+            fees.push(deposit.decodedFeeLog);
+          }
         } else if (event.name == events.sygmaBridge.proposalExecution.name) {
-          executions.push(this.parser.parseProposalExecution(event, domain));
+          const execution = await this.parser.parseProposalExecution(
+            event,
+            domain,
+            ctx,
+          );
+          if (execution) {
+            executions.push(execution);
+          }
         } else if (
           event.name == events.sygmaBridge.failedHandlerExecution.name
         ) {
-          failedHandlerExecutions.push(
-            this.parser.parseFailedHandlerExecution(event, domain),
+          const failedExecution = await this.parser.parseFailedHandlerExecution(
+            event,
+            domain,
+            ctx,
           );
+          if (failedExecution) {
+            failedHandlerExecutions.push(failedExecution);
+          }
         } else if (event.name == events.sygmaBridge.feeCollected.name) {
-          fees.push(this.parser.parseFee(event, domain));
+          const feeCollected = await this.parser.parseFee(event, domain, ctx);
+          if (feeCollected) {
+            // filter out default fees
+            fees.filter(
+              (fee) => fee.txIdentifier === feeCollected.txIdentifier,
+            );
+            fees.push(feeCollected);
+          }
         }
       }
     }
@@ -100,4 +121,4 @@ export class SubstrateProcessor implements IProcessor {
 
 export type Fields = SubstrateBatchProcessorFields<typeof SubstrateProcessor>;
 export type Event = _Event<Fields>;
-export type ProcessorContext<Store> = DataHandlerContext<Store, Fields>;
+export type Context = DataHandlerContext<Store, Fields>;

@@ -78,10 +78,9 @@ export class TransfersService {
           }
         : {
             execution: { txHash: txHash },
-            ...(domainID &&
-              {
-                //deposit: { fromDomain: { id: domainID.toString() } },
-              }),
+            ...(domainID && {
+              deposit: { fromDomain: { id: domainID.toString() } },
+            }),
           };
 
     const transfers = this.findTransfers(where, paginationParams);
@@ -95,7 +94,7 @@ export class TransfersService {
   ): Promise<Transfer[]> {
     const where: FindOptionsWhere<Transfer> = {
       deposit: {
-        //accountID: sender,
+        accountID: sender,
       },
     };
 

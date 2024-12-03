@@ -6,11 +6,11 @@ SPDX-License-Identifier: LGPL-3.0-only
 export type DecodedDepositLog = {
   id: string;
   blockNumber: number;
-  depositNonce: bigint;
-  toDomainID: number;
+  depositNonce: string;
+  toDomainID: string;
   sender: string;
   destination: string;
-  fromDomainID: number;
+  fromDomainID: string;
   resourceID: string;
   txHash: string;
   timestamp: Date;
@@ -19,38 +19,33 @@ export type DecodedDepositLog = {
   transferType: string;
   amount: string;
   senderStatus?: string;
-  fee: FeeData;
 };
 
 export type DecodedProposalExecutionLog = {
   id: string;
   blockNumber: number;
-  depositNonce: bigint;
+  depositNonce: string;
   txHash: string;
   timestamp: Date;
-  fromDomainID: number;
-  toDomainID: number;
+  fromDomainID: string;
+  toDomainID: string;
 };
 
 export type DecodedFailedHandlerExecutionLog = {
   id: string;
-  fromDomainID: number;
-  toDomainID: number;
-  depositNonce: bigint;
+  fromDomainID: string;
+  toDomainID: string;
+  depositNonce: string;
   message: string;
   txHash: string;
   blockNumber: number;
   timestamp: Date;
 };
 
-export type FeeData = {
+export type FeeCollectedData = {
   id: string;
-  tokenAddress: string;
-  tokenSymbol: string;
   amount: string;
-  decimals: number;
-};
-
-export type FeeCollectedData = FeeData & {
+  resourceID: string;
+  domainID: string;
   txIdentifier: string;
 };

@@ -1,7 +1,3 @@
-/*
-The Licensed Work is (c) 2024 Sygma
-SPDX-License-Identifier: LGPL-3.0-only
-*/
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_} from "typeorm"
 import {TransferStatus} from "./_transferStatus"
 import {Deposit} from "./deposit.model"

@@ -26,6 +26,7 @@ import type {
 
 import type { Context } from "./substrateProcessor";
 import { events } from "./types";
+import type { sygmaFeeHandlerRouter } from "./types/calls";
 
 export interface ISubstrateParser extends IParser {
   parseFee(
@@ -173,6 +174,25 @@ export class SubstrateParser implements ISubstrateParser {
       blockNumber: log.block.height,
       timestamp: new Date(log.block.timestamp!),
     };
+  }
+
+  public parseSubstrateAsset(call: sygmaFeeHandlerRouter.Call): string {
+    const asset = call.args.asset;
+    if (asset.__kind === "Concrete" && asset.value) {
+      const assetValue = asset.value;
+
+      if (assetValue.interior && assetValue.interior.__kind === "Here") {
+        const decodedAsset = {
+          concrete: {
+            parents: assetValue.parents,
+            interior: assetValue.interior.__kind.toLowerCase(),
+          },
+        };
+
+        return JSON.stringify(decodedAsset);
+      }
+    }
+    return "";
   }
 
   public async parseFee(

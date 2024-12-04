@@ -9,7 +9,10 @@ import type {
   EvmBatchProcessor,
   Log,
 } from "@subsquid/evm-processor";
-import type { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
+import type {
+  Call,
+  SubstrateBatchProcessor,
+} from "@subsquid/substrate-processor";
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 
 import {
@@ -20,6 +23,7 @@ import {
   TransferStatus,
   Fee,
 } from "../model";
+import { Route } from "../model/generated/route.model";
 import { logger } from "../utils/logger";
 
 import type { Domain } from "./config";
@@ -33,6 +37,7 @@ import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
+  DecodedRoutes,
   FeeCollectedData,
 } from "./types";
 
@@ -57,6 +62,10 @@ export interface IParser {
     ctx: EvmContext | SubstrateContext,
   ): Promise<DecodedFailedHandlerExecutionLog | null>;
   parseDestination(hexData: string, resourceType: ResourceType): string;
+  parseEvmRoute?(
+    txHash: string,
+  ): Promise<{ destinationDomainID: number; resourceID: string } | null>;
+  parseSubstrateAsset?(call: Call): string;
 }
 
 export interface IProcessor {
@@ -74,6 +83,7 @@ export type DecodedEvents = {
   executions: DecodedProposalExecutionLog[];
   failedHandlerExecutions: DecodedFailedHandlerExecutionLog[];
   fees: FeeCollectedData[];
+  routes: DecodedRoutes[];
 };
 export class Indexer {
   private domain: Domain;
@@ -103,6 +113,7 @@ export class Indexer {
           decodedEvents.failedHandlerExecutions,
         );
         await this.storeFees(ctx, decodedEvents.fees);
+        await this.storeRoutes(ctx, decodedEvents.routes);
       },
     );
   }
@@ -255,5 +266,22 @@ export class Indexer {
     }
     await ctx.store.upsert([...fees.values()]);
     await ctx.store.upsert([...deposits.values()]);
+  }
+
+  public async storeRoutes(
+    ctx: EvmContext | SubstrateContext,
+    routesData: DecodedRoutes[],
+  ): Promise<void> {
+    const routes = [];
+    for (const r of routesData) {
+      routes.push(
+        new Route({
+          fromDomainID: this.domain.id.toString(),
+          toDomainID: r.destinationDomainID.toString(),
+          resourceID: r.resourceID,
+        }),
+      );
+    }
+    await ctx.store.upsert(routes);
   }
 }

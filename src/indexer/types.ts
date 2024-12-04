@@ -20,6 +20,10 @@ export type DecodedDepositLog = {
   amount: string;
   senderStatus?: string;
 };
+export type DecodedRoutes = {
+  destinationDomainID: number;
+  resourceID: string;
+};
 
 export type DecodedProposalExecutionLog = {
   id: string;

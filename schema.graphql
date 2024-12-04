@@ -81,3 +81,15 @@ type Fee @entity {
   domainID: String
   domain: Domain!
 }
+
+
+type Route @entity @index(fields: ["fromDomainID", "toDomainID", "resourceID"], unique: true) {
+  id: ID!
+  fromDomainID: String  
+  fromDomain: Domain 
+
+  toDomainID: String
+  toDomain: Domain   
+
+  resourceID: String
+}

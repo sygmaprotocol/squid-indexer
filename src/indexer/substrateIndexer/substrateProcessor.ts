@@ -11,17 +11,20 @@ import type {
 import { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import type { Store } from "@subsquid/typeorm-store";
 
+import { Resource } from "../../model";
 import type { Domain } from "../config";
 import type { DecodedEvents, IProcessor } from "../indexer";
 import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
+  DecodedRoutes,
   FeeCollectedData,
 } from "../types";
 
 import type { ISubstrateParser } from "./substrateParser";
 import { events } from "./types";
+import { setFeeHandler } from "./types/sygma-fee-handler-router/calls";
 
 export class SubstrateProcessor implements IProcessor {
   private parser: ISubstrateParser;
@@ -42,7 +45,7 @@ export class SubstrateProcessor implements IProcessor {
         url: this.rpcUrl,
         rateLimit: 10,
       })
-      .setBlockRange({ from: domain.startBlock })
+      .setBlockRange({ from: 2756266 })
       .setFinalityConfirmation(domain.blockConfirmations)
       .addEvent({
         name: [events.sygmaBridge.deposit.name],
@@ -60,7 +63,12 @@ export class SubstrateProcessor implements IProcessor {
         name: [events.sygmaBridge.feeCollected.name],
         extrinsic: true,
       })
+      .addCall({
+        name: [setFeeHandler.name],
+        extrinsic: true,
+      })
       .setFields(this.fieldSelection);
+
     if (domain.gateway) {
       substrateProcessor.setGateway(domain.gateway);
     }
@@ -72,10 +80,24 @@ export class SubstrateProcessor implements IProcessor {
     domain: Domain,
   ): Promise<DecodedEvents> {
     const deposits: DecodedDepositLog[] = [];
+    const routes: DecodedRoutes[] = [];
     const executions: DecodedProposalExecutionLog[] = [];
     const failedHandlerExecutions: DecodedFailedHandlerExecutionLog[] = [];
     const fees: FeeCollectedData[] = [];
     for (const block of ctx.blocks) {
+      if (block.calls.length) {
+        for (const call of block.calls) {
+          const asset = this.parser.parseSubstrateAsset!(call);
+          const resource = await ctx.store.findOne(Resource, {
+            where: { tokenAddress: asset },
+          });
+          routes.push({
+            destinationDomainID: (call.args as { domain: number }).domain,
+            resourceID: resource?.resourceID || "",
+          });
+        }
+      }
+
       for (const event of block.events) {
         if (event.name == events.sygmaBridge.deposit.name) {
           const deposit = await this.parser.parseDeposit(event, domain, ctx);
@@ -115,7 +137,7 @@ export class SubstrateProcessor implements IProcessor {
         }
       }
     }
-    return { deposits, executions, failedHandlerExecutions, fees };
+    return { deposits, executions, failedHandlerExecutions, fees, routes };
   }
 }
 

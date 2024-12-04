@@ -15,6 +15,7 @@ import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
 import {IParser } from "../../src/indexer/indexer";
 import {Context} from "../../src/indexer/evmIndexer/evmProcessor"
 import { Domain, Resource } from "../../src/model";
+import * as feeRouter from "../../src/abi/FeeHandlerRouter";
 
 describe("EVMParser", () => {
   let provider: sinon.SinonStubbedInstance<JsonRpcProvider>;
@@ -452,6 +453,61 @@ const mockSourceDomain = {
       const result = await parser.parseFailedHandlerExecution(log, toDomain, ctx);
 
       expect(result).to.be.null;
+    });
+  });
+
+  describe('parseEvmRoute', function () {
+    let evmParser: EVMParser;
+    let providerStub: sinon.SinonStubbedInstance<JsonRpcProvider>;
+    let decodeStub: sinon.SinonStub;
+  
+    beforeEach(() => {
+      providerStub = sinon.createStubInstance(JsonRpcProvider);
+      evmParser = new EVMParser(providerStub as unknown as JsonRpcProvider);
+      decodeStub = sinon.stub(feeRouter.functions.adminSetResourceHandler, 'decode');
+    });
+  
+    afterEach(() => {
+      sinon.restore(); // Restore original methods after each test
+    });
+  
+    it('should return decoded data when transaction data is valid', async () => {
+      const mockTxHash = '0xMockTransactionHash';
+      const mockTxData = '0xMockTransactionData';
+      const mockDecodedData = { destinationDomainID: 1, resourceID: '0xMockResourceID' };
+  
+      providerStub.getTransaction.resolves({ data: mockTxData } as any);
+      decodeStub.withArgs(mockTxData).returns(mockDecodedData);
+  
+      const result = await evmParser.parseEvmRoute(mockTxHash);
+  
+      expect(result).to.deep.equal(mockDecodedData);
+      expect(providerStub.getTransaction.calledOnceWithExactly(mockTxHash)).to.be.true;
+      expect(decodeStub.calledOnceWithExactly(mockTxData)).to.be.true;
+    });
+  
+    it('should return null when transaction has no data', async () => {
+      const mockTxHash = '0xMockTransactionHash';
+  
+      providerStub.getTransaction.resolves({ data: null } as any);
+  
+      const result = await evmParser.parseEvmRoute(mockTxHash);
+  
+      expect(result).to.be.null;
+      expect(providerStub.getTransaction.calledOnceWithExactly(mockTxHash)).to.be.true;
+      expect(decodeStub.notCalled).to.be.true;
+    });
+  
+    it('should return null when transaction is not found', async () => {
+      const mockTxHash = '0xMockTransactionHash';
+  
+      providerStub.getTransaction.resolves(null);
+  
+      const result = await evmParser.parseEvmRoute(mockTxHash);
+  
+      expect(result).to.be.null;
+      expect(providerStub.getTransaction.calledOnceWithExactly(mockTxHash)).to.be.true;
+      expect(decodeStub.notCalled).to.be.true;
     });
   });
 });

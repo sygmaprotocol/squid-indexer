@@ -19,6 +19,7 @@ import {
 } from "../../src/indexer/substrateIndexer/types/v1260";
 import {Context} from "../../src/indexer/substrateIndexer/substrateProcessor"
 import { Domain, Resource } from "../../src/model";
+import { Call } from "@subsquid/substrate-processor";
 
 describe("Substrate parser", () => {
   let provider: sinon.SinonStubbedInstance<ApiPromise>;
@@ -455,5 +456,44 @@ const mockSourceDomain = {
 
   afterEach(() => {
     sinon.restore();
+  });
+
+  describe('parseSubstrateAsset', function () {
+    let substrateParser: SubstrateParser;
+    let mockCall: sinon.SinonStubbedInstance<Call>;
+    let providerStub: sinon.SinonStubbedInstance<ApiPromise>;
+  
+    beforeEach(() => {
+      providerStub = sinon.createStubInstance(ApiPromise);
+  
+      substrateParser = new SubstrateParser(providerStub as unknown as ApiPromise);
+  
+      mockCall = {
+        args: {
+          asset: {
+            __kind: 'Concrete',
+            value: {
+              interior: {
+                __kind: 'Here',
+              },
+              parents: 0,
+            },
+          },
+        },
+      } as unknown as sinon.SinonStubbedInstance<Call>;
+    });
+  
+    it('should correctly parse and return a formatted asset', async () => {
+      const expectedResult = JSON.stringify({
+        concrete: {
+          parents: 0,
+          interior: 'here',
+        },
+      });
+  
+      const result = await substrateParser.parseSubstrateAsset(mockCall);
+  
+      expect(result).to.equal(expectedResult);
+    });
   });
 });

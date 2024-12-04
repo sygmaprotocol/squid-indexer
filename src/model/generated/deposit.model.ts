@@ -1,8 +1,5 @@
-/*
-The Licensed Work is (c) 2024 Sygma
-SPDX-License-Identifier: LGPL-3.0-only
-*/
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_, ManyToOne as ManyToOne_} from "typeorm"
+import {Transfer} from "./transfer.model"
 import {Fee} from "./fee.model"
 import {Account} from "./account.model"
 import {Resource} from "./resource.model"

@@ -9,6 +9,7 @@ import type {
 import { EvmBatchProcessor } from "@subsquid/evm-processor";
 import type { Store } from "@subsquid/typeorm-store";
 
+import * as feeRouter from "../../abi/FeeHandlerRouterABI";
 import * as bridge from "../../abi/bridge";
 import type { Domain } from "../config";
 import type { DecodedEvents, IParser, IProcessor } from "../indexer";
@@ -16,6 +17,7 @@ import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
+  DecodedRoutes,
   FeeCollectedData,
 } from "../types";
 
@@ -32,7 +34,7 @@ export class EVMProcessor implements IProcessor {
         url: this.rpcUrl,
         rateLimit: 10,
       })
-      .setBlockRange({ from: domain.startBlock })
+      .setBlockRange({ from: 241642 })
       .setFinalityConfirmation(domain.blockConfirmations)
       .addLog({
         address: [domain.bridge],
@@ -48,6 +50,10 @@ export class EVMProcessor implements IProcessor {
         address: [domain.bridge],
         topic0: [bridge.events.FailedHandlerExecution.topic],
         transaction: true,
+      })
+      .addTransaction({
+        to: [domain.feeRouter],
+        sighash: [feeRouter.functions.adminSetResourceHandler.sighash],
       });
 
     if (domain.gateway) {
@@ -61,11 +67,23 @@ export class EVMProcessor implements IProcessor {
     domain: Domain,
   ): Promise<DecodedEvents> {
     const deposits: DecodedDepositLog[] = [];
+    const routes: DecodedRoutes[] = [];
     const executions: DecodedProposalExecutionLog[] = [];
     const failedHandlerExecutions: DecodedFailedHandlerExecutionLog[] = [];
     const fees: FeeCollectedData[] = [];
 
     for (const block of ctx.blocks) {
+      if (block.transactions.length) {
+        for (const tx of block.transactions) {
+          if (tx.to?.toLowerCase() == domain.feeRouter.toLowerCase()) {
+            const route = await this.parser.parseEvmRoute!(tx.hash);
+            if (route) {
+              routes.push(route);
+            }
+          }
+        }
+      }
+
       for (const log of block.logs) {
         if (log.topics[0] === bridge.events.Deposit.topic) {
           const deposit = await this.parser.parseDeposit(log, domain, ctx);
@@ -96,7 +114,7 @@ export class EVMProcessor implements IProcessor {
         }
       }
     }
-    return { deposits, executions, failedHandlerExecutions, fees };
+    return { deposits, executions, failedHandlerExecutions, fees, routes };
   }
 }
 

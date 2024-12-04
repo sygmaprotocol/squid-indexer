@@ -11,6 +11,7 @@ import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
 import type { JsonRpcProvider, Provider } from "ethers";
 import { ethers } from "ethers";
 
+import * as feeRouter from "../../abi/FeeHandlerRouter";
 import * as bridge from "../../abi/bridge";
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { Domain, Resource } from "../../model";
@@ -122,6 +123,19 @@ export class EVMParser implements IParser {
         txIdentifier: transaction.hash,
       },
     };
+  }
+
+  public async parseEvmRoute(
+    txHash: string,
+  ): Promise<{ destinationDomainID: number; resourceID: string } | null> {
+    const tx = await this.provider.getTransaction(txHash);
+    if (tx?.data) {
+      const decoded = feeRouter.functions.adminSetResourceHandler.decode(
+        tx.data,
+      );
+      return decoded;
+    }
+    return null;
   }
 
   public async parseProposalExecution(

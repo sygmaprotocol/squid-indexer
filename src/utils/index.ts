@@ -15,6 +15,7 @@ import {
   Resource,
   Transfer,
 } from "../model";
+import { Route } from "../model/generated/route.model";
 
 export async function initDatabase(dbConfig: DbConfig): Promise<DataSource> {
   const dataSource = new DataSource({
@@ -24,8 +25,18 @@ export async function initDatabase(dbConfig: DbConfig): Promise<DataSource> {
     port: dbConfig.port,
     username: dbConfig.username,
     password: dbConfig.password,
-    entities: [Domain, Transfer, Resource, Deposit, Execution, Account, Fee],
+    entities: [
+      Domain,
+      Transfer,
+      Resource,
+      Deposit,
+      Execution,
+      Account,
+      Fee,
+      Route,
+    ],
     namingStrategy: new SnakeNamingStrategy(),
+    synchronize: true,
   });
   await dataSource.initialize();
   return dataSource;

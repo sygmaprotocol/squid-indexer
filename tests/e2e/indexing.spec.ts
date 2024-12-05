@@ -128,14 +128,14 @@ describe("Indexer e2e tests", function () {
       `http://localhost:8000/api/transfers/txHash/${FUNGIBLE_EVM_DEPOSIT_TXHASH}?domainID=${DOMAIN_1}`
     );
     const transfers: TransferResponse[] = await res.json();
-    const transfer = transfers[0];
 
     expect(res.status).to.be.deep.equal(200);
-    expect(transfer).to.be.deep.equal({
-      id: transfer.id,
+    expect(transfers.length).to.be.deep.equal(1); 
+    expect(transfers[0]).to.be.deep.equal({
+      id: transfers[0].id,
       status: TransferStatus.executed,
       deposit: {
-        id: transfer.deposit.id,
+        id: transfers[0].deposit.id,
         type: ResourceType.FUNGIBLE,
         txHash:
           "0x0a4fb75c91ca774d1b2faeed14a0d9c8f261dba64fc8adfe070c0b9f78a07492",
@@ -147,8 +147,8 @@ describe("Indexer e2e tests", function () {
         timestamp: "2024-11-14T08:16:41.000Z",
         fee: {
           amount: "100000000000000",
-          id: transfer.deposit.fee?.id,
-          resourceID: transfer.deposit.fee?.resourceID,
+          id: transfers[0].deposit.fee?.id,
+          resourceID: transfers[0].deposit.fee?.resourceID,
         },
         accountID: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
         account: {
@@ -156,9 +156,9 @@ describe("Indexer e2e tests", function () {
           addressStatus: "",
         },
         depositNonce: "1",
-        resourceID: transfer.deposit.resourceID,
+        resourceID: transfers[0].deposit.resourceID,
         resource: {
-          id: transfer.deposit.resource.id,
+          id: transfers[0].deposit.resource.id,
           resourceID:
             "0x0000000000000000000000000000000000000000000000000000000000000000",
           type: ResourceType.FUNGIBLE,
@@ -174,7 +174,7 @@ describe("Indexer e2e tests", function () {
         amount: "0.0000000000000001",
       },
       execution: {
-        id: transfer.execution.id,
+        id: transfers[0].execution.id,
         txHash:
           "0x8be14ce560b614606e2fad63c6bd58f80a7bc2ae344114eed094ec5296178888",
         blockNumber: "123",
@@ -189,14 +189,14 @@ describe("Indexer e2e tests", function () {
       `http://localhost:8000/api/transfers/txHash/${FUNGIBLE_EVM_EXECUTION_TXHASH}?type=execution`
     );
     const transfers: TransferResponse[] = await res.json();
-    const transfer = transfers[0];
 
     expect(res.status).to.be.deep.equal(200);
-    expect(transfer).to.be.deep.equal({
-      id: transfer.id,
+    expect(transfers.length).to.be.deep.equal(1); 
+    expect(transfers[0]).to.be.deep.equal({
+      id: transfers[0].id,
       status: TransferStatus.executed,
       deposit: {
-        id: transfer.deposit.id,
+        id: transfers[0].deposit.id,
         type: ResourceType.FUNGIBLE,
         txHash:
           "0xcf0ed5a25739be16c610e7fd17c8140f21b82128e28cccc5ccef5db16dca052f",
@@ -208,8 +208,8 @@ describe("Indexer e2e tests", function () {
         timestamp: "2024-11-14T08:18:21.000Z",
         fee: {
           amount: "100000000000000",
-          id: transfer.deposit.fee?.id,
-          resourceID: transfer.deposit.fee?.resourceID,
+          id: transfers[0].deposit.fee?.id,
+          resourceID: transfers[0].deposit.fee?.resourceID,
         },
         accountID: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
         account: {
@@ -217,9 +217,9 @@ describe("Indexer e2e tests", function () {
           addressStatus: "",
         },
         depositNonce: "29",
-        resourceID: transfer.deposit.resourceID,
+        resourceID: transfers[0].deposit.resourceID,
         resource: {
-          id: transfer.deposit.resource.id,
+          id: transfers[0].deposit.resource.id,
           resourceID:
             "0x0000000000000000000000000000000000000000000000000000000000000300",
           type: ResourceType.FUNGIBLE,
@@ -235,7 +235,7 @@ describe("Indexer e2e tests", function () {
         amount: "0.0000000000000001",
       },
       execution: {
-        id: transfer.execution.id,
+        id: transfers[0].execution.id,
         txHash:
           "0x10f878f78f6e5fe7a916c40b981d62ffe6e04bff7c783802a9ecda36dae059fb",
         blockNumber: "167",
@@ -250,14 +250,14 @@ describe("Indexer e2e tests", function () {
       `http://localhost:8000/api/transfers/txHash/${NONFUNGIBLE_EVM_DEPOSIT_TXHASH}?domainID=${DOMAIN_1}`
     );
     const transfers: TransferResponse[] = await res.json();
-    const transfer = transfers[0];
 
     expect(res.status).to.be.deep.equal(200);
-    expect(transfer).to.be.deep.equal({
-      id: transfer.id,
+    expect(transfers.length).to.be.deep.equal(1); 
+    expect(transfers[0]).to.be.deep.equal({
+      id: transfers[0].id,
       status: TransferStatus.executed,
       deposit: {
-        id: transfer.deposit.id,
+        id: transfers[0].deposit.id,
         type: ResourceType.NON_FUNGIBLE,
         txHash:
           "0x12327002087fe09d30a4bd45e97e55549d92dbf05d254788591dc2b6bca4ef0f",
@@ -268,8 +268,8 @@ describe("Indexer e2e tests", function () {
         timestamp: "2024-11-14T08:17:11.000Z",
         fee: {
           amount: "100000000000000",
-          id: transfer.deposit.fee?.id,
-          resourceID: transfer.deposit.fee?.resourceID,
+          id: transfers[0].deposit.fee?.id,
+          resourceID: transfers[0].deposit.fee?.resourceID,
         },
         accountID: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
         account: {
@@ -277,9 +277,9 @@ describe("Indexer e2e tests", function () {
           addressStatus: "",
         },
         depositNonce: "2",
-        resourceID: transfer.deposit.resourceID,
+        resourceID: transfers[0].deposit.resourceID,
         resource: {
-          id: transfer.deposit.resource.id,
+          id: transfers[0].deposit.resource.id,
           resourceID:
             "0x0000000000000000000000000000000000000000000000000000000000000200",
           type: ResourceType.NON_FUNGIBLE,
@@ -295,7 +295,7 @@ describe("Indexer e2e tests", function () {
         amount: "2935717020161974584",
       },
       execution: {
-        id: transfer.execution.id,
+        id: transfers[0].execution.id,
         txHash:
           "0x43c02a7cee493621c550e059489db14500b5a388185d61deeb7d9a7f52959e8d",
         blockNumber: "138",
@@ -310,14 +310,14 @@ describe("Indexer e2e tests", function () {
       `http://localhost:8000/api/transfers/txHash/${FUNGIBLE_SUBSTRATE_TO_EVM_DEPOSIT_TXHASH}`
     );
     const transfers: TransferResponse[] = await res.json();
-    const transfer = transfers[0];
 
     expect(res.status).to.be.deep.equal(200);
-    expect(transfer).to.be.deep.equal({
-      id: transfer.id,
+    expect(transfers.length).to.be.deep.equal(1); 
+    expect(transfers[0]).to.be.deep.equal({
+      id: transfers[0].id,
       status: TransferStatus.pending, // change
       deposit: {
-        id: transfer.deposit.id,
+        id: transfers[0].deposit.id,
         type: ResourceType.FUNGIBLE,
         txHash: "0000000279-f6443-000001",
         blockNumber: "279",
@@ -327,8 +327,8 @@ describe("Indexer e2e tests", function () {
         timestamp: "2024-11-14T08:19:48.001Z",
         fee: {
           amount: "0", // change
-          id: transfer.deposit.fee?.id,
-          resourceID: transfer.deposit.fee?.resourceID,
+          id: transfers[0].deposit.fee?.id,
+          resourceID: transfers[0].deposit.fee?.resourceID,
         },
         accountID:
           "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
@@ -337,9 +337,9 @@ describe("Indexer e2e tests", function () {
           addressStatus: "",
         },
         depositNonce: "0",
-        resourceID: transfer.deposit.resourceID,
+        resourceID: transfers[0].deposit.resourceID,
         resource: {
-          id: transfer.deposit.resource.id,
+          id: transfers[0].deposit.resource.id,
           resourceID:
             "0x0000000000000000000000000000000000000000000000000000000000000300",
           type: ResourceType.FUNGIBLE,
@@ -356,7 +356,7 @@ describe("Indexer e2e tests", function () {
         amount: "0.000001",
       },
       execution: {
-        id: transfer.execution.id,
+        id: transfers[0].execution.id,
         txHash:
           "0x9b10747083d576b05caa28edbecd5937080b77ae27da3485b29376e168e4076d",
         blockNumber: "218",
@@ -371,14 +371,14 @@ describe("Indexer e2e tests", function () {
       `http://localhost:8000/api/transfers/txHash/${FUNGIBLE_EVM_TO_SUBSTRATE_DEPOSIT_TXHASH}?domainID=${DOMAIN_1}`
     );
     const transfers: TransferResponse[] = await res.json();
-    const transfer = transfers[0];
 
     expect(res.status).to.be.deep.equal(200);
-    expect(transfer).to.be.deep.equal({
-      id: transfer.id,
+    expect(transfers.length).to.be.deep.equal(1); 
+    expect(transfers[0]).to.be.deep.equal({
+      id: transfers[0].id,
       status: TransferStatus.executed,
       deposit: {
-        id: transfer.deposit.id,
+        id: transfers[0].deposit.id,
         type: ResourceType.FUNGIBLE,
         txHash:
           "0x967b320daebffcba435b6bf9ba493963471f6ca9d12c84c9f156bda6862934e0",
@@ -390,8 +390,8 @@ describe("Indexer e2e tests", function () {
         timestamp: "2024-11-14T08:19:23.000Z",
         fee: {
           amount: "100000000000000",
-          id: transfer.deposit.fee?.id,
-          resourceID: transfer.deposit.fee?.resourceID,
+          id: transfers[0].deposit.fee?.id,
+          resourceID: transfers[0].deposit.fee?.resourceID,
         },
         accountID: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
         account: {
@@ -399,9 +399,9 @@ describe("Indexer e2e tests", function () {
           addressStatus: "",
         },
         depositNonce: "1",
-        resourceID: transfer.deposit.resourceID,
+        resourceID: transfers[0].deposit.resourceID,
         resource: {
-          id: transfer.deposit.resource.id,
+          id: transfers[0].deposit.resource.id,
           resourceID:
             "0x0000000000000000000000000000000000000000000000000000000000000300",
           type: ResourceType.FUNGIBLE,
@@ -417,7 +417,7 @@ describe("Indexer e2e tests", function () {
         amount: "0.0001",
       },
       execution: {
-        id: transfer.execution.id,
+        id: transfers[0].execution.id,
         txHash: "0000000278-91805-000001",
         blockNumber: "278",
         timestamp: "2024-11-14T08:19:42.000Z",
@@ -431,14 +431,14 @@ describe("Indexer e2e tests", function () {
       `http://localhost:8000/api/transfers/txHash/${PERMISSIONLESS_GENERIC_EVM_DEPOSIT_TXHASH}`
     );
     const transfers: TransferResponse[] = await res.json();
-    const transfer = transfers[0];
 
     expect(res.status).to.be.deep.equal(200);
-    expect(transfer).to.be.deep.equal({
-      id: transfer.id,
+    expect(transfers.length).to.be.deep.equal(1); 
+    expect(transfers[0]).to.be.deep.equal({
+      id: transfers[0].id,
       status: TransferStatus.executed,
       deposit: {
-        id: transfer.deposit.id,
+        id: transfers[0].deposit.id,
         type: ResourceType.PERMISSIONLESS_GENERIC,
         txHash:
           "0x2b355542a454d8faedccc75c8741ef0d2f531ea4cd8ed53544734ff681377699",
@@ -449,8 +449,8 @@ describe("Indexer e2e tests", function () {
         timestamp: "2024-11-14T08:18:03.000Z",
         fee: {
           amount: "100000000000000",
-          id: transfer.deposit.fee?.id,
-          resourceID: transfer.deposit.fee?.resourceID,
+          id: transfers[0].deposit.fee?.id,
+          resourceID: transfers[0].deposit.fee?.resourceID,
         },
         accountID: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
         account: {
@@ -458,9 +458,9 @@ describe("Indexer e2e tests", function () {
           addressStatus: "",
         },
         depositNonce: "28",
-        resourceID: transfer.deposit.resourceID,
+        resourceID: transfers[0].deposit.resourceID,
         resource: {
-          id: transfer.deposit.resource.id,
+          id: transfers[0].deposit.resource.id,
           resourceID:
             "0x0000000000000000000000000000000000000000000000000000000000000500",
           type: ResourceType.PERMISSIONLESS_GENERIC,
@@ -476,7 +476,7 @@ describe("Indexer e2e tests", function () {
         amount: "",
       },
       execution: {
-        id: transfer.execution.id,
+        id: transfers[0].execution.id,
         txHash:
           "0x508195d23128b60c20a577eca7ace567e6ec68f636bad42ddb554b7d96644dd3",
         blockNumber: "162",

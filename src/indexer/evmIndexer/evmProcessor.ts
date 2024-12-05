@@ -32,7 +32,7 @@ export class EVMProcessor implements IProcessor {
         url: this.rpcUrl,
         rateLimit: 10,
       })
-      .setBlockRange({ from: 241642 })
+      .setBlockRange({ from: domain.startBlock })
       .setFinalityConfirmation(domain.blockConfirmations)
       .addLog({
         address: [domain.bridge],

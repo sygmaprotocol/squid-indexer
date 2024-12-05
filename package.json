@@ -17,6 +17,7 @@
     "start": "docker-compose up --build",
     "stop": "docker-compose down",
     "test:unit": "NODE_ENV=test nyc --exclude **/data/** --all --include \"src/**/*.ts\"  mocha -r ts-node/register \"tests/unit/**/*.spec.ts\"",
+    "test:e2e": "NODE_ENV=test SERVER_PORT=0 mocha --timeout 40000 -r ts-node/register -r dotenv/config \"tests/e2e/**/*.spec.ts\"",
     "update": "npx npm-check-updates --filter /subsquid/ --upgrade && npm i -f"
   },
   "dependencies": {

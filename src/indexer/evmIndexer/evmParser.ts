@@ -13,7 +13,7 @@ import { ethers } from "ethers";
 
 import * as bridge from "../../abi/bridge";
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
-import { Domain, Resource } from "../../model";
+import { Domain, Resource, Token } from "../../model";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
 import type { IParser } from "../indexer";
@@ -63,8 +63,7 @@ export class EVMParser implements IParser {
 
     const resource = await ctx.store.findOne(Resource, {
       where: {
-        resourceID: event.resourceID.toLowerCase(),
-        domainID: fromDomain.id.toString(),
+        id: event.resourceID.toLowerCase(),
       },
     });
 
@@ -75,14 +74,14 @@ export class EVMParser implements IParser {
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
     const fee = await this.getFee(event, fromDomain, this.provider);
-    const feeResource = await ctx.store.findOne(Resource, {
+    const token = await ctx.store.findOne(Token, {
       where: {
         tokenAddress: fee.tokenAddress,
         domainID: fromDomain.id.toString(),
       },
     });
 
-    if (!feeResource) {
+    if (!token) {
       logger.error(`Unsupported resource: ${event.resourceID.toLowerCase()}`);
       return null;
     }
@@ -110,14 +109,14 @@ export class EVMParser implements IParser {
         transferType: resource.type,
         amount: decodeAmountOrTokenId(
           event.data,
-          resource.decimals!,
+          token.decimals,
           resource.type as ResourceType,
         ),
       },
       decodedFeeLog: {
         id: randomUUID(),
         amount: fee.amount,
-        resourceID: feeResource?.id,
+        tokenID: token.id,
         domainID: fromDomain.id.toString(),
         txIdentifier: transaction.hash,
       },

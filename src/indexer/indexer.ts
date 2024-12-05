@@ -243,7 +243,7 @@ export class Indexer {
         const fee = new Fee({
           id: f.id,
           amount: f.amount,
-          resourceID: f.resourceID,
+          tokenID: f.tokenID,
           depositID: deposit.id,
           domainID: f.domainID,
         });

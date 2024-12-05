@@ -12,7 +12,7 @@ import { decodeHex } from "@subsquid/evm-processor";
 import { assertNotNull } from "@subsquid/substrate-processor";
 
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
-import { Domain, Resource } from "../../model";
+import { Domain, Resource, Token } from "../../model";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
 import type { IParser } from "../indexer";
@@ -63,17 +63,28 @@ export class SubstrateParser implements ISubstrateParser {
     }
     const resource = await ctx.store.findOne(Resource, {
       where: {
-        resourceID: event.resourceId.toLowerCase(),
-        domainID: fromDomain.id.toString(),
+        id: event.resourceId.toLowerCase(),
       },
     });
     if (!resource) {
-      logger.error(`Unsupported resource: ${event.resourceId.toLowerCase()}`);
+      logger.error(
+        `Unsupported resource: ${event.resourceId.toLowerCase()}, skipping...`,
+      );
       return null;
     }
 
-    const resourceType = resource.type ?? "";
-
+    const token = await ctx.store.findOne(Token, {
+      where: {
+        resource: resource,
+        domainID: fromDomain.id.toString(),
+      },
+    });
+    if (!token) {
+      logger.error(
+        `Token with resourceID: ${event.resourceId.toLowerCase()} doesn't exist, skipping...`,
+      );
+      return null;
+    }
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
     return {
@@ -89,7 +100,7 @@ export class SubstrateParser implements ISubstrateParser {
         sender: event.sender,
         destination: destinationParser.parseDestination(
           event.depositData,
-          resourceType as ResourceType,
+          resource.type as ResourceType,
         ),
         fromDomainID: fromDomain.id.toString(),
         resourceID: resource.id,
@@ -97,10 +108,10 @@ export class SubstrateParser implements ISubstrateParser {
         timestamp: new Date(log.block.timestamp ?? ""),
         depositData: event.depositData,
         handlerResponse: event.handlerResponse,
-        transferType: resourceType,
+        transferType: resource.type,
         amount: decodeAmountOrTokenId(
           event.depositData,
-          resource.decimals ?? 12,
+          token?.decimals ?? 12,
           resource.type as ResourceType,
         ),
       },
@@ -108,7 +119,7 @@ export class SubstrateParser implements ISubstrateParser {
         id: randomUUID(),
         amount: "50",
         domainID: fromDomain.id.toString(),
-        resourceID: resource.id,
+        tokenID: token?.id,
         txIdentifier: extrinsic.id,
       },
     };
@@ -183,8 +194,7 @@ export class SubstrateParser implements ISubstrateParser {
     const event = events.sygmaBridge.feeCollected.v1260.decode(log);
     const resource = await ctx.store.findOne(Resource, {
       where: {
-        resourceID: event.resourceId.toLowerCase(),
-        domainID: fromDomain.id.toString(),
+        id: event.resourceId.toLowerCase(),
       },
     });
     if (!resource) {
@@ -192,13 +202,25 @@ export class SubstrateParser implements ISubstrateParser {
       return null;
     }
 
+    const token = await ctx.store.findOne(Token, {
+      where: {
+        resource: resource,
+        domainID: fromDomain.id.toString(),
+      },
+    });
+    if (!token) {
+      logger.error(
+        `Token with resourceID: ${event.resourceId.toLowerCase()} doesn't exist, skipping...`,
+      );
+      return null;
+    }
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
     return {
       id: randomUUID(),
       amount: event.feeAmount.toString().replaceAll(",", ""),
       domainID: fromDomain.id.toString(),
-      resourceID: resource.id,
+      tokenID: token.id,
       txIdentifier: extrinsic.id,
     };
   }

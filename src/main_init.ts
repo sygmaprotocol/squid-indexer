@@ -8,7 +8,7 @@ import type { EntityManager } from "typeorm";
 import type { Domain as DomainConfig } from "./indexer/config";
 import { fetchSharedConfig } from "./indexer/config";
 import { getEnv } from "./indexer/config/validator";
-import { Domain, Resource } from "./model";
+import { Domain, Resource, Token } from "./model";
 import { initDatabase } from "./utils";
 import { logger } from "./utils/logger";
 
@@ -36,32 +36,34 @@ async function insertDomains(
       },
       ["id"],
     );
-    let isNativeInserted = false;
+    await manager.upsert(
+      Token,
+      {
+        decimals: domain.nativeTokenDecimals,
+        tokenSymbol: domain.nativeTokenSymbol,
+        tokenAddress: NATIVE_TOKEN_ADDRESS,
+        domainID: domain.id.toString(),
+      },
+      ["tokenAddress", "domainID"],
+    );
+
     for (const r of domain.resources) {
       const resource = {
-        resourceID: r.resourceId,
+        id: r.resourceId.toLowerCase(),
         type: r.type,
+      };
+      await manager.upsert(Resource, resource, ["id"]);
+      if (r.type == ResourceType.PERMISSIONLESS_GENERIC) {
+        continue;
+      }
+      const token = {
         decimals: r.decimals,
         tokenSymbol: r.symbol,
         tokenAddress:
           "address" in r ? r.address : JSON.stringify(r.xcmMultiAssetId),
         domainID: domain.id.toString(),
       };
-      await manager.upsert(Resource, resource, ["tokenAddress", "domainID"]);
-      if (resource.tokenAddress == NATIVE_TOKEN_ADDRESS || r.native) {
-        isNativeInserted = true;
-      }
-    }
-    // if native token is not defined in resources in shared-config, insert default native token
-    if (!isNativeInserted) {
-      await manager.insert(Resource, {
-        type: ResourceType.FUNGIBLE,
-        resourceID: "0x00",
-        decimals: domain.nativeTokenDecimals,
-        tokenSymbol: domain.nativeTokenSymbol,
-        tokenAddress: NATIVE_TOKEN_ADDRESS,
-        domainID: domain.id.toString(),
-      });
+      await manager.upsert(Token, token, ["tokenAddress", "domainID"]);
     }
   }
 }

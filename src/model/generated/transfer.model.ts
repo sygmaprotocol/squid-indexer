@@ -20,12 +20,12 @@ export class Transfer {
     status!: TransferStatus
 
     @Index_({unique: true})
-    @OneToOne_(() => Deposit, {nullable: true})
+    @OneToOne_(() => Deposit, {nullable: true, cascade: true})
     @JoinColumn_()
     deposit!: Deposit | undefined | null
 
     @Index_({unique: true})
-    @OneToOne_(() => Execution, {nullable: true})
+    @OneToOne_(() => Execution, {nullable: true, cascade: true})
     @JoinColumn_()
     execution!: Execution | undefined | null
 }

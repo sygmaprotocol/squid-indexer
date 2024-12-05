@@ -29,5 +29,5 @@ export class Domain {
     fee!: Fee[]
 
     @OneToMany_(() => Token, e => e.domain)
-    resource!: Token[]
+    token!: Token[]
 }

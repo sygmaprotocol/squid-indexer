@@ -62,6 +62,7 @@ async function insertDomains(
         tokenAddress:
           "address" in r ? r.address : JSON.stringify(r.xcmMultiAssetId),
         domainID: domain.id.toString(),
+        resourceID: r.resourceId,
       };
       await manager.upsert(Token, token, ["tokenAddress", "domainID"]);
     }

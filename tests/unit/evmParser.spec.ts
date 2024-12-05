@@ -14,7 +14,7 @@ import { generateTransferID } from "../../src/indexer/utils";
 import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
 import {IParser } from "../../src/indexer/indexer";
 import {Context} from "../../src/indexer/evmIndexer/evmProcessor"
-import { Domain, Resource } from "../../src/model";
+import { Domain, Resource, Token } from "../../src/model";
 
 describe("EVMParser", () => {
   let provider: sinon.SinonStubbedInstance<JsonRpcProvider>;
@@ -24,8 +24,15 @@ describe("EVMParser", () => {
 const mockResource = {
   id: '0x0000000000000000000000000000000000000000000000000000000000000300',
   type: 'fungible',
+};
+
+const mockToken = {
+  id:"tokenID",
   tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
   decimals: 18,
+  tokenSymbol: "ERC20LRTest",
+  domainID: 2,
+  resourceID: mockResource.id
 };
 
 const mockSourceDomain = {
@@ -61,8 +68,8 @@ const mockSourceDomain = {
     });
 
     it("should parse a deposit log correctly", async () => {
-      findOneStub.withArgs(Resource, { where: { resourceID: mockResource.id, domainID: "2" } }).resolves(mockResource);
-      findOneStub.withArgs(Resource, { where: { tokenAddress: "0x1234567890abcdef1234567890abcdef12345678", domainID: "2" } }).resolves(mockResource);
+      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
+      findOneStub.withArgs(Token, { where: { tokenAddress: mockToken.tokenAddress, domainID: "2" } }).resolves(mockToken);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -147,7 +154,7 @@ const mockSourceDomain = {
       },
       decodedFeeLog: {
         id: result?.decodedFeeLog.id,
-        resourceID: "0x0000000000000000000000000000000000000000000000000000000000000300",
+        tokenID: mockToken.id,
         txIdentifier: "0xTxHash",
         domainID: "2",
         amount: "0.01",

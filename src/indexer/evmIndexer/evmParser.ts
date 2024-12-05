@@ -68,7 +68,9 @@ export class EVMParser implements IParser {
     });
 
     if (!resource) {
-      logger.error(`Unsupported resource: ${event.resourceID.toLowerCase()}, skipping`);
+      logger.error(
+        `Unsupported resource: ${event.resourceID.toLowerCase()}, skipping`,
+      );
       return null;
     }
     const transaction = assertNotNull(log.transaction, "Missing transaction");
@@ -82,7 +84,9 @@ export class EVMParser implements IParser {
     });
 
     if (!token) {
-      logger.error(`Token with resourceID: ${event.resourceID.toLowerCase()} doesn't exist, skipping`);
+      logger.error(
+        `Token with resourceID: ${event.resourceID.toLowerCase()} doesn't exist, skipping`,
+      );
       return null;
     }
     return {

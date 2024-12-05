@@ -63,6 +63,7 @@ type Token @entity @index(fields: ["tokenAddress", "domainID"], unique: true) {
   tokenAddress: String!
   tokenSymbol: String!
   resource: Resource
+  resourceID: String
   domain: Domain!
   domainID: String
   fee: [Fee!] @derivedFrom(field: "token")
@@ -74,7 +75,7 @@ type Domain @entity {
   fromDomain: [Deposit!] @derivedFrom(field: "fromDomain")
   toDomain: [Deposit!] @derivedFrom(field: "toDomain")
   fee: [Fee!] @derivedFrom(field: "domain")
-  resource: [Token!] @derivedFrom(field: "domain")
+  token: [Token!] @derivedFrom(field: "domain")
 }
 
 type Fee @entity {

@@ -30,6 +30,9 @@ export class Token {
     @ManyToOne_(() => Resource, {nullable: true})
     resource!: Resource | undefined | null
 
+    @Column_("text", {nullable: true})
+    resourceID!: string | undefined | null
+
     @Index_()
     @ManyToOne_(() => Domain, {nullable: true})
     domain!: Domain

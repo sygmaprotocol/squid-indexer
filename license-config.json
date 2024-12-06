@@ -22,7 +22,8 @@
       "start-prod.sh",
       ".squidignore",
       "lib/",
-      ".eslintignore"
+      ".eslintignore",
+      "db/migrations"
     ],
     "license": "header.txt",
     "licenseFormats": {

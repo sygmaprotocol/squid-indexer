@@ -13,6 +13,7 @@ import { assertNotNull } from "@subsquid/substrate-processor";
 
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { Domain, Resource, Token } from "../../model";
+import { SkipNotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
 import type { IParser } from "../indexer";
@@ -32,7 +33,7 @@ export interface ISubstrateParser extends IParser {
     log: Event,
     fromDomain: DomainType,
     ctx: Context,
-  ): Promise<FeeCollectedData | null>;
+  ): Promise<FeeCollectedData>;
 }
 
 export class SubstrateParser implements ISubstrateParser {
@@ -54,12 +55,13 @@ export class SubstrateParser implements ISubstrateParser {
   ): Promise<{
     decodedDepositLog: DecodedDepositLog;
     decodedFeeLog: FeeCollectedData;
-  } | null> {
+  }> {
     const event = events.sygmaBridge.deposit.v1250.decode(log);
     const destinationParser = this.parsers.get(event.destDomainId);
     if (!destinationParser) {
-      logger.error(`Destination domain id ${event.destDomainId} not supported`);
-      return null;
+      throw new SkipNotFoundError(
+        `Destination domain id ${event.destDomainId} not supported`,
+      );
     }
     const resource = await ctx.store.findOne(Resource, {
       where: {
@@ -67,10 +69,9 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!resource) {
-      logger.error(
-        `Unsupported resource: ${event.resourceId.toLowerCase()}, skipping...`,
+      throw new SkipNotFoundError(
+        `Unssupported resource with ID ${event.resourceId}`,
       );
-      return null;
     }
 
     const token = await ctx.store.findOne(Token, {
@@ -80,10 +81,9 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!token) {
-      logger.error(
-        `Token with resourceID: ${event.resourceId.toLowerCase()} doesn't exist, skipping...`,
+      throw new SkipNotFoundError(
+        `Token with resourceID: ${resource.id.toLowerCase()} doesn't exist, skipping`,
       );
-      return null;
     }
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
@@ -129,7 +129,7 @@ export class SubstrateParser implements ISubstrateParser {
     log: Event,
     toDomain: DomainType,
     ctx: Context,
-  ): Promise<DecodedProposalExecutionLog | null> {
+  ): Promise<DecodedProposalExecutionLog> {
     const event = events.sygmaBridge.proposalExecution.v1250.decode(log);
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
@@ -138,8 +138,9 @@ export class SubstrateParser implements ISubstrateParser {
     });
 
     if (!fromDomain) {
-      logger.error(`Source domain id ${event.originDomainId} not supported`);
-      return null;
+      throw new SkipNotFoundError(
+        `Source domain id ${event.originDomainId} not supported`,
+      );
     }
     return {
       id: generateTransferID(
@@ -160,15 +161,16 @@ export class SubstrateParser implements ISubstrateParser {
     log: Event,
     toDomain: DomainType,
     ctx: Context,
-  ): Promise<DecodedFailedHandlerExecutionLog | null> {
+  ): Promise<DecodedFailedHandlerExecutionLog> {
     const event = events.sygmaBridge.failedHandlerExecution.v1250.decode(log);
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
     const fromDomain = await ctx.store.findOne(Domain, {
       where: { id: event.originDomainId.toString() },
     });
     if (!fromDomain) {
-      logger.error(`Source domain id ${event.originDomainId} not supported`);
-      return null;
+      throw new SkipNotFoundError(
+        `Source domain id ${event.originDomainId} not supported`,
+      );
     }
     return {
       id: generateTransferID(
@@ -190,7 +192,7 @@ export class SubstrateParser implements ISubstrateParser {
     log: Event,
     fromDomain: DomainType,
     ctx: Context,
-  ): Promise<FeeCollectedData | null> {
+  ): Promise<FeeCollectedData> {
     const event = events.sygmaBridge.feeCollected.v1260.decode(log);
     const resource = await ctx.store.findOne(Resource, {
       where: {
@@ -198,8 +200,9 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!resource) {
-      logger.error(`Unsupported resource: ${event.resourceId.toLowerCase()}`);
-      return null;
+      throw new SkipNotFoundError(
+        `Unssupported resource with ID ${event.resourceId}`,
+      );
     }
 
     const token = await ctx.store.findOne(Token, {
@@ -209,10 +212,9 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!token) {
-      logger.error(
-        `Token with resourceID: ${event.resourceId.toLowerCase()} doesn't exist, skipping...`,
+      throw new SkipNotFoundError(
+        `Token with resourceID: ${resource.id.toLowerCase()} doesn't exist, skipping`,
       );
-      return null;
     }
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 

@@ -45,17 +45,17 @@ export interface IParser {
   ): Promise<{
     decodedDepositLog: DecodedDepositLog;
     decodedFeeLog: FeeCollectedData;
-  } | null>;
+  }>;
   parseProposalExecution(
     log: Log | Event,
     toDomain: Domain,
     ctx: EvmContext | SubstrateContext,
-  ): Promise<DecodedProposalExecutionLog | null>;
+  ): Promise<DecodedProposalExecutionLog>;
   parseFailedHandlerExecution(
     log: Log | Event,
     toDomain: Domain,
     ctx: EvmContext | SubstrateContext,
-  ): Promise<DecodedFailedHandlerExecutionLog | null>;
+  ): Promise<DecodedFailedHandlerExecutionLog>;
   parseDestination(hexData: string, resourceType: ResourceType): string;
 }
 

@@ -2,14 +2,17 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
+import { ResourceType } from "@buildwithsygma/core";
 import type { EntityManager } from "typeorm";
 
 import type { Domain as DomainConfig } from "./indexer/config";
 import { fetchSharedConfig } from "./indexer/config";
 import { getEnv } from "./indexer/config/validator";
-import { Domain, Resource } from "./model";
+import { Domain, Resource, Token } from "./model";
 import { initDatabase } from "./utils";
 import { logger } from "./utils/logger";
+
+const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 async function main(): Promise<void> {
   const envVars = getEnv();
@@ -29,21 +32,39 @@ async function insertDomains(
       Domain,
       {
         id: domain.id.toString(),
-        lastIndexedBlock: domain.startBlock.toString(),
         name: domain.name,
       },
       ["id"],
     );
-    for (const resource of domain.resources) {
-      await manager.upsert(
-        Resource,
-        {
-          id: resource.resourceId,
-          type: resource.type,
-          decimals: resource.decimals,
-        },
-        ["id"],
-      );
+    await manager.upsert(
+      Token,
+      {
+        decimals: domain.nativeTokenDecimals,
+        tokenSymbol: domain.nativeTokenSymbol,
+        tokenAddress: NATIVE_TOKEN_ADDRESS,
+        domainID: domain.id.toString(),
+      },
+      ["tokenAddress", "domainID"],
+    );
+
+    for (const r of domain.resources) {
+      const resource = {
+        id: r.resourceId.toLowerCase(),
+        type: r.type,
+      };
+      await manager.upsert(Resource, resource, ["id"]);
+      if (r.type == ResourceType.PERMISSIONLESS_GENERIC) {
+        continue;
+      }
+      const token = {
+        decimals: r.decimals,
+        tokenSymbol: r.symbol,
+        tokenAddress:
+          "address" in r ? r.address : JSON.stringify(r.xcmMultiAssetId),
+        domainID: domain.id.toString(),
+        resourceID: r.resourceId,
+      };
+      await manager.upsert(Token, token, ["tokenAddress", "domainID"]);
     }
   }
 }

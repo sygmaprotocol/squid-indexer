@@ -3,7 +3,6 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
-import {Transfer} from "./transfer.model"
 
 @Entity_()
 export class Execution {
@@ -23,4 +22,7 @@ export class Execution {
 
     @Column_("text", {nullable: false})
     blockNumber!: string
+
+    @Column_("text", {nullable: true})
+    message!: string | undefined | null
 }

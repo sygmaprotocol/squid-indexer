@@ -15,7 +15,7 @@ import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
 import {IParser } from "../../src/indexer/indexer";
 import {Context} from "../../src/indexer/evmIndexer/evmProcessor"
 import { Domain, Resource, Token } from "../../src/model";
-import { SkipNotFoundError } from "../../src/utils/error";
+import { NotFoundError } from "../../src/utils/error";
 
 describe("EVMParser", () => {
   let provider: sinon.SinonStubbedInstance<JsonRpcProvider>;
@@ -232,7 +232,7 @@ const mockSourceDomain = {
         await parser.parseDeposit(log, fromDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(SkipNotFoundError);
+        expect(error).to.be.instanceOf(NotFoundError);
       }
     });
 
@@ -283,7 +283,7 @@ const mockSourceDomain = {
         await parser.parseDeposit(log, fromDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(SkipNotFoundError);
+        expect(error).to.be.instanceOf(NotFoundError);
       }
     });
 
@@ -394,7 +394,7 @@ const mockSourceDomain = {
         await parser.parseProposalExecution(log, toDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(SkipNotFoundError);
+        expect(error).to.be.instanceOf(NotFoundError);
       }
     });
   });
@@ -470,7 +470,7 @@ const mockSourceDomain = {
       try {
         await parser.parseFailedHandlerExecution(log, toDomain, ctx);        expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(SkipNotFoundError);
+        expect(error).to.be.instanceOf(NotFoundError);
       }
     });
   });

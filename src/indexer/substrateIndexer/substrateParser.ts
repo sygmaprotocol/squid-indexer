@@ -13,7 +13,7 @@ import { assertNotNull } from "@subsquid/substrate-processor";
 
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { Domain, Resource, Token } from "../../model";
-import { SkipNotFoundError } from "../../utils/error";
+import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
 import type { IParser } from "../indexer";
@@ -59,7 +59,7 @@ export class SubstrateParser implements ISubstrateParser {
     const event = events.sygmaBridge.deposit.v1250.decode(log);
     const destinationParser = this.parsers.get(event.destDomainId);
     if (!destinationParser) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Destination domain id ${event.destDomainId} not supported`,
       );
     }
@@ -69,7 +69,7 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!resource) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Unssupported resource with ID ${event.resourceId}`,
       );
     }
@@ -81,7 +81,7 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!token) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Token with resourceID: ${resource.id.toLowerCase()} doesn't exist, skipping`,
       );
     }
@@ -138,7 +138,7 @@ export class SubstrateParser implements ISubstrateParser {
     });
 
     if (!fromDomain) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Source domain id ${event.originDomainId} not supported`,
       );
     }
@@ -168,7 +168,7 @@ export class SubstrateParser implements ISubstrateParser {
       where: { id: event.originDomainId.toString() },
     });
     if (!fromDomain) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Source domain id ${event.originDomainId} not supported`,
       );
     }
@@ -200,7 +200,7 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!resource) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Unssupported resource with ID ${event.resourceId}`,
       );
     }
@@ -212,7 +212,7 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!token) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Token with resourceID: ${resource.id.toLowerCase()} doesn't exist, skipping`,
       );
     }

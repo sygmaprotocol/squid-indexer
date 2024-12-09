@@ -11,7 +11,7 @@ import type {
 import { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import type { Store } from "@subsquid/typeorm-store";
 
-import { SkipNotFoundError } from "../../utils/error";
+import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
 import type { DecodedEvents, IProcessor } from "../indexer";
@@ -132,7 +132,7 @@ export class SubstrateProcessor implements IProcessor {
               break;
           }
         } catch (error) {
-          if (error instanceof SkipNotFoundError) {
+          if (error instanceof NotFoundError) {
             logger.error(error.message);
           } else {
             throw error;

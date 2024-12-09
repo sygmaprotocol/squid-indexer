@@ -14,7 +14,7 @@ import { ethers } from "ethers";
 import * as bridge from "../../abi/bridge";
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { Domain, Resource, Token } from "../../model";
-import { SkipNotFoundError } from "../../utils/error";
+import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
 import type { IParser } from "../indexer";
@@ -56,7 +56,7 @@ export class EVMParser implements IParser {
     const event = bridge.events.Deposit.decode(log);
     const destinationParser = this.parsers.get(event.destinationDomainID);
     if (!destinationParser) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Destination domain id ${event.destinationDomainID} not supported`,
       );
     }
@@ -68,7 +68,7 @@ export class EVMParser implements IParser {
     });
 
     if (!resource) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Unssupported resource with ID ${event.resourceID}`,
       );
     }
@@ -83,7 +83,7 @@ export class EVMParser implements IParser {
     });
 
     if (!token) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Token with resourceID: ${event.resourceID.toLowerCase()} doesn't exist, skipping`,
       );
     }
@@ -137,7 +137,7 @@ export class EVMParser implements IParser {
       where: { id: event.originDomainID.toString() },
     });
     if (!fromDomain) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Source domain id ${event.originDomainID} not supported`,
       );
     }
@@ -168,7 +168,7 @@ export class EVMParser implements IParser {
       where: { id: event.originDomainID.toString() },
     });
     if (!fromDomain) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Source domain id ${event.originDomainID} not supported`,
       );
     }

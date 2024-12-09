@@ -50,17 +50,17 @@ export interface IParser {
   ): Promise<{
     decodedDepositLog: DecodedDepositLog;
     decodedFeeLog: FeeCollectedData;
-  } | null>;
+  }>;
   parseProposalExecution(
     log: Log | Event,
     toDomain: Domain,
     ctx: EvmContext | SubstrateContext,
-  ): Promise<DecodedProposalExecutionLog | null>;
+  ): Promise<DecodedProposalExecutionLog>;
   parseFailedHandlerExecution(
     log: Log | Event,
     toDomain: Domain,
     ctx: EvmContext | SubstrateContext,
-  ): Promise<DecodedFailedHandlerExecutionLog | null>;
+  ): Promise<DecodedFailedHandlerExecutionLog>;
   parseDestination(hexData: string, resourceType: ResourceType): string;
   parseEvmRoute?(
     txHash: string,
@@ -254,7 +254,7 @@ export class Indexer {
         const fee = new Fee({
           id: f.id,
           amount: f.amount,
-          resourceID: f.resourceID,
+          tokenID: f.tokenID,
           depositID: deposit.id,
           domainID: f.domainID,
         });

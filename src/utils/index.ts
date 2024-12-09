@@ -13,6 +13,7 @@ import {
   Execution,
   Fee,
   Resource,
+  Token,
   Transfer,
 } from "../model";
 import { Route } from "../model/generated/route.model";
@@ -34,6 +35,7 @@ export async function initDatabase(dbConfig: DbConfig): Promise<DataSource> {
       Account,
       Fee,
       Route,
+      Token,
     ],
     namingStrategy: new SnakeNamingStrategy(),
     synchronize: true,

@@ -14,8 +14,9 @@ import { generateTransferID } from "../../src/indexer/utils";
 import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
 import {IParser } from "../../src/indexer/indexer";
 import {Context} from "../../src/indexer/evmIndexer/evmProcessor"
-import { Domain, Resource } from "../../src/model";
 import * as feeRouter from "../../src/abi/FeeHandlerRouter";
+import { Domain, Resource, Token } from "../../src/model";
+import { SkipNotFoundError } from "../../src/utils/error";
 
 describe("EVMParser", () => {
   let provider: sinon.SinonStubbedInstance<JsonRpcProvider>;
@@ -25,8 +26,15 @@ describe("EVMParser", () => {
 const mockResource = {
   id: '0x0000000000000000000000000000000000000000000000000000000000000300',
   type: 'fungible',
+};
+
+const mockToken = {
+  id:"tokenID",
   tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
   decimals: 18,
+  tokenSymbol: "ERC20LRTest",
+  domainID: 2,
+  resourceID: mockResource.id
 };
 
 const mockSourceDomain = {
@@ -62,8 +70,8 @@ const mockSourceDomain = {
     });
 
     it("should parse a deposit log correctly", async () => {
-      findOneStub.withArgs(Resource, { where: { resourceID: mockResource.id, domainID: "2" } }).resolves(mockResource);
-      findOneStub.withArgs(Resource, { where: { tokenAddress: "0x1234567890abcdef1234567890abcdef12345678", domainID: "2" } }).resolves(mockResource);
+      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
+      findOneStub.withArgs(Token, { where: { tokenAddress: mockToken.tokenAddress, domainID: "2" } }).resolves(mockToken);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -148,7 +156,7 @@ const mockSourceDomain = {
       },
       decodedFeeLog: {
         id: result?.decodedFeeLog.id,
-        resourceID: "0x0000000000000000000000000000000000000000000000000000000000000300",
+        tokenID: mockToken.id,
         txIdentifier: "0xTxHash",
         domainID: "2",
         amount: "0.01",
@@ -221,9 +229,12 @@ const mockSourceDomain = {
         amount: "0.01",
       });
 
-      const result = await parser.parseDeposit(log, fromDomain, ctx);
-
-      expect(result).to.be.null
+      try {
+        await parser.parseDeposit(log, fromDomain, ctx);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(SkipNotFoundError);
+      }
     });
 
 
@@ -269,9 +280,12 @@ const mockSourceDomain = {
         amount: "0.01",
       });
 
-      const result = await parser.parseDeposit(log, fromDomain, ctx);
-
-      expect(result).to.be.null;
+      try {
+        await parser.parseDeposit(log, fromDomain, ctx);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(SkipNotFoundError);
+      }
     });
 
     it("should throw an error if resource is not found", async () => {
@@ -377,9 +391,12 @@ const mockSourceDomain = {
       };
       sinon.stub(bridge.events.ProposalExecution, "decode").returns(event);
 
-      const result = await parser.parseProposalExecution(log, toDomain, ctx);
-
-      expect(result).to.be.null
+      try {
+        await parser.parseProposalExecution(log, toDomain, ctx);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(SkipNotFoundError);
+      }
     });
   });
 
@@ -450,9 +467,12 @@ const mockSourceDomain = {
       };
       sinon.stub(bridge.events.FailedHandlerExecution, "decode").returns(event);
 
-      const result = await parser.parseFailedHandlerExecution(log, toDomain, ctx);
 
-      expect(result).to.be.null;
+      try {
+        await parser.parseFailedHandlerExecution(log, toDomain, ctx);        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(SkipNotFoundError);
+      }
     });
   });
 

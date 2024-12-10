@@ -69,7 +69,7 @@ export class EVMParser implements IParser {
 
     if (!resource) {
       throw new NotFoundError(
-        `Unssupported resource with ID ${event.resourceID}`,
+        `Unsupported resource with ID ${event.resourceID}`,
       );
     }
     const transaction = assertNotNull(log.transaction, "Missing transaction");
@@ -81,7 +81,6 @@ export class EVMParser implements IParser {
         domainID: fromDomain.id.toString(),
       },
     });
-
     if (!token) {
       throw new NotFoundError(
         `Token with resourceID: ${event.resourceID.toLowerCase()} doesn't exist, skipping`,

@@ -15,8 +15,8 @@ export interface ITransferByTxHash {
   type: TransferType;
 }
 
-export interface ITransferBySender extends ITransfers {
-  senderAddress: string;
+export interface ITransferBySender {
+  sender: string;
 }
 
 export enum TransferType {

@@ -189,3 +189,7 @@ export const transferByTxHashSchema = {
   },
   txHash: { type: "string" },
 };
+
+export const transfersBySenderSchema = {
+  sender: { type: "string" },
+};

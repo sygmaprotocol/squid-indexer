@@ -5,10 +5,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 import type { FastifyInstance } from "fastify";
 
 import { TransfersController } from "../controllers/TransfersController";
-import {
-  transfersBySenderSchema,
-  transfersSchema,
-} from "../schemas/transfers.schema";
+import { transfersSchema } from "../schemas/transfers.schema";
 
 export async function transferRoutes(server: FastifyInstance): Promise<void> {
   const transfersController = new TransfersController(server.db);
@@ -17,11 +14,5 @@ export async function transferRoutes(server: FastifyInstance): Promise<void> {
     { schema: transfersSchema },
     transfersController.getTransfers.bind(transfersController),
   );
-  server.get(
-    "/transfers/sender/:senderAddress",
-    { schema: transfersBySenderSchema },
-    transfersController.getTransfersBySender.bind(transfersController),
-  );
-
   return Promise.resolve();
 }

@@ -60,19 +60,4 @@ export class TransfersService {
 
     return transfers;
   }
-
-  public async findTransfersBySenderAddress(
-    sender: string,
-    paginationParams: Pagination,
-  ): Promise<Transfer[]> {
-    const where: FindOptionsWhere<Transfer> = {
-      deposit: {
-        accountID: sender,
-      },
-    };
-
-    const transfers = this.findTransfers(where, paginationParams);
-
-    return transfers;
-  }
 }

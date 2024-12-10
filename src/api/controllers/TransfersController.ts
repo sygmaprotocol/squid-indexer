@@ -24,8 +24,10 @@ export class TransfersController {
 
   public async getTransfers(
     {
-      query: { page, limit, status, txHash, type },
-    }: FastifyRequest<{ Querystring: ITransfers & ITransferByTxHash }>,
+      query: { page, limit, status, txHash, type, sender },
+    }: FastifyRequest<{
+      Querystring: ITransfers & ITransferByTxHash & ITransferBySender;
+    }>,
     reply: FastifyReply,
   ): Promise<void> {
     try {
@@ -37,6 +39,8 @@ export class TransfersController {
           );
         }
         where[type] = { txHash };
+      } else if (sender) {
+        where.deposit = { accountID: sender };
       }
       const transfersResult = await this.transfersService.findTransfers(where, {
         page,
@@ -44,30 +48,7 @@ export class TransfersController {
       });
       await reply.status(200).send(transfersResult);
     } catch (error) {
-      logger.error("Error occurred when fetching all transfers", error);
-      await reply.status(500).send({ error: "Internal server error" });
-    }
-  }
-
-  public async getTransfersBySender(
-    {
-      params: { senderAddress },
-      query: { page, limit },
-    }: FastifyRequest<{ Params: ITransferBySender; Querystring: ITransfers }>,
-    reply: FastifyReply,
-  ): Promise<void> {
-    try {
-      const transfers =
-        await this.transfersService.findTransfersBySenderAddress(
-          senderAddress,
-          { page, limit },
-        );
-      await reply.status(200).send(transfers);
-    } catch (error) {
-      logger.error(
-        "Error occurred when fetching transfers by sender address",
-        error,
-      );
+      logger.error("Error occurred when fetching transfers", error);
       await reply.status(500).send({ error: "Internal server error" });
     }
   }

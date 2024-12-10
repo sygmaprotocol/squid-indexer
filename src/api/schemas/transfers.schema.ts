@@ -11,7 +11,7 @@ import {
 } from ".";
 
 export const transfersSchema = {
-  summary: "Get all transfers (ordered by time)",
+  summary: "Get transfers (ordered by time)",
   querystring: {
     type: "object",
     properties: {

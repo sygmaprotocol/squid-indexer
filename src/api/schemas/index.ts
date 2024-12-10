@@ -182,7 +182,7 @@ export const paginationSchema = {
 };
 
 export const transferByTxHashSchema = {
-  type: {
+  component: {
     type: "string",
     enum: ["deposit", "execution"],
     default: "deposit",

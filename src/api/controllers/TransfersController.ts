@@ -8,7 +8,7 @@ import type { DataSource, FindOptionsWhere } from "typeorm";
 import type { Transfer } from "../../model";
 import { logger } from "../../utils/logger";
 import {
-  TransferType,
+  TransferComponent,
   type ITransferBySender,
   type ITransferByTxHash,
   type ITransfers,
@@ -24,7 +24,7 @@ export class TransfersController {
 
   public async getTransfers(
     {
-      query: { page, limit, status, txHash, type, sender },
+      query: { page, limit, status, txHash, component, sender },
     }: FastifyRequest<{
       Querystring: ITransfers & ITransferByTxHash & ITransferBySender;
     }>,
@@ -33,12 +33,15 @@ export class TransfersController {
     try {
       const where: FindOptionsWhere<Transfer> = { status };
       if (txHash) {
-        if (type != TransferType.Deposit && type != TransferType.Execution) {
+        if (
+          component != TransferComponent.Deposit &&
+          component != TransferComponent.Execution
+        ) {
           throw new Error(
             `Invalid type provided: must be 'deposit' or 'execution' when txHash is specified`,
           );
         }
-        where[type] = { txHash };
+        where[component] = { txHash };
       } else if (sender) {
         where.deposit = { accountID: sender };
       }

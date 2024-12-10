@@ -12,14 +12,14 @@ export interface ITransfers {
 
 export interface ITransferByTxHash {
   txHash: string;
-  type: TransferType;
+  component: TransferComponent;
 }
 
 export interface ITransferBySender {
   sender: string;
 }
 
-export enum TransferType {
+export enum TransferComponent {
   Deposit = "deposit",
   Execution = "execution",
 }

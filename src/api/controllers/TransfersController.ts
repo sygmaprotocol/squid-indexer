@@ -29,11 +29,11 @@ export class TransfersController {
     reply: FastifyReply,
   ): Promise<void> {
     try {
-      let where: FindOptionsWhere<Transfer> = { status };
+      const where: FindOptionsWhere<Transfer> = { status };
       if (txHash) {
         if (type != TransferType.Deposit && type != TransferType.Execution) {
           throw new Error(
-            `Invalid type provided: must be 'deposit' or 'execution' when txHash is specified`
+            `Invalid type provided: must be 'deposit' or 'execution' when txHash is specified`,
           );
         }
         where[type] = { txHash };

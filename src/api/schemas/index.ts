@@ -180,3 +180,12 @@ export const paginationSchema = {
     default: 10,
   },
 };
+
+export const transferByTxHashSchema = {
+  type: {
+    type: "string",
+    enum: ["deposit", "execution"],
+    default: "deposit",
+  },
+  txHash: { type: "string" },
+};

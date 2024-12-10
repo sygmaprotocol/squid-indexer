@@ -5,7 +5,6 @@ SPDX-License-Identifier: LGPL-3.0-only
 import type { DataSource, FindOptionsWhere, Repository } from "typeorm";
 
 import { Transfer } from "../../../model";
-import { TransferType } from "../../interfaces";
 
 export type Pagination = {
   page: number;
@@ -34,7 +33,7 @@ export class TransfersService {
   }
 
   public async findTransfers(
-    where: FindOptionsWhere<Transfer> | FindOptionsWhere<Transfer>[],
+    where: FindOptionsWhere<Transfer>,
     paginationParams: Pagination,
   ): Promise<Transfer[]> {
     const { skip, take } = this.calculatePaginationParams(paginationParams);
@@ -58,32 +57,6 @@ export class TransfersService {
         "deposit.toDomain",
       ],
     });
-
-    return transfers;
-  }
-
-  public async findTransfersByTxHash(
-    txHash: string,
-    type: TransferType,
-    domainID: number,
-    paginationParams: Pagination,
-  ): Promise<Transfer[]> {
-    const where: FindOptionsWhere<Transfer> =
-      type === TransferType.Deposit
-        ? {
-            deposit: {
-              txHash: txHash,
-              ...(domainID && { fromDomain: { id: domainID.toString() } }),
-            },
-          }
-        : {
-            execution: { txHash: txHash },
-            ...(domainID && {
-              deposit: { fromDomain: { id: domainID.toString() } },
-            }),
-          };
-
-    const transfers = this.findTransfers(where, paginationParams);
 
     return transfers;
   }

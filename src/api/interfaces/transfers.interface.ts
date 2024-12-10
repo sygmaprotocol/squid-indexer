@@ -4,7 +4,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import type { TransferStatus } from "../../model";
 
-export interface ITransfer {
+export interface ITransfers {
   page: number;
   limit: number;
   status?: TransferStatus;
@@ -12,21 +12,14 @@ export interface ITransfer {
 
 export interface ITransferByTxHash {
   txHash: string;
+  type: TransferType;
 }
 
-export interface ITransferBySender extends ITransfer {
+export interface ITransferBySender extends ITransfers {
   senderAddress: string;
-}
-
-export interface ITransferByDomain extends ITransfer {
-  domainID: number;
 }
 
 export enum TransferType {
   Deposit = "deposit",
   Execution = "execution",
-}
-
-export interface ITransferByTransferType extends ITransfer {
-  type: TransferType;
 }

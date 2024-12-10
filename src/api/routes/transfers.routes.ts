@@ -6,7 +6,6 @@ import type { FastifyInstance } from "fastify";
 
 import { TransfersController } from "../controllers/TransfersController";
 import {
-  transferByTxHashSchema,
   transfersBySenderSchema,
   transfersSchema,
 } from "../schemas/transfers.schema";
@@ -22,11 +21,6 @@ export async function transferRoutes(server: FastifyInstance): Promise<void> {
     "/transfers/sender/:senderAddress",
     { schema: transfersBySenderSchema },
     transfersController.getTransfersBySender.bind(transfersController),
-  );
-  server.get(
-    "/transfers/txHash/:txHash",
-    { schema: transferByTxHashSchema },
-    transfersController.getTransferByTxHash.bind(transfersController),
   );
 
   return Promise.resolve();

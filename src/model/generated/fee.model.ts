@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, ManyToOne as ManyToOne_, Index as Index_} from "@subsquid/typeorm-store"
 import {Deposit} from "./deposit.model"
 import {Domain} from "./domain.model"
 import {Token} from "./token.model"
@@ -16,17 +16,17 @@ export class Fee {
     @PrimaryColumn_()
     id!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     amount!: string
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     depositID!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Deposit, {nullable: true})
     deposit!: Deposit | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     domainID!: string | undefined | null
 
     @Index_()
@@ -37,6 +37,6 @@ export class Fee {
     @ManyToOne_(() => Token, {nullable: true})
     token!: Token | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     tokenID!: string | undefined | null
 }

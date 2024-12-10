@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_, ManyToOne as ManyToOne_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToOne as OneToOne_, StringColumn as StringColumn_, DateTimeColumn as DateTimeColumn_, Index as Index_, JoinColumn as JoinColumn_, ManyToOne as ManyToOne_} from "@subsquid/typeorm-store"
 import {Transfer} from "./transfer.model"
 import {Fee} from "./fee.model"
 import {Account} from "./account.model"
@@ -18,26 +18,28 @@ export class Deposit {
     @PrimaryColumn_()
     id!: string
 
+    @OneToOne_(() => Transfer, e => e.deposit)
+    transfer!: Transfer | undefined | null
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     type!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     txHash!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     blockNumber!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     depositData!: string
 
-    @Column_("timestamp with time zone", {nullable: true})
+    @DateTimeColumn_({nullable: true})
     timestamp!: Date | undefined | null
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     handlerResponse!: string
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     feeID!: string | undefined | null
 
     @Index_({unique: true})
@@ -45,40 +47,40 @@ export class Deposit {
     @JoinColumn_()
     fee!: Fee | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     accountID!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Account, {nullable: true})
     account!: Account | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     depositNonce!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Resource, {nullable: true})
     resource!: Resource
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     resourceID!: string | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     fromDomainID!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Domain, {nullable: true})
     fromDomain!: Domain
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     toDomainID!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Domain, {nullable: true})
     toDomain!: Domain
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     destination!: string | undefined | null
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     amount!: string
 }

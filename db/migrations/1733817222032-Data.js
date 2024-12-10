@@ -1,14 +1,14 @@
-module.exports = class Data1733473538875 {
-    name = 'Data1733473538875'
+module.exports = class Data1733817222032 {
+    name = 'Data1733817222032'
 
     async up(db) {
         await db.query(`CREATE TABLE "resource" ("id" character varying NOT NULL, "type" text NOT NULL, CONSTRAINT "PK_e2894a5867e06ae2e8889f1173f" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE TABLE "token" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "decimals" integer NOT NULL, "token_address" text NOT NULL, "token_symbol" text NOT NULL, "resource_id" character varying, "domain_id" character varying, CONSTRAINT "PK_82fae97f905930df5d62a702fc9" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "token" ("id" character varying NOT NULL, "decimals" integer NOT NULL, "token_address" text NOT NULL, "token_symbol" text NOT NULL, "resource_id" character varying, "domain_id" character varying, CONSTRAINT "PK_82fae97f905930df5d62a702fc9" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_435ef0917a04e91698042dff2b" ON "token" ("resource_id") `)
         await db.query(`CREATE INDEX "IDX_3d565341b16e9c03d63e05eac8" ON "token" ("domain_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_ada3dfc11e70168668345b2951" ON "token" ("token_address", "domain_id") `)
         await db.query(`CREATE TABLE "domain" ("id" character varying NOT NULL, "name" text NOT NULL, CONSTRAINT "PK_27e3ec3ea0ae02c8c5bceab3ba9" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE TABLE "fee" ("id" character varying NOT NULL, "amount" text NOT NULL, "deposit_id" character varying, "domain_id" character varying, "token_id" uuid, CONSTRAINT "PK_ee7e51cc563615bc60c2b234635" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "fee" ("id" character varying NOT NULL, "amount" text NOT NULL, "deposit_id" character varying, "domain_id" character varying, "token_id" character varying, CONSTRAINT "PK_ee7e51cc563615bc60c2b234635" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_a81285659ab5f86b08e7776700" ON "fee" ("deposit_id") `)
         await db.query(`CREATE INDEX "IDX_dab28f6cfe8ff03f1da38f0d79" ON "fee" ("domain_id") `)
         await db.query(`CREATE INDEX "IDX_bde4aa972635af552acf115242" ON "fee" ("token_id") `)

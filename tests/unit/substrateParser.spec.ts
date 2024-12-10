@@ -141,7 +141,6 @@ const mockSourceDomain = {
         decodedFeeLog: {
           id: result?.decodedFeeLog.id,
           amount: '50',
-          domainID: '4',
           tokenID: mockToken.id,
           txIdentifier: '0000000001-0ea58-000001'
         }
@@ -407,7 +406,6 @@ const mockSourceDomain = {
       expect(result).to.deep.include({
         id: result?.id,
         amount: '10',
-        domainID: '4',
         tokenID: 'tokenID',
         txIdentifier: '0000000001-0ea58-000001'
       });

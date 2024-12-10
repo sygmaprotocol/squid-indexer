@@ -3,7 +3,7 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, OneToMany as OneToMany_} from "@subsquid/typeorm-store"
-import {Deposit} from "./deposit.model"
+import {Transfer} from "./transfer.model"
 import {Token} from "./token.model"
 
 @Entity_()
@@ -18,8 +18,8 @@ export class Resource {
     @StringColumn_({nullable: false})
     type!: string
 
-    @OneToMany_(() => Deposit, e => e.resource)
-    deposit!: Deposit[]
+    @OneToMany_(() => Transfer, e => e.resource)
+    transfers!: Transfer[]
 
     @OneToMany_(() => Token, e => e.resource)
     tokens!: Token[]

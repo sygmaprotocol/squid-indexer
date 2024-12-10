@@ -118,7 +118,6 @@ export class SubstrateParser implements ISubstrateParser {
       decodedFeeLog: {
         id: randomUUID(),
         amount: "50",
-        domainID: fromDomain.id.toString(),
         tokenID: token?.id,
         txIdentifier: extrinsic.id,
       },
@@ -221,7 +220,6 @@ export class SubstrateParser implements ISubstrateParser {
     return {
       id: randomUUID(),
       amount: event.feeAmount.toString().replaceAll(",", ""),
-      domainID: fromDomain.id.toString(),
       tokenID: token.id,
       txIdentifier: extrinsic.id,
     };

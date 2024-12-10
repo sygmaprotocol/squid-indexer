@@ -3,8 +3,7 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, OneToMany as OneToMany_} from "@subsquid/typeorm-store"
-import {Deposit} from "./deposit.model"
-import {Fee} from "./fee.model"
+import {Transfer} from "./transfer.model"
 import {Token} from "./token.model"
 
 @Entity_()
@@ -19,14 +18,11 @@ export class Domain {
     @StringColumn_({nullable: false})
     name!: string
 
-    @OneToMany_(() => Deposit, e => e.fromDomain)
-    fromDomain!: Deposit[]
+    @OneToMany_(() => Transfer, e => e.fromDomain)
+    transfersFrom!: Transfer[]
 
-    @OneToMany_(() => Deposit, e => e.toDomain)
-    toDomain!: Deposit[]
-
-    @OneToMany_(() => Fee, e => e.domain)
-    fee!: Fee[]
+    @OneToMany_(() => Transfer, e => e.toDomain)
+    transfersTo!: Transfer[]
 
     @OneToMany_(() => Token, e => e.domain)
     token!: Token[]

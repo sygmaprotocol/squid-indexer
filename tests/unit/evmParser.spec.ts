@@ -2,53 +2,55 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-
+import { ApiPromise } from "@polkadot/api";
 import { expect } from "chai";
 import sinon from "sinon";
-import { JsonRpcProvider } from "ethers";
-import { EVMParser } from "../../src/indexer/evmIndexer/evmParser";
-import { Log } from "@subsquid/evm-processor";
-import { FeeHandlerType, Network, ResourceType } from "@buildwithsygma/core";
-import * as bridge from "../../src/abi/bridge";
+import { SubstrateParser } from "../../src/indexer/substrateIndexer/substrateParser";
+import { IParser } from "../../src/indexer/indexer";
+import { Network, ResourceType } from "@buildwithsygma/core";
+import { Domain as DomainType } from "../../src/indexer/config";
+import { events } from "../../src/indexer/substrateIndexer/types";
+import type { Event } from "../../src/indexer/substrateIndexer/substrateProcessor";
 import { generateTransferID } from "../../src/indexer/utils";
-import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
-import {IParser } from "../../src/indexer/indexer";
-import {Context} from "../../src/indexer/evmIndexer/evmProcessor"
+import { EVMParser } from "../../src/indexer/evmIndexer/evmParser";
+import { JsonRpcProvider } from "ethers";
+import {
+  V3AssetId,
+} from "../../src/indexer/substrateIndexer/types/v1260";
+import {Context} from "../../src/indexer/substrateIndexer/substrateProcessor"
 import { Domain, Resource, Token } from "../../src/model";
-import { NotFoundError } from "../../src/utils/error";
 
-describe("EVMParser", () => {
-  let provider: sinon.SinonStubbedInstance<JsonRpcProvider>;
-  let parser: EVMParser;
+describe("Substrate parser", () => {
+  let provider: sinon.SinonStubbedInstance<ApiPromise>;
+  let parser: SubstrateParser;
   let ctx: Context;
   // Mock Data
-const mockResource = {
-  id: '0x0000000000000000000000000000000000000000000000000000000000000300',
-  type: 'fungible',
-};
-
-const mockToken = {
-  id:"tokenID",
-  tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
-  decimals: 18,
-  tokenSymbol: "ERC20LRTest",
-  domainID: 2,
-  resourceID: mockResource.id
-};
+  const mockResource = {
+    id: '0x0000000000000000000000000000000000000000000000000000000000000300',
+    type: 'fungible',
+  };
+  
+  const mockToken = {
+    id:"tokenID",
+    tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
+    decimals: 18,
+    tokenSymbol: "ERC20LRTest",
+    domainID: 2,
+    resourceID: mockResource.id
+  };
 
 const mockSourceDomain = {
-  id: '2',
+  id: '1',
 };
-
   before(() => {
-    // Mock provider
-    provider = sinon.createStubInstance(JsonRpcProvider);
-    parser = new EVMParser(provider as any);
-    const parsers = new Map<number, IParser>()
-    parsers.set(3,parser)
-    parser.setParsers(parsers)
-  });
+    provider = sinon.createStubInstance(ApiPromise);
 
+    parser = new SubstrateParser(provider);
+
+    const parsers = new Map<number, IParser>();
+    parsers.set(1, new EVMParser(new JsonRpcProvider()));
+    parser.setParsers(parsers);
+  });
 
   describe("parseDeposit", () => {
     let findOneStub: sinon.SinonStub;
@@ -67,255 +69,165 @@ const mockSourceDomain = {
     afterEach(() => {
       sinon.restore();
     });
-
-    it("should parse a deposit log correctly", async () => {
+    it("should parse a deposit correctly", async () => {
       findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
-      findOneStub.withArgs(Token, { where: { tokenAddress: mockToken.tokenAddress, domainID: "2" } }).resolves(mockToken);
-      const log: Log = {
+      findOneStub.withArgs(Token, { where: { resource: mockResource, domainID: "4" } }).resolves(mockToken);
+      let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
-        transaction: {
-          from: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-          hash: "0xTxHash",
-        },
-      } as Log;
+        extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
+      } as Event;
 
       const fromDomain: DomainType = {
-        id: 2,
-        chainId: 11155111,
-        caipId: "eip155:11155111",
-        name: "sepolia",
-        type: Network.EVM,
-        bridge: "0x4CF326d3817558038D1DEF9e76b727202c3E8492",
-        handlers: [
-          {
-            type: HandlerType.ERC20, 
-            address: "0x0d4fB069753bdf1C5aB48302e9744BF222A9F4e8"
-          }
-        ],
-        nativeTokenSymbol: "eth",
-        nativeTokenDecimals: 18,
-        blockConfirmations: 5,
-        startBlock: 5703542,
-        feeRouter: "0xD277478b4684Ed8594d5eb5B228AA7aDbA59df43",
-        feeHandlers: [
-          {
-            address: "0x356B7B3C25355325CcBFBCF00a82895F93f086b7",
-            type: FeeHandlerType.BASIC
-          }
-        ],
+        id: 4,
+        chainId: 5,
+        caipId: "polkadot:5",
+        name: "Sygma standalone pallet",
+        type: Network.SUBSTRATE,
+        bridge: "",
+        handlers: [],
+        nativeTokenSymbol: "syg",
+        nativeTokenDecimals: 12,
+        blockConfirmations: 2,
+        startBlock: 5,
+        feeRouter: "",
+        feeHandlers: [],
         resources: [
           {
-            resourceId: "0x0000000000000000000000000000000000000000000000000000000000000300",
-            caip19: "eip155:11155111/erc20:0x7d58589b6C1Ba455c4060a3563b9a0d447Bef9af",
+            resourceId:
+              "0x0000000000000000000000000000000000000000000000000000000000000300",
+            caip19: "polkadot:5",
             type: ResourceType.FUNGIBLE,
-            address: "0x7d58589b6C1Ba455c4060a3563b9a0d447Bef9af",
-            symbol: "ERC20LRTest",
-            decimals: 18
+            address: "",
+            symbol: "PHA",
+            decimals: 12,
           },
-        ]
+        ],
       };
 
-      // Mock bridge event decode
-      const event = {
+      const decodedEvent = {
+        destDomainId: 1,
+        resourceId:
+          "0x0000000000000000000000000000000000000000000000000000000000000300",
         depositNonce: BigInt(1),
-        destinationDomainID: 3,
-        resourceID: "0x0000000000000000000000000000000000000000000000000000000000000300",
-        user: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        data: "0x0000000000000000000000000000000000000000000000000162ea9c8f924d3c00000000000000000000000000000000000000000000000000000000000000149a17fa0a2824ea855ec6ad3eab3aa2516ec6626d",
-        handlerResponse: "",
-      };
-      sinon.stub(bridge.events.Deposit, "decode").returns(event);
-
-      // Mock getFee method
-      sinon.stub(parser, "getFee").resolves({
-        tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
-        amount: "0.01",
-      });
-
-      const result = await parser.parseDeposit(log, fromDomain, ctx);
-
-      expect(result).to.deep.include(
-        {
-        decodedDepositLog: {
-        id: generateTransferID("1", "2", "3"),
-        blockNumber: 1,
-        depositNonce: "1",
-        toDomainID: "3",
         sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        fromDomainID: "2",
-        resourceID: "0x0000000000000000000000000000000000000000000000000000000000000300",
-        txHash: "0xTxHash",
-        timestamp: new Date(1633072800),
-        transferType: ResourceType.FUNGIBLE,
-        amount: '0.0999000999000999',
-        destination: '0x9a17fa0a2824ea855ec6ad3eab3aa2516ec6626d',
-        depositData: "0x0000000000000000000000000000000000000000000000000162ea9c8f924d3c00000000000000000000000000000000000000000000000000000000000000149a17fa0a2824ea855ec6ad3eab3aa2516ec6626d",
-        handlerResponse: ""
- 
-      },
-      decodedFeeLog: {
-        id: result?.decodedFeeLog.id,
-        tokenID: mockToken.id,
-        txIdentifier: "0xTxHash",
-        domainID: "2",
-        amount: "0.01",
-      }
-    }
-      );
-    });
-
-
-    it("should skip deposits to unsupported domains", async () => {
-      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
-      const log: Log = {
-        block: { height: 1, timestamp: 1633072800 },
-        transaction: {
-          from: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-          hash: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        },
-      } as Log;
-
-      const fromDomain: DomainType = {
-        id: 2,
-        chainId: 11155111,
-        caipId: "eip155:11155111",
-        name: "sepolia",
-        type: Network.EVM,
-        bridge: "0x4CF326d3817558038D1DEF9e76b727202c3E8492",
-        handlers: [
-          {
-            type: HandlerType.ERC20, 
-            address: "0x0d4fB069753bdf1C5aB48302e9744BF222A9F4e8"
-          }
-        ],
-        nativeTokenSymbol: "eth",
-        nativeTokenDecimals: 18,
-        blockConfirmations: 5,
-        startBlock: 5703542,
-        feeRouter: "0xD277478b4684Ed8594d5eb5B228AA7aDbA59df43",
-        feeHandlers: [
-          {
-            address: "0x356B7B3C25355325CcBFBCF00a82895F93f086b7",
-            type: FeeHandlerType.BASIC
-          }
-        ],
-        resources: [
-          {
-            resourceId: "0x0000000000000000000000000000000000000000000000000000000000000300",
-            caip19: "eip155:11155111/erc20:0x7d58589b6C1Ba455c4060a3563b9a0d447Bef9af",
-            type: ResourceType.FUNGIBLE,
-            address: "0x7d58589b6C1Ba455c4060a3563b9a0d447Bef9af",
-            symbol: "ERC20LRTest",
-            decimals: 18
-          },
-        ]
-      };
-
-      // Mock bridge event decode
-      const event = {
-        depositNonce: BigInt(1),
-        destinationDomainID: 4,
-        resourceID: "0x0000000000000000000000000000000000000000000000000000000000000300",
-        user: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        data: "0x0000000000000000000000000000000000000000000000000162ea9c8f924d3c00000000000000000000000000000000000000000000000000000000000000149a17fa0a2824ea855ec6ad3eab3aa2516ec6626d",
+        transferType: ResourceType.FUNGIBLE as any,
+        depositData:
+          "0x00000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000000145c1f5961696bad2e73f73417f07ef55c62a2dc5b",
         handlerResponse: "",
       };
-      sinon.stub(bridge.events.Deposit, "decode").returns(event);
+      sinon
+        .stub(events.sygmaBridge.deposit.v1250, "decode")
+        .returns(decodedEvent);
 
-      // Mock getFee method
-      sinon.stub(parser, "getFee").resolves({
-        tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
-        amount: "0.01",
+      const result = await parser.parseDeposit(event, fromDomain, ctx);
+
+      expect(result).to.deep.include({
+        decodedDepositLog: {
+          id: '1-4-1',
+          blockNumber: 1,
+          depositNonce: '1',
+          toDomainID: '1',
+          sender: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef',
+          destination: '0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b',
+          fromDomainID: '4',
+          resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
+          txHash: '0000000001-0ea58-000001',
+          timestamp: new Date(1633072800),
+          depositData: '0x00000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000000145c1f5961696bad2e73f73417f07ef55c62a2dc5b',
+          handlerResponse: '',
+          transferType: 'fungible',
+          amount: '0.000000000001'
+        },
+        decodedFeeLog: {
+          id: result?.decodedFeeLog.id,
+          amount: '50',
+          tokenID: mockToken.id,
+          txIdentifier: '0000000001-0ea58-000001'
+        }
+
       });
-
-      try {
-        await parser.parseDeposit(log, fromDomain, ctx);
-        expect.fail("Expected error was not thrown");
-      } catch (error) {
-        expect(error).to.be.instanceOf(NotFoundError);
-      }
     });
 
-
-    it("should skip deposits with unsupported resource", async () => {
-      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(undefined);
-      const log: Log = {
+    it("should throw an error if destination parser is not found", () => {
+      let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
-        transaction: {
-          from: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-          hash: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        },
-      } as Log;
+        extrinsic: { id: "00", hash: "0x00" },
+      } as Event;
 
       const fromDomain: DomainType = {
-        id: 2,
-        chainId: 11155111,
+        id: 4,
+        chainId: 5,
         resources: [
           {
-            resourceId: "0x0000000000000000000000000000000000000000000000000000000000000300",
-            caip19: "eip155:11155111/erc20:0x7d58589b6C1Ba455c4060a3563b9a0d447Bef9af",
+            resourceId:
+              "0x0000000000000000000000000000000000000000000000000000000000000300",
+            caip19: "polkadot:5",
             type: ResourceType.FUNGIBLE,
-            address: "0x7d58589b6C1Ba455c4060a3563b9a0d447Bef9af",
-            symbol: "ERC20LRTest",
-            decimals: 18
+            address: "",
+            symbol: "PHA",
+            decimals: 12,
           },
-        ]
+        ],
       } as DomainType;
 
-      // Mock bridge event decode
-      const event = {
-        depositNonce: BigInt(1),
-        destinationDomainID: 3,
-        resourceID: "0x0000000000000000000000000000000000000000000000000000000000000300",
-        user: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        data: "0x0000000000000000000000000000000000000000000000000162ea9c8f924d3c00000000000000000000000000000000000000000000000000000000000000149a17fa0a2824ea855ec6ad3eab3aa2516ec6626d",
+      const decodedEvent = {
+        destDomainId: 999,
+        resourceId: "0x00",
+        depositNonce: BigInt(0),
+        sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
+        transferType: ResourceType.FUNGIBLE as any,
+        depositData: "",
         handlerResponse: "",
       };
-      sinon.stub(bridge.events.Deposit, "decode").returns(event);
-
-      // Mock getFee method
-      sinon.stub(parser, "getFee").resolves({
-        tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
-        amount: "0.01",
-      });
+      sinon
+        .stub(events.sygmaBridge.deposit.v1250, "decode")
+        .returns(decodedEvent);
 
       try {
-        await parser.parseDeposit(log, fromDomain, ctx);
+        parser.parseDeposit(event, fromDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(NotFoundError);
+        expect(error).to.be.instanceOf(Error);
       }
     });
 
-    it("should throw an error if resource is not found", async () => {
-      const log: Log = { block: { height: 1, timestamp: 1633072800 }, transaction: {} } as any;
+    it("should throw an error if resource is not found", () => {
+      let event: Event = {
+        block: { height: 1, timestamp: 1633072800 },
+        extrinsic: { id: "00", hash: "0x00" },
+      } as Event;
+
       const fromDomain: DomainType = {
-        id: 2,
-        chainId: 11155111,
+        id: 4,
+        chainId: 5,
         resources: [
           {
-            resourceId: "0x0000000000000000000000000000000000000000000000000000000000000300",
-            caip19: "eip155:11155111/erc20:0x7d58589b6C1Ba455c4060a3563b9a0d447Bef9af",
+            resourceId:
+              "0x0000000000000000000000000000000000000000000000000000000000000300",
+            caip19: "polkadot:5",
             type: ResourceType.FUNGIBLE,
-            address: "0x7d58589b6C1Ba455c4060a3563b9a0d447Bef9af",
-            symbol: "ERC20LRTest",
-            decimals: 18
+            address: "",
+            symbol: "PHA",
+            decimals: 12,
           },
-        ]
+        ],
       } as DomainType;
 
-      const event = {
-        depositNonce: BigInt(1),
-        destinationDomainID: 3,
-        resourceID: "0x1234567890abcdef1234567890abcdef12345678",
-        user: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        data: "0x...",
+      const decodedEvent = {
+        destDomainId: 1,
+        resourceId: "0x1234567890abcdef1234567890abcdef12345678",
+        depositNonce: BigInt(0),
+        sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
+        transferType: ResourceType.FUNGIBLE as any,
+        depositData: "",
         handlerResponse: "",
       };
-      sinon.stub(bridge.events.Deposit, "decode").returns(event);
+      sinon
+        .stub(events.sygmaBridge.deposit.v1250, "decode")
+        .returns(decodedEvent);
 
       try {
-        await parser.parseDeposit(log, fromDomain, ctx);
+        parser.parseDeposit(event, fromDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
         expect(error).to.be.instanceOf(Error);
@@ -340,62 +252,35 @@ const mockSourceDomain = {
     afterEach(() => {
       sinon.restore();
     });
-    it("should parse a proposal execution log correctly", async () => {
+    it("should parse a proposal execution correctly", async () => {
       findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
-      const log: Log = {
+
+      let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
-        transaction: {
-          hash: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        },
-      } as Log;
+        extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
+      } as Event;
 
-      const toDomain: DomainType = { id: 3 } as DomainType;
+      const toDomain: DomainType = { id: 4 } as DomainType;
 
-      const event = {
+      const decodedEvent = {
+        originDomainId: 1,
         depositNonce: BigInt(1),
-        originDomainID: 2,
         dataHash: "",
-        handlerResponse: ""
       };
-      sinon.stub(bridge.events.ProposalExecution, "decode").returns(event);
+      sinon
+        .stub(events.sygmaBridge.proposalExecution.v1250, "decode")
+        .returns(decodedEvent);
 
-      const result = await parser.parseProposalExecution(log, toDomain, ctx);
-
+      const result = await parser.parseProposalExecution(event, toDomain, ctx);
       expect(result).to.deep.include({
-        id: generateTransferID("1", "2", "3"),
+        id: generateTransferID("1", "1", "4"),
         blockNumber: 1,
         depositNonce: "1",
-        txHash: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        fromDomainID: "2",
-        toDomainID: "3",
+        txHash: "0000000001-0ea58-000001",
+        fromDomainID: "1",
+        toDomainID: "4",
+        timestamp: new Date(1633072800),
       });
-    });
-
-    it("should skip execution from unsupported domain", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(undefined);
-      const log: Log = {
-        block: { height: 1, timestamp: 1633072800 },
-        transaction: {
-          hash: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        },
-      } as Log;
-
-      const toDomain: DomainType = { id: 3 } as DomainType;
-
-      const event = {
-        depositNonce: BigInt(1),
-        originDomainID: 2,
-        dataHash: "",
-        handlerResponse: ""
-      };
-      sinon.stub(bridge.events.ProposalExecution, "decode").returns(event);
-
-      try {
-        await parser.parseProposalExecution(log, toDomain, ctx);
-        expect.fail("Expected error was not thrown");
-      } catch (error) {
-        expect(error).to.be.instanceOf(NotFoundError);
-      }
     });
   });
 
@@ -416,62 +301,164 @@ const mockSourceDomain = {
     afterEach(() => {
       sinon.restore();
     });
-    it("should parse a failed handler execution log correctly", async () => {
+    it("should parse a failed handler execution correctly", async () => {
       findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
-      const log: Log = {
+
+      let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
-        transaction: {
-          hash: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        },
-      } as Log;
+        extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
+      } as Event;
 
-      const toDomain: DomainType = { id: 3 } as DomainType;
+      const toDomain: DomainType = { id: 4 } as DomainType;
 
-      const event = {
+      const decodedEvent = {
+        error: "error",
+        originDomainId: 1,
         depositNonce: BigInt(1),
-        originDomainID: 2,
-        lowLevelData: "08C379A00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001245524332303A2063616C6C206661696C65640000000000000000000000000000",
       };
-      sinon.stub(bridge.events.FailedHandlerExecution, "decode").returns(event);
+      sinon
+        .stub(events.sygmaBridge.failedHandlerExecution.v1250, "decode")
+        .returns(decodedEvent);
 
-      const result = await parser.parseFailedHandlerExecution(log, toDomain, ctx);
+      const result = await parser.parseFailedHandlerExecution(event, toDomain, ctx);
 
       expect(result).to.deep.include({
-        id: generateTransferID("1", "2", "3"),
-        fromDomainID: "2",
-        toDomainID: "3",
+        id: generateTransferID("1", "1", "4"),
+        fromDomainID: "1",
+        toDomainID: "4",
         depositNonce: "1",
-        txHash: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
+        txHash: "0000000001-0ea58-000001",
         blockNumber: 1,
         timestamp: new Date(1633072800),
-        message: "ERC20: call failed",
+        message: "error",
+      });
+    });
+  });
+
+  describe("parseFee", () => {
+    let findOneStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      ctx = {
+        store: {
+          findOne: sinon.stub(),
+        },
+      } as unknown as Context;
+  
+      // Stub each findOne call with appropriate return values
+      findOneStub = ctx.store.findOne as sinon.SinonStub;
+    });
+  
+    afterEach(() => {
+      sinon.restore();
+    });
+    it("should parse fee correctly", async () => {
+      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
+      findOneStub.withArgs(Token, { where: { resource: mockResource, domainID: "4" } }).resolves(mockToken);
+      let event: Event = {
+        block: { height: 1, timestamp: 1633072800 },
+        extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
+      } as Event;
+
+      const fromDomain: DomainType = {
+        id: 4,
+        chainId: 5,
+        caipId: "polkadot:5",
+        name: "Sygma standalone pallet",
+        type: Network.SUBSTRATE,
+        bridge: "",
+        handlers: [],
+        nativeTokenSymbol: "syg",
+        nativeTokenDecimals: 12,
+        blockConfirmations: 2,
+        startBlock: 5,
+        feeRouter: "",
+        feeHandlers: [],
+        resources: [
+          {
+            resourceId:
+              "0x0000000000000000000000000000000000000000000000000000000000000300",
+            caip19: "polkadot:5",
+            type: ResourceType.FUNGIBLE,
+            address: "",
+            symbol: "PHA",
+            decimals: 12,
+          },
+        ],
+      };
+
+      const decodedEvent = {
+        feePayer: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
+        destDomainId: 1,
+        resourceId:
+          "0x0000000000000000000000000000000000000000000000000000000000000300",
+        feeAmount: BigInt(10),
+        feeAssetId: {
+          __kind: "Concrete",
+          value: { parents: 1, interior: { __kind: "X3", value: {} } },
+        } as V3AssetId,
+      };
+      sinon
+        .stub(events.sygmaBridge.feeCollected.v1260, "decode")
+        .returns(decodedEvent);
+
+      const result = await parser.parseFee(event, fromDomain, ctx);
+      expect(result).to.deep.include({
+        id: result?.id,
+        amount: '10',
+        tokenID: 'tokenID',
+        txIdentifier: '0000000001-0ea58-000001'
       });
     });
 
-    it("should skip failed executions from unsupported domain", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(undefined);
-      const log: Log = {
+    it("should throw an error if resource is not found", () => {
+      let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
-        transaction: {
-          hash: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        },
-      } as Log;
+        extrinsic: { id: "00", hash: "0x00" },
+      } as Event;
 
-      const toDomain: DomainType = { id: 3 } as DomainType;
+      const fromDomain: DomainType = {
+        id: 4,
+        chainId: 5,
+        resources: [
+          {
+            resourceId:
+              "0x0000000000000000000000000000000000000000000000000000000000000300",
+            caip19: "polkadot:5",
+            type: ResourceType.FUNGIBLE,
+            address: "",
+            symbol: "PHA",
+            decimals: 12,
+          },
+        ],
+      } as DomainType;
 
-      const event = {
-        depositNonce: BigInt(1),
-        originDomainID: 2,
-        lowLevelData: "08C379A00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001245524332303A2063616C6C206661696C65640000000000000000000000000000",
+      const decodedEvent = {
+        feePayer: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
+        destDomainId: 1,
+        resourceId:
+          "0x1234567890abcdef1234567890abcdef12345678",
+        feeAmount: BigInt(10),
+        feeAssetId: {
+          __kind: "Concrete",
+          value: { parents: 1, interior: { __kind: "X3", value: {} } },
+        } as V3AssetId,
       };
-      sinon.stub(bridge.events.FailedHandlerExecution, "decode").returns(event);
 
+      sinon
+        .stub(events.sygmaBridge.feeCollected.v1260, "decode")
+        .returns(decodedEvent);
 
       try {
-        await parser.parseFailedHandlerExecution(log, toDomain, ctx);        expect.fail("Expected error was not thrown");
+        parser.parseFee(event, fromDomain, ctx);
+        expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(NotFoundError);
+        expect(error).to.be.instanceOf(Error);
       }
     });
+  });
+
+  afterEach(() => {
+    sinon.restore();
   });
 });

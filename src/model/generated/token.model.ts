@@ -6,6 +6,7 @@ import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, I
 import {Resource} from "./resource.model"
 import {Domain} from "./domain.model"
 import {Fee} from "./fee.model"
+import { PrimaryGeneratedColumn } from "typeorm"
 
 @Index_(["tokenAddress", "domainID"], {unique: true})
 @Entity_()
@@ -14,7 +15,7 @@ export class Token {
         Object.assign(this, props)
     }
 
-    @PrimaryColumn_()
+    @PrimaryGeneratedColumn("uuid")
     id!: string
 
     @IntColumn_({nullable: false})

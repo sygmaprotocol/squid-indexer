@@ -1,33 +1,31 @@
 type Transfer @entity {
   id: ID!
-  depositNonce: BigInt!
-  resource: Resource
-  resourceID: String
-  fromDomain: Domain!
-  fromDomainID: Int!
-  toDomain: Domain
-  toDomainID: Int
-  destination: String
-  amount: String
   status: TransferStatus!
+  depositNonce: String!
+  fromDomainID: String
+  fromDomain: Domain!
+  toDomainID: String
+  toDomain: Domain!
   deposit: Deposit @unique
   execution: Execution @unique
+  feeID: String
   fee: Fee @unique
-  account: Account
-  accountID: String
-  message: String
-  usdValue: Float
+  resource: Resource
+  resourceID: String
+  amount: String
 }
 
 type Deposit @entity {
   id: ID!
   transfer: Transfer @derivedFrom(field: "deposit")
-  type: String!
   txHash: String!
   blockNumber: String!
   depositData: String!
   timestamp: DateTime
   handlerResponse: String!
+  destination: String
+  accountID: String 
+  account: Account 
 }
 
 type Execution @entity {
@@ -35,7 +33,8 @@ type Execution @entity {
   transfer: Transfer @derivedFrom(field: "execution")
   txHash: String!
   timestamp: DateTime
-  blockNumber: String! 
+  blockNumber: String!
+  message: String
 }
 
 enum TransferStatus {
@@ -47,29 +46,41 @@ enum TransferStatus {
 type Account @entity {
   id: ID!
   addressStatus: String
-  transfers: [Transfer!] @derivedFrom(field: "account")
+  deposits: [Deposit!] @derivedFrom(field: "account")
 }
 
 type Resource @entity {
   id: ID!
   type: String!
-  decimals: Int
   transfers: [Transfer!] @derivedFrom(field: "resource")
+  tokens: [Token!] @derivedFrom(field: "resource")
+}
+
+type Token @entity @index(fields: ["tokenAddress", "domainID"], unique: true) {
+  id: ID!
+  decimals: Int!
+  tokenAddress: String!
+  tokenSymbol: String!
+  resource: Resource
+  resourceID: String
+  domain: Domain!
+  domainID: String
+  fee: [Fee!] @derivedFrom(field: "token")
 }
 
 type Domain @entity {
   id: ID!
   name: String!
-  lastIndexedBlock: String!
   transfersFrom: [Transfer!] @derivedFrom(field: "fromDomain")
   transfersTo: [Transfer!] @derivedFrom(field: "toDomain")
+  token: [Token!] @derivedFrom(field: "domain")
 }
 
 type Fee @entity {
   id: ID! 
   amount: String!
-  tokenAddress: String!
-  tokenSymbol: String!
-  decimals: Int
-  transfer: Transfer @derivedFrom(field: "fee")
+  transferID: String
+  transfer: Transfer
+  token: Token
+  tokenID: String
 }

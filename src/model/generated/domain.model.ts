@@ -4,6 +4,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
 import {Transfer} from "./transfer.model"
+import {Token} from "./token.model"
 
 @Entity_()
 export class Domain {
@@ -17,12 +18,12 @@ export class Domain {
     @Column_("text", {nullable: false})
     name!: string
 
-    @Column_("text", {nullable: false})
-    lastIndexedBlock!: string
-
     @OneToMany_(() => Transfer, e => e.fromDomain)
     transfersFrom!: Transfer[]
 
     @OneToMany_(() => Transfer, e => e.toDomain)
     transfersTo!: Transfer[]
+
+    @OneToMany_(() => Token, e => e.domain)
+    token!: Token[]
 }

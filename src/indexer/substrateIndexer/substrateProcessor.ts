@@ -11,6 +11,8 @@ import type {
 import { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import type { Store } from "@subsquid/typeorm-store";
 
+import { NotFoundError } from "../../utils/error";
+import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
 import type { DecodedEvents, IProcessor } from "../indexer";
 import type {
@@ -67,30 +69,74 @@ export class SubstrateProcessor implements IProcessor {
     return substrateProcessor;
   }
 
-  public processEvents(
-    ctx: ProcessorContext<Store>,
+  public async processEvents(
+    ctx: Context,
     domain: Domain,
-  ): DecodedEvents {
+  ): Promise<DecodedEvents> {
     const deposits: DecodedDepositLog[] = [];
     const executions: DecodedProposalExecutionLog[] = [];
     const failedHandlerExecutions: DecodedFailedHandlerExecutionLog[] = [];
     const fees: FeeCollectedData[] = [];
     for (const block of ctx.blocks) {
       for (const event of block.events) {
-        if (event.name == events.sygmaBridge.deposit.name) {
-          deposits.push(
-            this.parser.parseDeposit(event, domain) as DecodedDepositLog,
-          );
-        } else if (event.name == events.sygmaBridge.proposalExecution.name) {
-          executions.push(this.parser.parseProposalExecution(event, domain));
-        } else if (
-          event.name == events.sygmaBridge.failedHandlerExecution.name
-        ) {
-          failedHandlerExecutions.push(
-            this.parser.parseFailedHandlerExecution(event, domain),
-          );
-        } else if (event.name == events.sygmaBridge.feeCollected.name) {
-          fees.push(this.parser.parseFee(event, domain));
+        try {
+          switch (event.name) {
+            case events.sygmaBridge.deposit.name: {
+              const deposit = await this.parser.parseDeposit(
+                event,
+                domain,
+                ctx,
+              );
+              deposits.push(deposit.decodedDepositLog);
+              fees.push(deposit.decodedFeeLog);
+              break;
+            }
+
+            case events.sygmaBridge.proposalExecution.name: {
+              const execution = await this.parser.parseProposalExecution(
+                event,
+                domain,
+                ctx,
+              );
+              executions.push(execution);
+              break;
+            }
+
+            case events.sygmaBridge.failedHandlerExecution.name: {
+              const failedExecution =
+                await this.parser.parseFailedHandlerExecution(
+                  event,
+                  domain,
+                  ctx,
+                );
+              failedHandlerExecutions.push(failedExecution);
+              break;
+            }
+
+            case events.sygmaBridge.feeCollected.name: {
+              const feeCollected = await this.parser.parseFee(
+                event,
+                domain,
+                ctx,
+              );
+              // filter out default fees
+              fees.filter(
+                (fee) => fee.txIdentifier === feeCollected.txIdentifier,
+              );
+              fees.push(feeCollected);
+              break;
+            }
+
+            default:
+              logger.error(`Unsupported log topic: ${event.name}`);
+              break;
+          }
+        } catch (error) {
+          if (error instanceof NotFoundError) {
+            logger.error(error.message);
+          } else {
+            throw error;
+          }
         }
       }
     }
@@ -100,4 +146,4 @@ export class SubstrateProcessor implements IProcessor {
 
 export type Fields = SubstrateBatchProcessorFields<typeof SubstrateProcessor>;
 export type Event = _Event<Fields>;
-export type ProcessorContext<Store> = DataHandlerContext<Store, Fields>;
+export type Context = DataHandlerContext<Store, Fields>;

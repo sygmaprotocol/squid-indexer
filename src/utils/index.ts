@@ -13,6 +13,7 @@ import {
   Execution,
   Fee,
   Resource,
+  Token,
   Transfer,
 } from "../model";
 
@@ -24,7 +25,16 @@ export async function initDatabase(dbConfig: DbConfig): Promise<DataSource> {
     port: dbConfig.port,
     username: dbConfig.username,
     password: dbConfig.password,
-    entities: [Domain, Transfer, Resource, Deposit, Execution, Account, Fee],
+    entities: [
+      Domain,
+      Transfer,
+      Resource,
+      Deposit,
+      Execution,
+      Account,
+      Fee,
+      Token,
+    ],
     namingStrategy: new SnakeNamingStrategy(),
   });
   await dataSource.initialize();

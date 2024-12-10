@@ -8,7 +8,7 @@ import sinon from "sinon";
 import { SubstrateParser } from "../../src/indexer/substrateIndexer/substrateParser";
 import { IParser } from "../../src/indexer/indexer";
 import { Network, ResourceType } from "@buildwithsygma/core";
-import { Domain } from "../../src/indexer/config";
+import { Domain as DomainType } from "../../src/indexer/config";
 import { events } from "../../src/indexer/substrateIndexer/types";
 import type { Event } from "../../src/indexer/substrateIndexer/substrateProcessor";
 import { generateTransferID } from "../../src/indexer/utils";
@@ -17,29 +17,67 @@ import { JsonRpcProvider } from "ethers";
 import {
   V3AssetId,
 } from "../../src/indexer/substrateIndexer/types/v1260";
+import {Context} from "../../src/indexer/substrateIndexer/substrateProcessor"
+import { Domain, Resource, Token } from "../../src/model";
 
 describe("Substrate parser", () => {
   let provider: sinon.SinonStubbedInstance<ApiPromise>;
   let parser: SubstrateParser;
+  let ctx: Context;
+  // Mock Data
+  const mockResource = {
+    id: '0x0000000000000000000000000000000000000000000000000000000000000300',
+    type: 'fungible',
+  };
+  
+  const mockToken = {
+    id:"tokenID",
+    tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
+    decimals: 18,
+    tokenSymbol: "ERC20LRTest",
+    domainID: 2,
+    resourceID: mockResource.id
+  };
 
+const mockSourceDomain = {
+  id: '1',
+};
   before(() => {
     provider = sinon.createStubInstance(ApiPromise);
 
     parser = new SubstrateParser(provider);
 
     const parsers = new Map<number, IParser>();
-    parsers.set(1, new EVMParser(new JsonRpcProvider(), new Map()));
+    parsers.set(1, new EVMParser(new JsonRpcProvider()));
     parser.setParsers(parsers);
   });
 
   describe("parseDeposit", () => {
-    it("should parse a deposit correctly", () => {
+    let findOneStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      ctx = {
+        store: {
+          findOne: sinon.stub(),
+        },
+      } as unknown as Context;
+  
+      // Stub each findOne call with appropriate return values
+      findOneStub = ctx.store.findOne as sinon.SinonStub;
+    });
+  
+    afterEach(() => {
+      sinon.restore();
+    });
+    it("should parse a deposit correctly", async () => {
+      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
+      findOneStub.withArgs(Token, { where: { resource: mockResource, domainID: "4" } }).resolves(mockToken);
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
       } as Event;
 
-      const fromDomain: Domain = {
+      const fromDomain: DomainType = {
         id: 4,
         chainId: 5,
         caipId: "polkadot:5",
@@ -81,22 +119,32 @@ describe("Substrate parser", () => {
         .stub(events.sygmaBridge.deposit.v1250, "decode")
         .returns(decodedEvent);
 
-      const result = parser.parseDeposit(event, fromDomain);
+      const result = await parser.parseDeposit(event, fromDomain, ctx);
 
       expect(result).to.deep.include({
-        id: generateTransferID("1", "4", "1"),
-        blockNumber: 1,
-        depositNonce: BigInt(1),
-        toDomainID: 1,
-        sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-        fromDomainID: 4,
-        destination: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-        amount: "0.000001",
-        resourceID:
-          "0x0000000000000000000000000000000000000000000000000000000000000300",
-        txHash: "0000000001-0ea58-000001",
-        timestamp: new Date(1633072800),
-        transferType: ResourceType.FUNGIBLE,
+        decodedDepositLog: {
+          id: '1-4-1',
+          blockNumber: 1,
+          depositNonce: '1',
+          toDomainID: '1',
+          sender: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef',
+          destination: '0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b',
+          fromDomainID: '4',
+          resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
+          txHash: '0000000001-0ea58-000001',
+          timestamp: new Date(1633072800),
+          depositData: '0x00000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000000145c1f5961696bad2e73f73417f07ef55c62a2dc5b',
+          handlerResponse: '',
+          transferType: 'fungible',
+          amount: '0.000000000001'
+        },
+        decodedFeeLog: {
+          id: result?.decodedFeeLog.id,
+          amount: '50',
+          tokenID: mockToken.id,
+          txIdentifier: '0000000001-0ea58-000001'
+        }
+
       });
     });
 
@@ -106,7 +154,7 @@ describe("Substrate parser", () => {
         extrinsic: { id: "00", hash: "0x00" },
       } as Event;
 
-      const fromDomain: Domain = {
+      const fromDomain: DomainType = {
         id: 4,
         chainId: 5,
         resources: [
@@ -120,7 +168,7 @@ describe("Substrate parser", () => {
             decimals: 12,
           },
         ],
-      } as Domain;
+      } as DomainType;
 
       const decodedEvent = {
         destDomainId: 999,
@@ -136,7 +184,7 @@ describe("Substrate parser", () => {
         .returns(decodedEvent);
 
       try {
-        parser.parseDeposit(event, fromDomain);
+        parser.parseDeposit(event, fromDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
         expect(error).to.be.instanceOf(Error);
@@ -149,7 +197,7 @@ describe("Substrate parser", () => {
         extrinsic: { id: "00", hash: "0x00" },
       } as Event;
 
-      const fromDomain: Domain = {
+      const fromDomain: DomainType = {
         id: 4,
         chainId: 5,
         resources: [
@@ -163,7 +211,7 @@ describe("Substrate parser", () => {
             decimals: 12,
           },
         ],
-      } as Domain;
+      } as DomainType;
 
       const decodedEvent = {
         destDomainId: 1,
@@ -179,7 +227,7 @@ describe("Substrate parser", () => {
         .returns(decodedEvent);
 
       try {
-        parser.parseDeposit(event, fromDomain);
+        parser.parseDeposit(event, fromDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
         expect(error).to.be.instanceOf(Error);
@@ -188,13 +236,31 @@ describe("Substrate parser", () => {
   });
 
   describe("parseProposalExecution", () => {
+    let findOneStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      ctx = {
+        store: {
+          findOne: sinon.stub(),
+        },
+      } as unknown as Context;
+  
+      // Stub each findOne call with appropriate return values
+      findOneStub = ctx.store.findOne as sinon.SinonStub;
+    });
+  
+    afterEach(() => {
+      sinon.restore();
+    });
     it("should parse a proposal execution correctly", async () => {
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
+
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
       } as Event;
 
-      const toDomain: Domain = { id: 4 } as Domain;
+      const toDomain: DomainType = { id: 4 } as DomainType;
 
       const decodedEvent = {
         originDomainId: 1,
@@ -205,28 +271,45 @@ describe("Substrate parser", () => {
         .stub(events.sygmaBridge.proposalExecution.v1250, "decode")
         .returns(decodedEvent);
 
-      const result = parser.parseProposalExecution(event, toDomain);
-
+      const result = await parser.parseProposalExecution(event, toDomain, ctx);
       expect(result).to.deep.include({
         id: generateTransferID("1", "1", "4"),
         blockNumber: 1,
-        depositNonce: BigInt(1),
+        depositNonce: "1",
         txHash: "0000000001-0ea58-000001",
-        fromDomainID: 1,
-        toDomainID: 4,
+        fromDomainID: "1",
+        toDomainID: "4",
         timestamp: new Date(1633072800),
       });
     });
   });
 
   describe("parseFailedHandlerExecution", () => {
+    let findOneStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      ctx = {
+        store: {
+          findOne: sinon.stub(),
+        },
+      } as unknown as Context;
+  
+      // Stub each findOne call with appropriate return values
+      findOneStub = ctx.store.findOne as sinon.SinonStub;
+    });
+  
+    afterEach(() => {
+      sinon.restore();
+    });
     it("should parse a failed handler execution correctly", async () => {
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
+
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
       } as Event;
 
-      const toDomain: Domain = { id: 4 } as Domain;
+      const toDomain: DomainType = { id: 4 } as DomainType;
 
       const decodedEvent = {
         error: "error",
@@ -237,13 +320,13 @@ describe("Substrate parser", () => {
         .stub(events.sygmaBridge.failedHandlerExecution.v1250, "decode")
         .returns(decodedEvent);
 
-      const result = parser.parseFailedHandlerExecution(event, toDomain);
+      const result = await parser.parseFailedHandlerExecution(event, toDomain, ctx);
 
       expect(result).to.deep.include({
         id: generateTransferID("1", "1", "4"),
-        fromDomainID: 1,
-        toDomainID: 4,
-        depositNonce: BigInt(1),
+        fromDomainID: "1",
+        toDomainID: "4",
+        depositNonce: "1",
         txHash: "0000000001-0ea58-000001",
         blockNumber: 1,
         timestamp: new Date(1633072800),
@@ -253,13 +336,31 @@ describe("Substrate parser", () => {
   });
 
   describe("parseFee", () => {
-    it("should parse fee correctly", () => {
+    let findOneStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      ctx = {
+        store: {
+          findOne: sinon.stub(),
+        },
+      } as unknown as Context;
+  
+      // Stub each findOne call with appropriate return values
+      findOneStub = ctx.store.findOne as sinon.SinonStub;
+    });
+  
+    afterEach(() => {
+      sinon.restore();
+    });
+    it("should parse fee correctly", async () => {
+      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
+      findOneStub.withArgs(Token, { where: { resource: mockResource, domainID: "4" } }).resolves(mockToken);
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
       } as Event;
 
-      const fromDomain: Domain = {
+      const fromDomain: DomainType = {
         id: 4,
         chainId: 5,
         caipId: "polkadot:5",
@@ -301,17 +402,12 @@ describe("Substrate parser", () => {
         .stub(events.sygmaBridge.feeCollected.v1260, "decode")
         .returns(decodedEvent);
 
-      const result = parser.parseFee(event, fromDomain);
-
+      const result = await parser.parseFee(event, fromDomain, ctx);
       expect(result).to.deep.include({
-        amount: "10",
-        decimals: 12,
-        tokenAddress: JSON.stringify({
-          __kind: "Concrete",
-          value: { parents: 1, interior: { __kind: "X3", value: {} } },
-        }),
-        tokenSymbol: "PHA",
-        txIdentifier: "0000000001-0ea58-000001",
+        id: result?.id,
+        amount: '10',
+        tokenID: 'tokenID',
+        txIdentifier: '0000000001-0ea58-000001'
       });
     });
 
@@ -321,7 +417,7 @@ describe("Substrate parser", () => {
         extrinsic: { id: "00", hash: "0x00" },
       } as Event;
 
-      const fromDomain: Domain = {
+      const fromDomain: DomainType = {
         id: 4,
         chainId: 5,
         resources: [
@@ -335,7 +431,7 @@ describe("Substrate parser", () => {
             decimals: 12,
           },
         ],
-      } as Domain;
+      } as DomainType;
 
       const decodedEvent = {
         feePayer: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
@@ -354,7 +450,7 @@ describe("Substrate parser", () => {
         .returns(decodedEvent);
 
       try {
-        parser.parseFee(event, fromDomain);
+        parser.parseFee(event, fromDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
         expect(error).to.be.instanceOf(Error);

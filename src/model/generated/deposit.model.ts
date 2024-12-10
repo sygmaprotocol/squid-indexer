@@ -2,8 +2,8 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
-import {Transfer} from "./transfer.model"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Account} from "./account.model"
 
 @Entity_()
 export class Deposit {
@@ -14,9 +14,6 @@ export class Deposit {
     @PrimaryColumn_()
     id!: string
 
-
-    @Column_("text", {nullable: false})
-    type!: string
 
     @Column_("text", {nullable: false})
     txHash!: string
@@ -32,4 +29,14 @@ export class Deposit {
 
     @Column_("text", {nullable: false})
     handlerResponse!: string
+
+    @Column_("text", {nullable: true})
+    destination!: string | undefined | null
+
+    @Column_("text", {nullable: true})
+    accountID!: string | undefined | null
+
+    @Index_()
+    @ManyToOne_(() => Account, {nullable: true})
+    account!: Account | undefined | null
 }

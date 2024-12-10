@@ -13,16 +13,19 @@ import { ethers } from "ethers";
 
 import * as bridge from "../../abi/bridge";
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
+import { Domain, Resource, Token } from "../../model";
+import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
-import type { Domain, Token } from "../config";
+import type { Domain as DomainType } from "../config";
 import type { IParser } from "../indexer";
 import type {
   DecodedDepositLog,
-  DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
-  FeeData,
+  DecodedFailedHandlerExecutionLog,
+  FeeCollectedData,
 } from "../types";
 
+import type { Context } from "./evmProcessor";
 import { ContractType } from "./evmTypes";
 import { getContract } from "./utils";
 
@@ -35,10 +38,8 @@ export class EVMParser implements IParser {
   private STATIC_FEE_DATA = "0x00";
   private provider: JsonRpcProvider;
   private parsers!: Map<number, IParser>;
-  private tokens: Map<string, Token>;
-  constructor(provider: JsonRpcProvider, tokens: Map<string, Token>) {
+  constructor(provider: JsonRpcProvider) {
     this.provider = provider;
-    this.tokens = tokens;
   }
 
   public setParsers(parsers: Map<number, IParser>): void {
@@ -46,58 +47,98 @@ export class EVMParser implements IParser {
   }
   public async parseDeposit(
     log: Log,
-    fromDomain: Domain,
-  ): Promise<DecodedDepositLog> {
+    fromDomain: DomainType,
+    ctx: Context,
+  ): Promise<{
+    decodedDepositLog: DecodedDepositLog;
+    decodedFeeLog: FeeCollectedData;
+  }> {
     const event = bridge.events.Deposit.decode(log);
     const destinationParser = this.parsers.get(event.destinationDomainID);
     if (!destinationParser) {
-      throw new Error(
+      throw new NotFoundError(
         `Destination domain id ${event.destinationDomainID} not supported`,
       );
     }
-    const resource = fromDomain.resources.find(
-      (resource) =>
-        resource.resourceId.toLowerCase() == event.resourceID.toLowerCase(),
-    );
+
+    const resource = await ctx.store.findOne(Resource, {
+      where: {
+        id: event.resourceID.toLowerCase(),
+      },
+    });
+
     if (!resource) {
-      throw new Error(
-        `Resource with ID ${event.resourceID} not found in shared configuration`,
+      throw new NotFoundError(
+        `Unsupported resource with ID ${event.resourceID}`,
       );
     }
-    const resourceType = resource.type ?? "";
-    const resourceDecimals = resource.decimals ?? 18;
-
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
+    const fee = await this.getFee(event, fromDomain, this.provider);
+    const token = await ctx.store.findOne(Token, {
+      where: {
+        tokenAddress: fee.tokenAddress,
+        domainID: fromDomain.id.toString(),
+      },
+    });
+    if (!token) {
+      throw new NotFoundError(
+        `Token with resourceID: ${event.resourceID.toLowerCase()} doesn't exist, skipping`,
+      );
+    }
     return {
-      id: generateTransferID(
-        event.depositNonce.toString(),
-        fromDomain.id.toString(),
-        event.destinationDomainID.toString(),
-      ),
-      blockNumber: log.block.height,
-      depositNonce: event.depositNonce,
-      toDomainID: event.destinationDomainID,
-      sender: transaction.from,
-      destination: destinationParser.parseDestination(event.data, resourceType),
-      fromDomainID: fromDomain.id,
-      resourceID: resource.resourceId,
-      txHash: transaction.hash,
-      timestamp: new Date(log.block.timestamp),
-      depositData: event.data,
-      handlerResponse: event.handlerResponse,
-      transferType: resourceType,
-      amount: decodeAmountOrTokenId(event.data, resourceDecimals, resourceType),
-      fee: await this.getFee(event, fromDomain, this.provider),
+      decodedDepositLog: {
+        id: generateTransferID(
+          event.depositNonce.toString(),
+          fromDomain.id.toString(),
+          event.destinationDomainID.toString(),
+        ),
+        blockNumber: log.block.height,
+        depositNonce: event.depositNonce.toString(),
+        toDomainID: event.destinationDomainID.toString(),
+        sender: transaction.from,
+        destination: destinationParser.parseDestination(
+          event.data,
+          resource.type as ResourceType,
+        ),
+        fromDomainID: fromDomain.id.toString(),
+        resourceID: resource.id,
+        txHash: transaction.hash,
+        timestamp: new Date(log.block.timestamp),
+        depositData: event.data,
+        handlerResponse: event.handlerResponse,
+        transferType: resource.type,
+        amount: decodeAmountOrTokenId(
+          event.data,
+          token.decimals,
+          resource.type as ResourceType,
+        ),
+      },
+      decodedFeeLog: {
+        id: randomUUID(),
+        amount: fee.amount,
+        tokenID: token.id,
+        txIdentifier: transaction.hash,
+      },
     };
   }
 
-  public parseProposalExecution(
+  public async parseProposalExecution(
     log: Log,
-    toDomain: Domain,
-  ): DecodedProposalExecutionLog {
+    toDomain: DomainType,
+    ctx: Context,
+  ): Promise<DecodedProposalExecutionLog> {
     const event = bridge.events.ProposalExecution.decode(log);
     const transaction = assertNotNull(log.transaction, "Missing transaction");
+
+    const fromDomain = await ctx.store.findOne(Domain, {
+      where: { id: event.originDomainID.toString() },
+    });
+    if (!fromDomain) {
+      throw new NotFoundError(
+        `Source domain id ${event.originDomainID} not supported`,
+      );
+    }
 
     return {
       id: generateTransferID(
@@ -106,21 +147,29 @@ export class EVMParser implements IParser {
         toDomain.id.toString(),
       ),
       blockNumber: log.block.height,
-      depositNonce: event.depositNonce,
+      depositNonce: event.depositNonce.toString(),
       txHash: transaction.hash,
       timestamp: new Date(log.block.timestamp),
-      fromDomainID: event.originDomainID,
-      toDomainID: toDomain.id,
+      fromDomainID: fromDomain.id.toString(),
+      toDomainID: toDomain.id.toString(),
     };
   }
 
-  public parseFailedHandlerExecution(
+  public async parseFailedHandlerExecution(
     log: Log,
-    toDomain: Domain,
-  ): DecodedFailedHandlerExecutionLog {
+    toDomain: DomainType,
+    ctx: Context,
+  ): Promise<DecodedFailedHandlerExecutionLog> {
     const event = bridge.events.FailedHandlerExecution.decode(log);
     const transaction = assertNotNull(log.transaction, "Missing transaction");
-
+    const fromDomain = await ctx.store.findOne(Domain, {
+      where: { id: event.originDomainID.toString() },
+    });
+    if (!fromDomain) {
+      throw new NotFoundError(
+        `Source domain id ${event.originDomainID} not supported`,
+      );
+    }
     let errMsg;
     try {
       errMsg = ethers.decodeBytes32String(
@@ -136,9 +185,9 @@ export class EVMParser implements IParser {
         event.originDomainID.toString(),
         toDomain.id.toString(),
       ),
-      fromDomainID: event.originDomainID,
-      toDomainID: toDomain.id,
-      depositNonce: event.depositNonce,
+      fromDomainID: event.originDomainID.toString(),
+      toDomainID: toDomain.id.toString(),
+      depositNonce: event.depositNonce.toString(),
       txHash: transaction.hash,
       message: errMsg,
       blockNumber: log.block.height,
@@ -171,9 +220,9 @@ export class EVMParser implements IParser {
 
   public async getFee(
     event: bridge.DepositEventArgs,
-    fromDomain: Domain,
+    fromDomain: DomainType,
     provider: Provider,
-  ): Promise<FeeData> {
+  ): Promise<{ amount: string; tokenAddress: string }> {
     try {
       const feeRouter = getContract(
         provider,
@@ -183,7 +232,7 @@ export class EVMParser implements IParser {
 
       const fee = (await feeRouter.calculateFee(
         event.user,
-        fromDomain.id,
+        fromDomain.id.toString(),
         event.destinationDomainID,
         event.resourceID,
         event.data,
@@ -191,21 +240,13 @@ export class EVMParser implements IParser {
       )) as FeeDataResponse;
 
       return {
-        id: randomUUID(),
         tokenAddress: fee.tokenAddress,
-        tokenSymbol:
-          this.tokens.get(fee.tokenAddress.toLowerCase())?.symbol ?? "",
-        decimals:
-          this.tokens.get(fee.tokenAddress.toLowerCase())?.decimals ?? 18,
         amount: fee.fee.toString(),
       };
     } catch (err) {
       logger.error("Calculating fee failed", err);
       return {
-        id: randomUUID(),
         tokenAddress: "",
-        tokenSymbol: "",
-        decimals: 0,
         amount: "0",
       };
     }

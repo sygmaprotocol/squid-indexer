@@ -10,12 +10,15 @@ import { EvmBatchProcessor } from "@subsquid/evm-processor";
 import type { Store } from "@subsquid/typeorm-store";
 
 import * as bridge from "../../abi/bridge";
+import { NotFoundError } from "../../utils/error";
+import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
 import type { DecodedEvents, IParser, IProcessor } from "../indexer";
 import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
+  FeeCollectedData,
 } from "../types";
 
 export class EVMProcessor implements IProcessor {
@@ -62,22 +65,50 @@ export class EVMProcessor implements IProcessor {
     const deposits: DecodedDepositLog[] = [];
     const executions: DecodedProposalExecutionLog[] = [];
     const failedHandlerExecutions: DecodedFailedHandlerExecutionLog[] = [];
+    const fees: FeeCollectedData[] = [];
+
     for (const block of ctx.blocks) {
       for (const log of block.logs) {
-        if (log.topics[0] === bridge.events.Deposit.topic) {
-          deposits.push(await this.parser.parseDeposit(log, domain));
-        } else if (log.topics[0] === bridge.events.ProposalExecution.topic) {
-          executions.push(this.parser.parseProposalExecution(log, domain));
-        } else if (
-          log.topics[0] === bridge.events.FailedHandlerExecution.topic
-        ) {
-          failedHandlerExecutions.push(
-            this.parser.parseFailedHandlerExecution(log, domain),
-          );
+        try {
+          switch (log.topics[0]) {
+            case bridge.events.Deposit.topic: {
+              const deposit = await this.parser.parseDeposit(log, domain, ctx);
+              deposits.push(deposit.decodedDepositLog);
+              fees.push(deposit.decodedFeeLog);
+              break;
+            }
+
+            case bridge.events.ProposalExecution.topic: {
+              const execution = await this.parser.parseProposalExecution(
+                log,
+                domain,
+                ctx,
+              );
+              executions.push(execution);
+              break;
+            }
+
+            case bridge.events.FailedHandlerExecution.topic: {
+              const failedExecution =
+                await this.parser.parseFailedHandlerExecution(log, domain, ctx);
+              failedHandlerExecutions.push(failedExecution);
+              break;
+            }
+
+            default:
+              logger.error(`Unsupported log topic: ${log.topics[0]}`);
+              break;
+          }
+        } catch (error) {
+          if (error instanceof NotFoundError) {
+            logger.error(error.message);
+          } else {
+            throw error;
+          }
         }
       }
     }
-    return { deposits, executions, failedHandlerExecutions, fees: [] };
+    return { deposits, executions, failedHandlerExecutions, fees };
   }
 }
 

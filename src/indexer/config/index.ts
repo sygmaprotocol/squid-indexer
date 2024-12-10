@@ -6,22 +6,17 @@ import type {
   FeeHandler,
   Domain as DomainSDK,
   Resource,
-  EvmResource,
 } from "@buildwithsygma/core";
-import { ResourceType, Network } from "@buildwithsygma/core";
+import { Network } from "@buildwithsygma/core";
 import { ethers } from "ethers";
 
 import { logger } from "../../utils/logger";
 import { EVMParser } from "../evmIndexer/evmParser";
-import { ContractType } from "../evmIndexer/evmTypes";
-import { getContract } from "../evmIndexer/utils";
 import type { IParser, IProcessor } from "../indexer";
 import { SubstrateParser } from "../substrateIndexer/substrateParser";
 import { createSubstrateProvider } from "../substrateIndexer/utils";
 
 import type { EnvVariables } from "./validator";
-
-const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export type DomainConfig = {
   domainData: Domain;
@@ -67,11 +62,6 @@ type Config = {
   domain: Domain;
   parser: IParser;
   rpcMap: Map<number, string>;
-};
-
-export type Token = {
-  symbol: string;
-  decimals: number;
 };
 
 export async function getConfig(envVars: EnvVariables): Promise<Config> {
@@ -125,13 +115,7 @@ async function initializeParserMap(
   rpcMap: Map<number, string>,
 ): Promise<Map<number, IParser>> {
   const parserMap = new Map<number, IParser>();
-  const tokenMap = new Map<string, Token>();
   for (const domain of sharedConfig.domains) {
-    tokenMap.set(NATIVE_TOKEN_ADDRESS.toLowerCase(), {
-      symbol: domain.nativeTokenSymbol,
-      decimals: domain.nativeTokenDecimals,
-    });
-
     const rpcUrl = rpcMap.get(domain.id);
     if (!rpcUrl) {
       throw new Error(
@@ -141,24 +125,7 @@ async function initializeParserMap(
     switch (domain.type) {
       case Network.EVM: {
         const provider = new ethers.JsonRpcProvider(rpcUrl);
-
-        for (const resource of domain.resources as EvmResource[]) {
-          if (
-            resource.type == ResourceType.FUNGIBLE &&
-            resource.address != NATIVE_TOKEN_ADDRESS
-          ) {
-            const token = getContract(
-              provider,
-              resource.address,
-              ContractType.ERC20,
-            );
-            const symbol = (await token.symbol()) as string;
-            const decimals = Number(await token.decimals());
-
-            tokenMap.set(resource.address.toLowerCase(), { symbol, decimals });
-          }
-        }
-        parserMap.set(domain.id, new EVMParser(provider, tokenMap));
+        parserMap.set(domain.id, new EVMParser(provider));
         break;
       }
       case Network.SUBSTRATE: {

@@ -19,6 +19,7 @@ import {
 } from "../../src/indexer/substrateIndexer/types/v1260";
 import {Context} from "../../src/indexer/substrateIndexer/substrateProcessor"
 import { Domain, Resource, Token } from "../../src/model";
+import { NotFoundError } from "../../src/utils/error";
 
 describe("Substrate parser", () => {
   let provider: sinon.SinonStubbedInstance<ApiPromise>;
@@ -187,7 +188,7 @@ const mockSourceDomain = {
         parser.parseDeposit(event, fromDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(Error);
+        expect(error).to.be.instanceOf(NotFoundError);
       }
     });
 
@@ -309,7 +310,7 @@ const mockSourceDomain = {
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
       } as Event;
 
-      const toDomain: DomainType = { id: 4 } as DomainType;
+      const toDomain: DomainType = { id: 3 } as DomainType;
 
       const decodedEvent = {
         error: "error",

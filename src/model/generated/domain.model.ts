@@ -19,10 +19,10 @@ export class Domain {
     name!: string
 
     @OneToMany_(() => Transfer, e => e.fromDomain)
-    fromDomain!: Transfer[]
+    transfersFrom!: Transfer[]
 
     @OneToMany_(() => Transfer, e => e.toDomain)
-    toDomain!: Transfer[]
+    transfersTo!: Transfer[]
 
     @OneToMany_(() => Token, e => e.domain)
     token!: Token[]

@@ -19,7 +19,7 @@ export class Resource {
     type!: string
 
     @OneToMany_(() => Transfer, e => e.resource)
-    deposit!: Transfer[]
+    transfers!: Transfer[]
 
     @OneToMany_(() => Token, e => e.resource)
     tokens!: Token[]

@@ -52,7 +52,7 @@ type Account @entity {
 type Resource @entity {
   id: ID!
   type: String!
-  deposit: [Transfer!] @derivedFrom(field: "resource")
+  transfers: [Transfer!] @derivedFrom(field: "resource")
   tokens: [Token!] @derivedFrom(field: "resource")
 }
 
@@ -71,8 +71,8 @@ type Token @entity @index(fields: ["tokenAddress", "domainID"], unique: true) {
 type Domain @entity {
   id: ID!
   name: String!
-  fromDomain: [Transfer!] @derivedFrom(field: "fromDomain")
-  toDomain: [Transfer!] @derivedFrom(field: "toDomain")
+  transfersFrom: [Transfer!] @derivedFrom(field: "fromDomain")
+  transfersTo: [Transfer!] @derivedFrom(field: "toDomain")
   token: [Token!] @derivedFrom(field: "domain")
 }
 

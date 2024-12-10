@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, JoinColumn as JoinColumn_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, JoinColumn as JoinColumn_} from "@subsquid/typeorm-store"
 import {TransferStatus} from "./_transferStatus"
 import {Domain} from "./domain.model"
 import {Deposit} from "./deposit.model"
@@ -22,17 +22,17 @@ export class Transfer {
     @Column_("varchar", {length: 8, nullable: false})
     status!: TransferStatus
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     depositNonce!: string
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     fromDomainID!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Domain, {nullable: true})
     fromDomain!: Domain
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     toDomainID!: string | undefined | null
 
     @Index_()
@@ -49,7 +49,7 @@ export class Transfer {
     @JoinColumn_()
     execution!: Execution | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     feeID!: string | undefined | null
 
     @Index_({unique: true})
@@ -61,9 +61,9 @@ export class Transfer {
     @ManyToOne_(() => Resource, {nullable: true})
     resource!: Resource | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     resourceID!: string | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     amount!: string | undefined | null
 }

@@ -46,6 +46,5 @@ export type FeeCollectedData = {
   id: string;
   amount: string;
   tokenID: string;
-  domainID: string;
   txIdentifier: string;
 };

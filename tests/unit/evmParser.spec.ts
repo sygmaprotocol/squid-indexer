@@ -157,7 +157,6 @@ const mockSourceDomain = {
         id: result?.decodedFeeLog.id,
         tokenID: mockToken.id,
         txIdentifier: "0xTxHash",
-        domainID: "2",
         amount: "0.01",
       }
     }

@@ -119,7 +119,6 @@ export class EVMParser implements IParser {
         id: randomUUID(),
         amount: fee.amount,
         tokenID: token.id,
-        domainID: fromDomain.id.toString(),
         txIdentifier: transaction.hash,
       },
     };
@@ -152,7 +151,7 @@ export class EVMParser implements IParser {
       depositNonce: event.depositNonce.toString(),
       txHash: transaction.hash,
       timestamp: new Date(log.block.timestamp),
-      fromDomainID: fromDomain.id,
+      fromDomainID: fromDomain.id.toString(),
       toDomainID: toDomain.id.toString(),
     };
   }
@@ -234,7 +233,7 @@ export class EVMParser implements IParser {
 
       const fee = (await feeRouter.calculateFee(
         event.user,
-        fromDomain.id,
+        fromDomain.id.toString(),
         event.destinationDomainID,
         event.resourceID,
         event.data,

@@ -13,7 +13,8 @@ import { ethers } from "ethers";
 
 import * as bridge from "../../abi/bridge";
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
-import { Domain, Resource } from "../../model";
+import { Domain, Resource, Token } from "../../model";
+import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
 import type { IParser } from "../indexer";
@@ -51,40 +52,40 @@ export class EVMParser implements IParser {
   ): Promise<{
     decodedDepositLog: DecodedDepositLog;
     decodedFeeLog: FeeCollectedData;
-  } | null> {
+  }> {
     const event = bridge.events.Deposit.decode(log);
     const destinationParser = this.parsers.get(event.destinationDomainID);
     if (!destinationParser) {
-      logger.error(
+      throw new NotFoundError(
         `Destination domain id ${event.destinationDomainID} not supported`,
       );
-      return null;
     }
 
     const resource = await ctx.store.findOne(Resource, {
       where: {
-        resourceID: event.resourceID.toLowerCase(),
-        domainID: fromDomain.id.toString(),
+        id: event.resourceID.toLowerCase(),
       },
     });
 
     if (!resource) {
-      logger.error(`Unsupported resource: ${event.resourceID.toLowerCase()}`);
-      return null;
+      throw new NotFoundError(
+        `Unssupported resource with ID ${event.resourceID}`,
+      );
     }
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
     const fee = await this.getFee(event, fromDomain, this.provider);
-    const feeResource = await ctx.store.findOne(Resource, {
+    const token = await ctx.store.findOne(Token, {
       where: {
         tokenAddress: fee.tokenAddress,
         domainID: fromDomain.id.toString(),
       },
     });
 
-    if (!feeResource) {
-      logger.error(`Unsupported resource: ${event.resourceID.toLowerCase()}`);
-      return null;
+    if (!token) {
+      throw new NotFoundError(
+        `Token with resourceID: ${event.resourceID.toLowerCase()} doesn't exist, skipping`,
+      );
     }
     return {
       decodedDepositLog: {
@@ -110,14 +111,14 @@ export class EVMParser implements IParser {
         transferType: resource.type,
         amount: decodeAmountOrTokenId(
           event.data,
-          resource.decimals!,
+          token.decimals,
           resource.type as ResourceType,
         ),
       },
       decodedFeeLog: {
         id: randomUUID(),
         amount: fee.amount,
-        resourceID: feeResource?.id,
+        tokenID: token.id,
         domainID: fromDomain.id.toString(),
         txIdentifier: transaction.hash,
       },
@@ -128,7 +129,7 @@ export class EVMParser implements IParser {
     log: Log,
     toDomain: DomainType,
     ctx: Context,
-  ): Promise<DecodedProposalExecutionLog | null> {
+  ): Promise<DecodedProposalExecutionLog> {
     const event = bridge.events.ProposalExecution.decode(log);
     const transaction = assertNotNull(log.transaction, "Missing transaction");
 
@@ -136,8 +137,9 @@ export class EVMParser implements IParser {
       where: { id: event.originDomainID.toString() },
     });
     if (!fromDomain) {
-      logger.error(`Source domain id ${event.originDomainID} not supported`);
-      return null;
+      throw new NotFoundError(
+        `Source domain id ${event.originDomainID} not supported`,
+      );
     }
 
     return {
@@ -159,15 +161,16 @@ export class EVMParser implements IParser {
     log: Log,
     toDomain: DomainType,
     ctx: Context,
-  ): Promise<DecodedFailedHandlerExecutionLog | null> {
+  ): Promise<DecodedFailedHandlerExecutionLog> {
     const event = bridge.events.FailedHandlerExecution.decode(log);
     const transaction = assertNotNull(log.transaction, "Missing transaction");
     const fromDomain = await ctx.store.findOne(Domain, {
       where: { id: event.originDomainID.toString() },
     });
     if (!fromDomain) {
-      logger.error(`Source domain id ${event.originDomainID} not supported`);
-      return null;
+      throw new NotFoundError(
+        `Source domain id ${event.originDomainID} not supported`,
+      );
     }
     let errMsg;
     try {

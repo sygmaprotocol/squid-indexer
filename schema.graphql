@@ -50,16 +50,23 @@ type Account @entity {
   deposits: [Deposit!] @derivedFrom(field: "account")
 }
 
-type Resource @entity @index(fields: ["tokenAddress", "domainID"], unique: true) {
+type Resource @entity {
   id: ID!
-  resourceID: String!
   type: String!
-  decimals: Int
+  deposit: [Deposit!] @derivedFrom(field: "resource")
+  tokens: [Token!] @derivedFrom(field: "resource")
+}
+
+type Token @entity @index(fields: ["tokenAddress", "domainID"], unique: true) {
+  id: ID!
+  decimals: Int!
   tokenAddress: String!
   tokenSymbol: String!
-  deposit: [Deposit!] @derivedFrom(field: "resource")
+  resource: Resource
+  resourceID: String
+  domain: Domain!
   domainID: String
-  domain: Domain
+  fee: [Fee!] @derivedFrom(field: "token")
 }
 
 type Domain @entity {
@@ -68,16 +75,16 @@ type Domain @entity {
   fromDomain: [Deposit!] @derivedFrom(field: "fromDomain")
   toDomain: [Deposit!] @derivedFrom(field: "toDomain")
   fee: [Fee!] @derivedFrom(field: "domain")
-  resource: [Resource!] @derivedFrom(field: "domain")
+  token: [Token!] @derivedFrom(field: "domain")
 }
 
 type Fee @entity {
   id: ID! 
   amount: String!
-  resourceID: String
-  resource: Resource!
   depositID: String
   deposit: Deposit
   domainID: String
   domain: Domain!
+  token: Token
+  tokenID: String
 }

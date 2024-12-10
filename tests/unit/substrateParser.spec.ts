@@ -18,7 +18,7 @@ import {
   V3AssetId,
 } from "../../src/indexer/substrateIndexer/types/v1260";
 import {Context} from "../../src/indexer/substrateIndexer/substrateProcessor"
-import { Domain, Resource } from "../../src/model";
+import { Domain, Resource, Token } from "../../src/model";
 
 describe("Substrate parser", () => {
   let provider: sinon.SinonStubbedInstance<ApiPromise>;
@@ -28,8 +28,15 @@ describe("Substrate parser", () => {
   const mockResource = {
     id: '0x0000000000000000000000000000000000000000000000000000000000000300',
     type: 'fungible',
+  };
+  
+  const mockToken = {
+    id:"tokenID",
     tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
     decimals: 18,
+    tokenSymbol: "ERC20LRTest",
+    domainID: 2,
+    resourceID: mockResource.id
   };
 
 const mockSourceDomain = {
@@ -63,8 +70,8 @@ const mockSourceDomain = {
       sinon.restore();
     });
     it("should parse a deposit correctly", async () => {
-      findOneStub.withArgs(Resource, { where: { resourceID: mockResource.id, domainID: "4" } }).resolves(mockResource);
-
+      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
+      findOneStub.withArgs(Token, { where: { resource: mockResource, domainID: "4" } }).resolves(mockToken);
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
@@ -135,7 +142,7 @@ const mockSourceDomain = {
           id: result?.decodedFeeLog.id,
           amount: '50',
           domainID: '4',
-          resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
+          tokenID: mockToken.id,
           txIdentifier: '0000000001-0ea58-000001'
         }
 
@@ -347,8 +354,8 @@ const mockSourceDomain = {
       sinon.restore();
     });
     it("should parse fee correctly", async () => {
-      findOneStub.withArgs(Resource, { where: { resourceID: mockResource.id, domainID: "4" } }).resolves(mockResource);
-
+      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
+      findOneStub.withArgs(Token, { where: { resource: mockResource, domainID: "4" } }).resolves(mockToken);
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
@@ -401,7 +408,7 @@ const mockSourceDomain = {
         id: result?.id,
         amount: '10',
         domainID: '4',
-        resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
+        tokenID: 'tokenID',
         txIdentifier: '0000000001-0ea58-000001'
       });
     });

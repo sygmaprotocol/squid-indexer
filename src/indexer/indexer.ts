@@ -36,32 +36,33 @@ import type {
   FeeCollectedData,
 } from "./types";
 
+type Context = EvmContext | SubstrateContext;
 export interface IParser {
   setParsers(parsers: Map<number, IParser>): void;
   parseDeposit(
     log: Log | Event,
     fromDomain: Domain,
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
   ): Promise<{
     decodedDepositLog: DecodedDepositLog;
     decodedFeeLog: FeeCollectedData;
-  } | null>;
+  }>;
   parseProposalExecution(
     log: Log | Event,
     toDomain: Domain,
-    ctx: EvmContext | SubstrateContext,
-  ): Promise<DecodedProposalExecutionLog | null>;
+    ctx: Context,
+  ): Promise<DecodedProposalExecutionLog>;
   parseFailedHandlerExecution(
     log: Log | Event,
     toDomain: Domain,
-    ctx: EvmContext | SubstrateContext,
-  ): Promise<DecodedFailedHandlerExecutionLog | null>;
+    ctx: Context,
+  ): Promise<DecodedFailedHandlerExecutionLog>;
   parseDestination(hexData: string, resourceType: ResourceType): string;
 }
 
 export interface IProcessor {
   processEvents(
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
     domain: Domain,
   ): Promise<DecodedEvents> | DecodedEvents;
   getProcessor(
@@ -108,7 +109,7 @@ export class Indexer {
   }
 
   public async storeDeposits(
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
     depositsData: DecodedDepositLog[],
   ): Promise<void> {
     const accounts = new Map<string, Account>();
@@ -159,7 +160,7 @@ export class Indexer {
   }
 
   public async storeExecutions(
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
     executionsData: DecodedProposalExecutionLog[],
   ): Promise<void> {
     const executions = new Map<string, Execution>();
@@ -191,7 +192,7 @@ export class Indexer {
   }
 
   public async storeFailedExecutions(
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
     failedExecutionsData: DecodedFailedHandlerExecutionLog[],
   ): Promise<void> {
     const failedExecutions = new Map<string, Execution>();
@@ -224,7 +225,7 @@ export class Indexer {
   }
 
   public async storeFees(
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
     feeCollectedData: FeeCollectedData[],
   ): Promise<void> {
     const fees = new Map<string, Fee>();
@@ -243,7 +244,7 @@ export class Indexer {
         const fee = new Fee({
           id: f.id,
           amount: f.amount,
-          resourceID: f.resourceID,
+          tokenID: f.tokenID,
           depositID: deposit.id,
           domainID: f.domainID,
         });

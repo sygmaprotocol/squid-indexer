@@ -45,7 +45,7 @@ export type DecodedFailedHandlerExecutionLog = {
 export type FeeCollectedData = {
   id: string;
   amount: string;
-  resourceID: string;
+  tokenID: string;
   domainID: string;
   txIdentifier: string;
 };

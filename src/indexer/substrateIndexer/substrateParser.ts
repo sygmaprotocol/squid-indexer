@@ -12,7 +12,8 @@ import { decodeHex } from "@subsquid/evm-processor";
 import { assertNotNull } from "@subsquid/substrate-processor";
 
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
-import { Domain, Resource } from "../../model";
+import { Domain, Resource, Token } from "../../model";
+import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
 import type { IParser } from "../indexer";
@@ -32,7 +33,7 @@ export interface ISubstrateParser extends IParser {
     log: Event,
     fromDomain: DomainType,
     ctx: Context,
-  ): Promise<FeeCollectedData | null>;
+  ): Promise<FeeCollectedData>;
 }
 
 export class SubstrateParser implements ISubstrateParser {
@@ -54,26 +55,36 @@ export class SubstrateParser implements ISubstrateParser {
   ): Promise<{
     decodedDepositLog: DecodedDepositLog;
     decodedFeeLog: FeeCollectedData;
-  } | null> {
+  }> {
     const event = events.sygmaBridge.deposit.v1250.decode(log);
     const destinationParser = this.parsers.get(event.destDomainId);
     if (!destinationParser) {
-      logger.error(`Destination domain id ${event.destDomainId} not supported`);
-      return null;
+      throw new NotFoundError(
+        `Destination domain id ${event.destDomainId} not supported`,
+      );
     }
     const resource = await ctx.store.findOne(Resource, {
       where: {
-        resourceID: event.resourceId.toLowerCase(),
-        domainID: fromDomain.id.toString(),
+        id: event.resourceId.toLowerCase(),
       },
     });
     if (!resource) {
-      logger.error(`Unsupported resource: ${event.resourceId.toLowerCase()}`);
-      return null;
+      throw new NotFoundError(
+        `Unssupported resource with ID ${event.resourceId}`,
+      );
     }
 
-    const resourceType = resource.type ?? "";
-
+    const token = await ctx.store.findOne(Token, {
+      where: {
+        resource: resource,
+        domainID: fromDomain.id.toString(),
+      },
+    });
+    if (!token) {
+      throw new NotFoundError(
+        `Token with resourceID: ${resource.id.toLowerCase()} doesn't exist, skipping`,
+      );
+    }
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
     return {
@@ -89,7 +100,7 @@ export class SubstrateParser implements ISubstrateParser {
         sender: event.sender,
         destination: destinationParser.parseDestination(
           event.depositData,
-          resourceType as ResourceType,
+          resource.type as ResourceType,
         ),
         fromDomainID: fromDomain.id.toString(),
         resourceID: resource.id,
@@ -97,10 +108,10 @@ export class SubstrateParser implements ISubstrateParser {
         timestamp: new Date(log.block.timestamp ?? ""),
         depositData: event.depositData,
         handlerResponse: event.handlerResponse,
-        transferType: resourceType,
+        transferType: resource.type,
         amount: decodeAmountOrTokenId(
           event.depositData,
-          resource.decimals ?? 12,
+          token?.decimals ?? 12,
           resource.type as ResourceType,
         ),
       },
@@ -108,7 +119,7 @@ export class SubstrateParser implements ISubstrateParser {
         id: randomUUID(),
         amount: "50",
         domainID: fromDomain.id.toString(),
-        resourceID: resource.id,
+        tokenID: token?.id,
         txIdentifier: extrinsic.id,
       },
     };
@@ -118,7 +129,7 @@ export class SubstrateParser implements ISubstrateParser {
     log: Event,
     toDomain: DomainType,
     ctx: Context,
-  ): Promise<DecodedProposalExecutionLog | null> {
+  ): Promise<DecodedProposalExecutionLog> {
     const event = events.sygmaBridge.proposalExecution.v1250.decode(log);
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
@@ -127,8 +138,9 @@ export class SubstrateParser implements ISubstrateParser {
     });
 
     if (!fromDomain) {
-      logger.error(`Source domain id ${event.originDomainId} not supported`);
-      return null;
+      throw new NotFoundError(
+        `Source domain id ${event.originDomainId} not supported`,
+      );
     }
     return {
       id: generateTransferID(
@@ -149,15 +161,16 @@ export class SubstrateParser implements ISubstrateParser {
     log: Event,
     toDomain: DomainType,
     ctx: Context,
-  ): Promise<DecodedFailedHandlerExecutionLog | null> {
+  ): Promise<DecodedFailedHandlerExecutionLog> {
     const event = events.sygmaBridge.failedHandlerExecution.v1250.decode(log);
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
     const fromDomain = await ctx.store.findOne(Domain, {
       where: { id: event.originDomainId.toString() },
     });
     if (!fromDomain) {
-      logger.error(`Source domain id ${event.originDomainId} not supported`);
-      return null;
+      throw new NotFoundError(
+        `Source domain id ${event.originDomainId} not supported`,
+      );
     }
     return {
       id: generateTransferID(
@@ -179,26 +192,37 @@ export class SubstrateParser implements ISubstrateParser {
     log: Event,
     fromDomain: DomainType,
     ctx: Context,
-  ): Promise<FeeCollectedData | null> {
+  ): Promise<FeeCollectedData> {
     const event = events.sygmaBridge.feeCollected.v1260.decode(log);
     const resource = await ctx.store.findOne(Resource, {
       where: {
-        resourceID: event.resourceId.toLowerCase(),
-        domainID: fromDomain.id.toString(),
+        id: event.resourceId.toLowerCase(),
       },
     });
     if (!resource) {
-      logger.error(`Unsupported resource: ${event.resourceId.toLowerCase()}`);
-      return null;
+      throw new NotFoundError(
+        `Unssupported resource with ID ${event.resourceId}`,
+      );
     }
 
+    const token = await ctx.store.findOne(Token, {
+      where: {
+        resource: resource,
+        domainID: fromDomain.id.toString(),
+      },
+    });
+    if (!token) {
+      throw new NotFoundError(
+        `Token with resourceID: ${resource.id.toLowerCase()} doesn't exist, skipping`,
+      );
+    }
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
     return {
       id: randomUUID(),
       amount: event.feeAmount.toString().replaceAll(",", ""),
       domainID: fromDomain.id.toString(),
-      resourceID: resource.id,
+      tokenID: token.id,
       txIdentifier: extrinsic.id,
     };
   }

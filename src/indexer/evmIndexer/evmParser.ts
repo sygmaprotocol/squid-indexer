@@ -81,7 +81,6 @@ export class EVMParser implements IParser {
         domainID: fromDomain.id.toString(),
       },
     });
-
     if (!token) {
       throw new NotFoundError(
         `Token with resourceID: ${event.resourceID.toLowerCase()} doesn't exist, skipping`,

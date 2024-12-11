@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_, OneToMany as OneToMany_, PrimaryGeneratedColumn} from "typeorm"
+import {Entity as Entity_, Column as Column_, Index as Index_, ManyToOne as ManyToOne_, OneToMany as OneToMany_, PrimaryGeneratedColumn} from "typeorm"
 import {Resource} from "./resource.model"
 import {Domain} from "./domain.model"
 import {Fee} from "./fee.model"

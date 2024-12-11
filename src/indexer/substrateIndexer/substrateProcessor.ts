@@ -11,8 +11,7 @@ import type {
 import { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import type { Store } from "@subsquid/typeorm-store";
 
-import { Token } from "../../model";
-import { SkipNotFoundError } from "../../utils/error";
+import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
 import type { DecodedEvents, IProcessor } from "../indexer";
@@ -89,14 +88,8 @@ export class SubstrateProcessor implements IProcessor {
     for (const block of ctx.blocks) {
       if (block.calls.length) {
         for (const call of block.calls) {
-          const asset = this.parser.parseSubstrateAsset!(call);
-          const resource = await ctx.store.findOne(Token, {
-            where: { tokenAddress: asset },
-          });
-          routes.push({
-            destinationDomainID: (call.args as { domain: number }).domain,
-            resourceID: resource?.resourceID || "",
-          });
+          const route = await this.parser.parseSubstrateAsset!(call, ctx);
+          routes.push(route);
         }
       }
 
@@ -154,7 +147,7 @@ export class SubstrateProcessor implements IProcessor {
               break;
           }
         } catch (error) {
-          if (error instanceof SkipNotFoundError) {
+          if (error instanceof NotFoundError) {
             logger.error(error.message);
           } else {
             throw error;

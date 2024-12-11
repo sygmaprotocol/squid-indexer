@@ -15,10 +15,10 @@ import * as feeRouter from "../../abi/FeeHandlerRouter";
 import * as bridge from "../../abi/bridge";
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { Domain, Resource, Token } from "../../model";
-import { SkipNotFoundError } from "../../utils/error";
+import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
-import type { IParser } from "../indexer";
+import type { IParser, RouteData } from "../indexer";
 import type {
   DecodedDepositLog,
   DecodedProposalExecutionLog,
@@ -57,7 +57,7 @@ export class EVMParser implements IParser {
     const event = bridge.events.Deposit.decode(log);
     const destinationParser = this.parsers.get(event.destinationDomainID);
     if (!destinationParser) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Destination domain id ${event.destinationDomainID} not supported`,
       );
     }
@@ -69,8 +69,8 @@ export class EVMParser implements IParser {
     });
 
     if (!resource) {
-      throw new SkipNotFoundError(
-        `Unssupported resource with ID ${event.resourceID}`,
+      throw new NotFoundError(
+        `Unsupported resource with ID ${event.resourceID}`,
       );
     }
     const transaction = assertNotNull(log.transaction, "Missing transaction");
@@ -82,9 +82,8 @@ export class EVMParser implements IParser {
         domainID: fromDomain.id.toString(),
       },
     });
-
     if (!token) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Token with resourceID: ${event.resourceID.toLowerCase()} doesn't exist, skipping`,
       );
     }
@@ -120,23 +119,41 @@ export class EVMParser implements IParser {
         id: randomUUID(),
         amount: fee.amount,
         tokenID: token.id,
-        domainID: fromDomain.id.toString(),
         txIdentifier: transaction.hash,
       },
     };
   }
 
-  public async parseEvmRoute(
-    txHash: string,
-  ): Promise<{ destinationDomainID: number; resourceID: string } | null> {
+  public async parseEvmRoute(txHash: string, ctx: Context): Promise<RouteData> {
     const tx = await this.provider.getTransaction(txHash);
-    if (tx?.data) {
-      const decoded = feeRouter.functions.adminSetResourceHandler.decode(
-        tx.data,
-      );
-      return decoded;
+    if (!tx) {
+      throw new NotFoundError(`Tx not found ${txHash}`);
     }
-    return null;
+    const decoded = feeRouter.functions.adminSetResourceHandler.decode(tx.data);
+    const resource = await ctx.store.findOne(Resource, {
+      where: {
+        id: decoded.resourceID.toLowerCase(),
+      },
+    });
+
+    if (!resource) {
+      throw new NotFoundError(
+        `Unsupported resource with ID ${decoded.resourceID.toLowerCase()}`,
+      );
+    }
+
+    const destinationDomain = await ctx.store.findOne(Domain, {
+      where: { id: decoded.destinationDomainID.toString() },
+    });
+    if (!destinationDomain) {
+      throw new NotFoundError(
+        `Destination domain id ${decoded.destinationDomainID.toString()} not supported`,
+      );
+    }
+    return {
+      ...decoded,
+      destinationDomainID: decoded.destinationDomainID.toString(),
+    };
   }
 
   public async parseProposalExecution(
@@ -151,7 +168,7 @@ export class EVMParser implements IParser {
       where: { id: event.originDomainID.toString() },
     });
     if (!fromDomain) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Source domain id ${event.originDomainID} not supported`,
       );
     }
@@ -166,7 +183,7 @@ export class EVMParser implements IParser {
       depositNonce: event.depositNonce.toString(),
       txHash: transaction.hash,
       timestamp: new Date(log.block.timestamp),
-      fromDomainID: fromDomain.id,
+      fromDomainID: fromDomain.id.toString(),
       toDomainID: toDomain.id.toString(),
     };
   }
@@ -182,7 +199,7 @@ export class EVMParser implements IParser {
       where: { id: event.originDomainID.toString() },
     });
     if (!fromDomain) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Source domain id ${event.originDomainID} not supported`,
       );
     }
@@ -248,7 +265,7 @@ export class EVMParser implements IParser {
 
       const fee = (await feeRouter.calculateFee(
         event.user,
-        fromDomain.id,
+        fromDomain.id.toString(),
         event.destinationDomainID,
         event.resourceID,
         event.data,

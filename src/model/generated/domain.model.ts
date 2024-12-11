@@ -1,6 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
-import {Deposit} from "./deposit.model"
-import {Fee} from "./fee.model"
+import {Transfer} from "./transfer.model"
 import {Token} from "./token.model"
 
 @Entity_()
@@ -15,14 +14,11 @@ export class Domain {
     @Column_("text", {nullable: false})
     name!: string
 
-    @OneToMany_(() => Deposit, e => e.fromDomain)
-    fromDomain!: Deposit[]
+    @OneToMany_(() => Transfer, e => e.fromDomain)
+    transfersFrom!: Transfer[]
 
-    @OneToMany_(() => Deposit, e => e.toDomain)
-    toDomain!: Deposit[]
-
-    @OneToMany_(() => Fee, e => e.domain)
-    fee!: Fee[]
+    @OneToMany_(() => Transfer, e => e.toDomain)
+    transfersTo!: Transfer[]
 
     @OneToMany_(() => Token, e => e.domain)
     token!: Token[]

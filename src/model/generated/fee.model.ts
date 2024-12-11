@@ -1,6 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
-import {Deposit} from "./deposit.model"
-import {Domain} from "./domain.model"
+import {Transfer} from "./transfer.model"
 import {Token} from "./token.model"
 
 @Entity_()
@@ -16,18 +15,11 @@ export class Fee {
     amount!: string
 
     @Column_("text", {nullable: true})
-    depositID!: string | undefined | null
+    transferID!: string | undefined | null
 
     @Index_()
-    @ManyToOne_(() => Deposit, {nullable: true})
-    deposit!: Deposit | undefined | null
-
-    @Column_("text", {nullable: true})
-    domainID!: string | undefined | null
-
-    @Index_()
-    @ManyToOne_(() => Domain, {nullable: true})
-    domain!: Domain
+    @ManyToOne_(() => Transfer, {nullable: true})
+    transfer!: Transfer | undefined | null
 
     @Index_()
     @ManyToOne_(() => Token, {nullable: true})

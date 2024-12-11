@@ -13,10 +13,10 @@ import { assertNotNull } from "@subsquid/substrate-processor";
 
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { Domain, Resource, Token } from "../../model";
-import { SkipNotFoundError } from "../../utils/error";
+import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
-import type { IParser } from "../indexer";
+import type { IParser, RouteData, SubstrateRouteData } from "../indexer";
 import type { Event } from "../substrateIndexer/substrateProcessor";
 import type {
   DecodedDepositLog,
@@ -27,7 +27,6 @@ import type {
 
 import type { Context } from "./substrateProcessor";
 import { events } from "./types";
-import type { sygmaFeeHandlerRouter } from "./types/calls";
 
 export interface ISubstrateParser extends IParser {
   parseFee(
@@ -60,7 +59,7 @@ export class SubstrateParser implements ISubstrateParser {
     const event = events.sygmaBridge.deposit.v1250.decode(log);
     const destinationParser = this.parsers.get(event.destDomainId);
     if (!destinationParser) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Destination domain id ${event.destDomainId} not supported`,
       );
     }
@@ -70,7 +69,7 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!resource) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Unssupported resource with ID ${event.resourceId}`,
       );
     }
@@ -82,7 +81,7 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!token) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Token with resourceID: ${resource.id.toLowerCase()} doesn't exist, skipping`,
       );
     }
@@ -119,7 +118,6 @@ export class SubstrateParser implements ISubstrateParser {
       decodedFeeLog: {
         id: randomUUID(),
         amount: "50",
-        domainID: fromDomain.id.toString(),
         tokenID: token?.id,
         txIdentifier: extrinsic.id,
       },
@@ -139,7 +137,7 @@ export class SubstrateParser implements ISubstrateParser {
     });
 
     if (!fromDomain) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Source domain id ${event.originDomainId} not supported`,
       );
     }
@@ -169,7 +167,7 @@ export class SubstrateParser implements ISubstrateParser {
       where: { id: event.originDomainId.toString() },
     });
     if (!fromDomain) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Source domain id ${event.originDomainId} not supported`,
       );
     }
@@ -189,23 +187,46 @@ export class SubstrateParser implements ISubstrateParser {
     };
   }
 
-  public parseSubstrateAsset(call: sygmaFeeHandlerRouter.Call): string {
+  public async parseSubstrateAsset(
+    call: SubstrateRouteData,
+    ctx: Context,
+  ): Promise<RouteData> {
     const asset = call.args.asset;
+    let decodedAsset;
     if (asset.__kind === "Concrete" && asset.value) {
       const assetValue = asset.value;
 
       if (assetValue.interior && assetValue.interior.__kind === "Here") {
-        const decodedAsset = {
+        decodedAsset = {
           concrete: {
             parents: assetValue.parents,
             interior: assetValue.interior.__kind.toLowerCase(),
           },
         };
-
-        return JSON.stringify(decodedAsset);
       }
     }
-    return "";
+    const token = await ctx.store.findOne(Token, {
+      where: { tokenAddress: JSON.stringify(decodedAsset) },
+    });
+
+    if (!token) {
+      throw new NotFoundError(
+        `Unsupported resource for token ${JSON.stringify(decodedAsset)}`,
+      );
+    }
+
+    const destinationDomain = await ctx.store.findOne(Domain, {
+      where: { id: call.args.domainID },
+    });
+    if (!destinationDomain) {
+      throw new NotFoundError(
+        `Destination domain id ${call.args.domainID.toString()} not supported`,
+      );
+    }
+    return {
+      destinationDomainID: call.args.domainID,
+      resourceID: token.resourceID!,
+    };
   }
 
   public async parseFee(
@@ -220,7 +241,7 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!resource) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Unssupported resource with ID ${event.resourceId}`,
       );
     }
@@ -232,7 +253,7 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!token) {
-      throw new SkipNotFoundError(
+      throw new NotFoundError(
         `Token with resourceID: ${resource.id.toLowerCase()} doesn't exist, skipping`,
       );
     }
@@ -241,7 +262,6 @@ export class SubstrateParser implements ISubstrateParser {
     return {
       id: randomUUID(),
       amount: event.feeAmount.toString().replaceAll(",", ""),
-      domainID: fromDomain.id.toString(),
       tokenID: token.id,
       txIdentifier: extrinsic.id,
     };

@@ -16,7 +16,7 @@ import {IParser } from "../../src/indexer/indexer";
 import {Context} from "../../src/indexer/evmIndexer/evmProcessor"
 import * as feeRouter from "../../src/abi/FeeHandlerRouter";
 import { Domain, Resource, Token } from "../../src/model";
-import { SkipNotFoundError } from "../../src/utils/error";
+import { NotFoundError } from "../../src/utils/error";
 
 describe("EVMParser", () => {
   let provider: sinon.SinonStubbedInstance<JsonRpcProvider>;
@@ -37,7 +37,7 @@ const mockToken = {
   resourceID: mockResource.id
 };
 
-const mockSourceDomain = {
+const mockDomain = {
   id: '2',
 };
 
@@ -158,7 +158,6 @@ const mockSourceDomain = {
         id: result?.decodedFeeLog.id,
         tokenID: mockToken.id,
         txIdentifier: "0xTxHash",
-        domainID: "2",
         amount: "0.01",
       }
     }
@@ -233,7 +232,7 @@ const mockSourceDomain = {
         await parser.parseDeposit(log, fromDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(SkipNotFoundError);
+        expect(error).to.be.instanceOf(NotFoundError);
       }
     });
 
@@ -284,7 +283,7 @@ const mockSourceDomain = {
         await parser.parseDeposit(log, fromDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(SkipNotFoundError);
+        expect(error).to.be.instanceOf(NotFoundError);
       }
     });
 
@@ -342,7 +341,7 @@ const mockSourceDomain = {
       sinon.restore();
     });
     it("should parse a proposal execution log correctly", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -373,7 +372,7 @@ const mockSourceDomain = {
     });
 
     it("should skip execution from unsupported domain", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(undefined);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(undefined);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -395,7 +394,7 @@ const mockSourceDomain = {
         await parser.parseProposalExecution(log, toDomain, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(SkipNotFoundError);
+        expect(error).to.be.instanceOf(NotFoundError);
       }
     });
   });
@@ -418,7 +417,7 @@ const mockSourceDomain = {
       sinon.restore();
     });
     it("should parse a failed handler execution log correctly", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -450,7 +449,7 @@ const mockSourceDomain = {
     });
 
     it("should skip failed executions from unsupported domain", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(undefined);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(undefined);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -469,9 +468,10 @@ const mockSourceDomain = {
 
 
       try {
-        await parser.parseFailedHandlerExecution(log, toDomain, ctx);        expect.fail("Expected error was not thrown");
+        await parser.parseFailedHandlerExecution(log, toDomain, ctx);
+        expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(SkipNotFoundError);
+        expect(error).to.be.instanceOf(NotFoundError);
       }
     });
   });
@@ -480,11 +480,20 @@ const mockSourceDomain = {
     let evmParser: EVMParser;
     let providerStub: sinon.SinonStubbedInstance<JsonRpcProvider>;
     let decodeStub: sinon.SinonStub;
-  
+    let findOneStub: sinon.SinonStub;
+
     beforeEach(() => {
       providerStub = sinon.createStubInstance(JsonRpcProvider);
       evmParser = new EVMParser(providerStub as unknown as JsonRpcProvider);
       decodeStub = sinon.stub(feeRouter.functions.adminSetResourceHandler, 'decode');
+      ctx = {
+        store: {
+          findOne: sinon.stub(),
+        },
+      } as unknown as Context;
+  
+      // Stub each findOne call with appropriate return values
+      findOneStub = ctx.store.findOne as sinon.SinonStub;
     });
   
     afterEach(() => {
@@ -494,40 +503,67 @@ const mockSourceDomain = {
     it('should return decoded data when transaction data is valid', async () => {
       const mockTxHash = '0xMockTransactionHash';
       const mockTxData = '0xMockTransactionData';
-      const mockDecodedData = { destinationDomainID: 1, resourceID: '0xMockResourceID' };
-  
+      const mockDecodedData = { destinationDomainID: mockDomain.id, resourceID: mockResource.id };
+      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+
       providerStub.getTransaction.resolves({ data: mockTxData } as any);
       decodeStub.withArgs(mockTxData).returns(mockDecodedData);
   
-      const result = await evmParser.parseEvmRoute(mockTxHash);
+      const result = await evmParser.parseEvmRoute(mockTxHash, ctx);
   
       expect(result).to.deep.equal(mockDecodedData);
       expect(providerStub.getTransaction.calledOnceWithExactly(mockTxHash)).to.be.true;
       expect(decodeStub.calledOnceWithExactly(mockTxData)).to.be.true;
     });
   
-    it('should return null when transaction has no data', async () => {
+    it('should throw notFoundError when found route with deprecated resource', async () => {
       const mockTxHash = '0xMockTransactionHash';
-  
-      providerStub.getTransaction.resolves({ data: null } as any);
-  
-      const result = await evmParser.parseEvmRoute(mockTxHash);
-  
-      expect(result).to.be.null;
-      expect(providerStub.getTransaction.calledOnceWithExactly(mockTxHash)).to.be.true;
-      expect(decodeStub.notCalled).to.be.true;
+      const mockTxData = '0xMockTransactionData';
+      const mockDecodedData = { destinationDomainID: 1, resourceID: '0xMockResourceID' };
+
+      findOneStub.withArgs(Resource, { where: { id: mockDomain.id } }).resolves(null);
+      providerStub.getTransaction.resolves({ data: mockTxData } as any);
+      decodeStub.withArgs(mockTxData).returns(mockDecodedData);
+
+      try {
+        await evmParser.parseEvmRoute(mockTxHash, ctx);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(NotFoundError);
+      }
+    });
+
+    it('should throw notFoundError when found route with deprecated domain', async () => {
+      const mockTxHash = '0xMockTransactionHash';
+      const mockTxData = '0xMockTransactionData';
+      const mockDecodedData = { destinationDomainID: 1, resourceID: '0xMockResourceID' };
+
+      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(null);
+
+      providerStub.getTransaction.resolves({ data: mockTxData } as any);
+      decodeStub.withArgs(mockTxData).returns(mockDecodedData);
+
+      try {
+        await evmParser.parseEvmRoute(mockTxHash, ctx);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(NotFoundError);
+      }
     });
   
     it('should return null when transaction is not found', async () => {
       const mockTxHash = '0xMockTransactionHash';
   
       providerStub.getTransaction.resolves(null);
-  
-      const result = await evmParser.parseEvmRoute(mockTxHash);
-  
-      expect(result).to.be.null;
-      expect(providerStub.getTransaction.calledOnceWithExactly(mockTxHash)).to.be.true;
-      expect(decodeStub.notCalled).to.be.true;
+    
+      try {
+        await evmParser.parseEvmRoute(mockTxHash, ctx);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(NotFoundError);
+      }
     });
   });
 });

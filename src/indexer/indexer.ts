@@ -9,10 +9,7 @@ import type {
   EvmBatchProcessor,
   Log,
 } from "@subsquid/evm-processor";
-import type {
-  Call,
-  SubstrateBatchProcessor,
-} from "@subsquid/substrate-processor";
+import type { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 
 import {
@@ -33,6 +30,7 @@ import type {
   Fields,
   Context as SubstrateContext,
 } from "./substrateIndexer/substrateProcessor";
+import type { ConcreteAsset } from "./substrateIndexer/types/sygma-fee-handler-router/calls";
 import type {
   DecodedDepositLog,
   DecodedFailedHandlerExecutionLog,
@@ -41,12 +39,13 @@ import type {
   FeeCollectedData,
 } from "./types";
 
+type Context = EvmContext | SubstrateContext;
 export interface IParser {
   setParsers(parsers: Map<number, IParser>): void;
   parseDeposit(
     log: Log | Event,
     fromDomain: Domain,
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
   ): Promise<{
     decodedDepositLog: DecodedDepositLog;
     decodedFeeLog: FeeCollectedData;
@@ -54,23 +53,24 @@ export interface IParser {
   parseProposalExecution(
     log: Log | Event,
     toDomain: Domain,
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
   ): Promise<DecodedProposalExecutionLog>;
   parseFailedHandlerExecution(
     log: Log | Event,
     toDomain: Domain,
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
   ): Promise<DecodedFailedHandlerExecutionLog>;
   parseDestination(hexData: string, resourceType: ResourceType): string;
-  parseEvmRoute?(
-    txHash: string,
-  ): Promise<{ destinationDomainID: number; resourceID: string } | null>;
-  parseSubstrateAsset?(call: Call): string;
+  parseEvmRoute?(txHash: string, ctx: Context): Promise<RouteData>;
+  parseSubstrateAsset?(
+    call: SubstrateRouteData,
+    ctx: Context,
+  ): Promise<RouteData>;
 }
 
 export interface IProcessor {
   processEvents(
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
     domain: Domain,
   ): Promise<DecodedEvents> | DecodedEvents;
   getProcessor(
@@ -78,6 +78,13 @@ export interface IProcessor {
   ): EvmBatchProcessor | SubstrateBatchProcessor<Fields>;
 }
 
+export type RouteData = {
+  destinationDomainID: string;
+  resourceID: string;
+};
+export type SubstrateRouteData = {
+  args: { asset: ConcreteAsset; domainID: string };
+};
 export type DecodedEvents = {
   deposits: DecodedDepositLog[];
   executions: DecodedProposalExecutionLog[];
@@ -119,7 +126,7 @@ export class Indexer {
   }
 
   public async storeDeposits(
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
     depositsData: DecodedDepositLog[],
   ): Promise<void> {
     const accounts = new Map<string, Account>();
@@ -137,18 +144,12 @@ export class Indexer {
     for (const d of depositsData) {
       const deposit = new Deposit({
         id: d.id,
-        type: d.transferType,
         txHash: d.txHash,
         blockNumber: d.blockNumber.toString(),
         depositData: d.depositData,
         timestamp: d.timestamp,
         handlerResponse: d.handlerResponse,
-        depositNonce: d.depositNonce.toString(),
-        amount: d.amount,
         destination: d.destination,
-        resourceID: d.resourceID,
-        fromDomainID: d.fromDomainID,
-        toDomainID: d.toDomainID,
         accountID: d.sender,
       });
 
@@ -156,6 +157,11 @@ export class Indexer {
         id: d.id,
         status: TransferStatus.pending,
         deposit: deposit,
+        depositNonce: d.depositNonce.toString(),
+        amount: d.amount,
+        resourceID: d.resourceID,
+        fromDomainID: d.fromDomainID,
+        toDomainID: d.toDomainID,
       });
 
       if (!deposits.has(d.id)) {
@@ -170,7 +176,7 @@ export class Indexer {
   }
 
   public async storeExecutions(
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
     executionsData: DecodedProposalExecutionLog[],
   ): Promise<void> {
     const executions = new Map<string, Execution>();
@@ -188,6 +194,9 @@ export class Indexer {
         id: e.id,
         status: TransferStatus.executed,
         execution: execution,
+        fromDomainID: e.fromDomainID,
+        toDomainID: e.toDomainID,
+        depositNonce: e.depositNonce,
       });
 
       if (!executions.has(e.id)) {
@@ -202,7 +211,7 @@ export class Indexer {
   }
 
   public async storeFailedExecutions(
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
     failedExecutionsData: DecodedFailedHandlerExecutionLog[],
   ): Promise<void> {
     const failedExecutions = new Map<string, Execution>();
@@ -220,6 +229,9 @@ export class Indexer {
         id: e.id,
         status: TransferStatus.failed,
         execution: failedExecution,
+        fromDomainID: e.fromDomainID,
+        toDomainID: e.toDomainID,
+        depositNonce: e.depositNonce,
       });
 
       if (!failedExecutions.has(e.id)) {
@@ -235,16 +247,21 @@ export class Indexer {
   }
 
   public async storeFees(
-    ctx: EvmContext | SubstrateContext,
+    ctx: Context,
     feeCollectedData: FeeCollectedData[],
   ): Promise<void> {
     const fees = new Map<string, Fee>();
-    const deposits = new Map<string, Deposit>();
+    const transfers = new Map<string, Transfer>();
     for (const f of feeCollectedData) {
-      const deposit = await ctx.store.findOne(Deposit, {
-        where: { txHash: f.txIdentifier },
+      const transfer = await ctx.store.findOne(Transfer, {
+        where: {
+          deposit: {
+            txHash: f.txIdentifier,
+          },
+        },
+        relations: { deposit: true },
       });
-      if (!deposit) {
+      if (!transfer?.deposit) {
         logger.warn(
           `Deposit for the fee with txHash: ${f.txIdentifier} not found, skipping...`,
         );
@@ -255,17 +272,16 @@ export class Indexer {
           id: f.id,
           amount: f.amount,
           tokenID: f.tokenID,
-          depositID: deposit.id,
-          domainID: f.domainID,
+          transferID: transfer.id,
         });
-        deposit.fee = fee;
+        transfer.fee = fee;
 
         fees.set(f.id, fee);
-        deposits.set(deposit.id, deposit);
+        transfers.set(transfer.id, transfer);
       }
     }
     await ctx.store.upsert([...fees.values()]);
-    await ctx.store.upsert([...deposits.values()]);
+    await ctx.store.upsert([...transfers.values()]);
   }
 
   public async storeRoutes(

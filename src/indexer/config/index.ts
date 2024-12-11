@@ -118,8 +118,9 @@ async function initializeParserMap(
   for (const domain of sharedConfig.domains) {
     const rpcUrl = rpcMap.get(domain.id);
     if (!rpcUrl) {
-      console.log(`Unsupported or missing RPC URL for domain ID: ${domain.id}`);
-      continue;
+      throw new Error(
+        `Unsupported or missing RPC URL for domain ID: ${domain.id}`,
+      );
     }
     switch (domain.type) {
       case Network.EVM: {

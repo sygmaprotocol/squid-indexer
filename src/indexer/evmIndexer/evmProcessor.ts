@@ -11,7 +11,7 @@ import type { Store } from "@subsquid/typeorm-store";
 
 import * as feeRouter from "../../abi/FeeHandlerRouterABI";
 import * as bridge from "../../abi/bridge";
-import { SkipNotFoundError } from "../../utils/error";
+import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
 import type { DecodedEvents, IParser, IProcessor } from "../indexer";
@@ -36,7 +36,7 @@ export class EVMProcessor implements IProcessor {
         url: this.rpcUrl,
         rateLimit: 10,
       })
-      .setBlockRange({ from: 241642 })
+      .setBlockRange({ from: domain.startBlock })
       .setFinalityConfirmation(domain.blockConfirmations)
       .addLog({
         address: [domain.bridge],
@@ -77,10 +77,16 @@ export class EVMProcessor implements IProcessor {
     for (const block of ctx.blocks) {
       if (block.transactions.length) {
         for (const tx of block.transactions) {
-          if (tx.to?.toLowerCase() == domain.feeRouter.toLowerCase()) {
-            const route = await this.parser.parseEvmRoute!(tx.hash);
-            if (route) {
+          try {
+            if (tx.to?.toLowerCase() == domain.feeRouter.toLowerCase()) {
+              const route = await this.parser.parseEvmRoute!(tx.hash, ctx);
               routes.push(route);
+            }
+          } catch (error) {
+            if (error instanceof NotFoundError) {
+              logger.error(error.message);
+            } else {
+              throw error;
             }
           }
         }
@@ -118,7 +124,7 @@ export class EVMProcessor implements IProcessor {
               break;
           }
         } catch (error) {
-          if (error instanceof SkipNotFoundError) {
+          if (error instanceof NotFoundError) {
             logger.error(error.message);
           } else {
             throw error;

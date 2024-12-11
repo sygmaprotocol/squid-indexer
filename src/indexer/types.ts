@@ -21,7 +21,7 @@ export type DecodedDepositLog = {
   senderStatus?: string;
 };
 export type DecodedRoutes = {
-  destinationDomainID: number;
+  destinationDomainID: string;
   resourceID: string;
 };
 
@@ -50,6 +50,5 @@ export type FeeCollectedData = {
   id: string;
   amount: string;
   tokenID: string;
-  domainID: string;
   txIdentifier: string;
 };

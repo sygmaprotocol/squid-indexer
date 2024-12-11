@@ -18,6 +18,12 @@ export class Domain {
     @Column_("text", {nullable: false})
     name!: string
 
+    @Column_("text", {nullable: true})
+    iconUrl!: string | undefined | null
+
+    @Column_("text", {nullable: true})
+    explorerUrl!: string | undefined | null
+
     @OneToMany_(() => Transfer, e => e.fromDomain)
     transfersFrom!: Transfer[]
 

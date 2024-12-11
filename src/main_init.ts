@@ -7,7 +7,8 @@ import type { EntityManager } from "typeorm";
 
 import type { Domain as DomainConfig } from "./indexer/config";
 import { fetchSharedConfig } from "./indexer/config";
-import { getEnv } from "./indexer/config/validator";
+import type { DomainMetadata } from "./indexer/config/validator";
+import { getInitEnv } from "./indexer/config/validator";
 import { Domain, Resource, Token } from "./model";
 import { initDatabase } from "./utils";
 import { logger } from "./utils/logger";
@@ -15,17 +16,22 @@ import { logger } from "./utils/logger";
 const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 async function main(): Promise<void> {
-  const envVars = getEnv();
+  const envVars = getInitEnv();
   const dataSource = await initDatabase(envVars.dbConfig);
   const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
 
-  await insertDomains(sharedConfig.domains, dataSource.manager);
+  await insertDomains(
+    sharedConfig.domains,
+    dataSource.manager,
+    envVars.domainMetadata,
+  );
   await dataSource.destroy();
 }
 
 async function insertDomains(
   domains: Array<DomainConfig>,
   manager: EntityManager,
+  domainMetadata: DomainMetadata,
 ): Promise<void> {
   for (const domain of domains) {
     await manager.upsert(
@@ -33,6 +39,8 @@ async function insertDomains(
       {
         id: domain.id.toString(),
         name: domain.name,
+        iconUrl: domainMetadata[domain.id]?.iconUrl ?? "",
+        explorerUrl: domainMetadata[domain.id]?.explorerUrl ?? "",
       },
       ["id"],
     );

@@ -71,6 +71,8 @@ type Token @entity @index(fields: ["tokenAddress", "domainID"], unique: true) {
 type Domain @entity {
   id: ID!
   name: String!
+  iconUrl: String
+  explorerUrl: String
   transfersFrom: [Transfer!] @derivedFrom(field: "fromDomain")
   transfersTo: [Transfer!] @derivedFrom(field: "toDomain")
   token: [Token!] @derivedFrom(field: "domain")

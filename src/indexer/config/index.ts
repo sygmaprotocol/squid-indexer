@@ -16,7 +16,7 @@ import type { IParser, IProcessor } from "../indexer";
 import { SubstrateParser } from "../substrateIndexer/substrateParser";
 import { createSubstrateProvider } from "../substrateIndexer/utils";
 
-import type { EnvVariables } from "./validator";
+import type { EnvIndexerVariables } from "./validator";
 
 export type DomainConfig = {
   domainData: Domain;
@@ -64,7 +64,7 @@ type Config = {
   rpcMap: Map<number, string>;
 };
 
-export async function getConfig(envVars: EnvVariables): Promise<Config> {
+export async function getConfig(envVars: EnvIndexerVariables): Promise<Config> {
   const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
   const rpcMap = createRpcMap(envVars.rpcUrls);
   const parserMap = await initializeParserMap(sharedConfig, rpcMap);

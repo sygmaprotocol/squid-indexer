@@ -1,3 +1,7 @@
+/*
+The Licensed Work is (c) 2024 Sygma
+SPDX-License-Identifier: LGPL-3.0-only
+*/
 import {sts, Block, Bytes, Option, Result, CallType, RuntimeCtx} from '../support'
 import * as v1250 from '../v1250'
 import * as v1260 from '../v1260'

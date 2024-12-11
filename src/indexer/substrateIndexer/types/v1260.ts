@@ -1,3 +1,7 @@
+/*
+The Licensed Work is (c) 2024 Sygma
+SPDX-License-Identifier: LGPL-3.0-only
+*/
 import {sts, Result, Option, Bytes, BitSequence} from './support'
 
 export const FeeHandlerType: sts.Type<FeeHandlerType> = sts.closedEnum(() => {

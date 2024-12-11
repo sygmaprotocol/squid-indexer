@@ -9,7 +9,7 @@ import type {
 import { EvmBatchProcessor } from "@subsquid/evm-processor";
 import type { Store } from "@subsquid/typeorm-store";
 
-import * as feeRouter from "../../abi/FeeHandlerRouterABI";
+import * as feeRouter from "../../abi/FeeHandlerRouter";
 import * as bridge from "../../abi/bridge";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";

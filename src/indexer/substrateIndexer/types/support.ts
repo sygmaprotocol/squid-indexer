@@ -1,3 +1,7 @@
+/*
+The Licensed Work is (c) 2024 Sygma
+SPDX-License-Identifier: LGPL-3.0-only
+*/
 import type {BitSequence, Bytes, QualifiedName, Runtime} from '@subsquid/substrate-runtime'
 import * as sts from '@subsquid/substrate-runtime/lib/sts'
 import {Option, Result} from '@subsquid/substrate-runtime/lib/sts'

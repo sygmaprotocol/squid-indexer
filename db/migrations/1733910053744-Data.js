@@ -1,5 +1,5 @@
-module.exports = class Data1733840019584 {
-    name = 'Data1733840019584'
+module.exports = class Data1733910053744 {
+    name = 'Data1733910053744'
 
     async up(db) {
         await db.query(`CREATE TABLE "resource" ("id" character varying NOT NULL, "type" text NOT NULL, CONSTRAINT "PK_e2894a5867e06ae2e8889f1173f" PRIMARY KEY ("id"))`)
@@ -22,6 +22,10 @@ module.exports = class Data1733840019584 {
         await db.query(`CREATE UNIQUE INDEX "IDX_4b62ae14edfb27605cd911db59" ON "transfer" ("execution_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_f6b9e9b86a1ce51c26cd08f596" ON "transfer" ("fee_id") `)
         await db.query(`CREATE INDEX "IDX_d508a1e7a2e0da07bd955f76d8" ON "transfer" ("resource_id") `)
+        await db.query(`CREATE TABLE "route" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "from_domain_id" character varying, "to_domain_id" character varying, "resource_id" text, CONSTRAINT "PK_08affcd076e46415e5821acf52d" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE INDEX "IDX_cd316229471fecd312159ee307" ON "route" ("from_domain_id") `)
+        await db.query(`CREATE INDEX "IDX_863162a8edb416799e89f386f8" ON "route" ("to_domain_id") `)
+        await db.query(`CREATE UNIQUE INDEX "IDX_7dc7af2a7a9c846759377d1450" ON "route" ("from_domain_id", "to_domain_id", "resource_id") `)
         await db.query(`ALTER TABLE "fee" ADD CONSTRAINT "FK_119250e5caf62c90134b8e2f2d3" FOREIGN KEY ("transfer_id") REFERENCES "transfer"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "fee" ADD CONSTRAINT "FK_bde4aa972635af552acf1152420" FOREIGN KEY ("token_id") REFERENCES "token"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "token" ADD CONSTRAINT "FK_435ef0917a04e91698042dff2bc" FOREIGN KEY ("resource_id") REFERENCES "resource"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
@@ -33,6 +37,8 @@ module.exports = class Data1733840019584 {
         await db.query(`ALTER TABLE "transfer" ADD CONSTRAINT "FK_4b62ae14edfb27605cd911db591" FOREIGN KEY ("execution_id") REFERENCES "execution"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "transfer" ADD CONSTRAINT "FK_f6b9e9b86a1ce51c26cd08f596a" FOREIGN KEY ("fee_id") REFERENCES "fee"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "transfer" ADD CONSTRAINT "FK_d508a1e7a2e0da07bd955f76d81" FOREIGN KEY ("resource_id") REFERENCES "resource"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+        await db.query(`ALTER TABLE "route" ADD CONSTRAINT "FK_cd316229471fecd312159ee307e" FOREIGN KEY ("from_domain_id") REFERENCES "domain"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+        await db.query(`ALTER TABLE "route" ADD CONSTRAINT "FK_863162a8edb416799e89f386f82" FOREIGN KEY ("to_domain_id") REFERENCES "domain"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     }
 
     async down(db) {
@@ -56,6 +62,10 @@ module.exports = class Data1733840019584 {
         await db.query(`DROP INDEX "public"."IDX_4b62ae14edfb27605cd911db59"`)
         await db.query(`DROP INDEX "public"."IDX_f6b9e9b86a1ce51c26cd08f596"`)
         await db.query(`DROP INDEX "public"."IDX_d508a1e7a2e0da07bd955f76d8"`)
+        await db.query(`DROP TABLE "route"`)
+        await db.query(`DROP INDEX "public"."IDX_cd316229471fecd312159ee307"`)
+        await db.query(`DROP INDEX "public"."IDX_863162a8edb416799e89f386f8"`)
+        await db.query(`DROP INDEX "public"."IDX_7dc7af2a7a9c846759377d1450"`)
         await db.query(`ALTER TABLE "fee" DROP CONSTRAINT "FK_119250e5caf62c90134b8e2f2d3"`)
         await db.query(`ALTER TABLE "fee" DROP CONSTRAINT "FK_bde4aa972635af552acf1152420"`)
         await db.query(`ALTER TABLE "token" DROP CONSTRAINT "FK_435ef0917a04e91698042dff2bc"`)
@@ -67,5 +77,7 @@ module.exports = class Data1733840019584 {
         await db.query(`ALTER TABLE "transfer" DROP CONSTRAINT "FK_4b62ae14edfb27605cd911db591"`)
         await db.query(`ALTER TABLE "transfer" DROP CONSTRAINT "FK_f6b9e9b86a1ce51c26cd08f596a"`)
         await db.query(`ALTER TABLE "transfer" DROP CONSTRAINT "FK_d508a1e7a2e0da07bd955f76d81"`)
+        await db.query(`ALTER TABLE "route" DROP CONSTRAINT "FK_cd316229471fecd312159ee307e"`)
+        await db.query(`ALTER TABLE "route" DROP CONSTRAINT "FK_863162a8edb416799e89f386f82"`)
     }
 }

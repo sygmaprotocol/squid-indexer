@@ -38,7 +38,6 @@ export async function initDatabase(dbConfig: DbConfig): Promise<DataSource> {
       Token,
     ],
     namingStrategy: new SnakeNamingStrategy(),
-    synchronize: true,
   });
   await dataSource.initialize();
   return dataSource;

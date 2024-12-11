@@ -2,10 +2,11 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_, OneToMany as OneToMany_, PrimaryGeneratedColumn} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, IntColumn as IntColumn_, StringColumn as StringColumn_, ManyToOne as ManyToOne_, OneToMany as OneToMany_} from "@subsquid/typeorm-store"
 import {Resource} from "./resource.model"
 import {Domain} from "./domain.model"
 import {Fee} from "./fee.model"
+import { PrimaryGeneratedColumn } from "typeorm"
 
 @Index_(["tokenAddress", "domainID"], {unique: true})
 @Entity_()
@@ -17,27 +18,27 @@ export class Token {
     @PrimaryGeneratedColumn("uuid")
     id!: string
 
-    @Column_("int4", {nullable: false})
+    @IntColumn_({nullable: false})
     decimals!: number
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     tokenAddress!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     tokenSymbol!: string
 
     @Index_()
     @ManyToOne_(() => Resource, {nullable: true})
     resource!: Resource | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     resourceID!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Domain, {nullable: true})
     domain!: Domain
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     domainID!: string | undefined | null
 
     @OneToMany_(() => Fee, e => e.token)

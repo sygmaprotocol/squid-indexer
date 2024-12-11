@@ -190,16 +190,3 @@ export const paginationSchema = {
     default: 10,
   },
 };
-
-export const transferByTxHashSchema = {
-  component: {
-    type: "string",
-    enum: ["deposit", "execution"],
-    default: "deposit",
-  },
-  txHash: { type: "string" },
-};
-
-export const transfersBySenderSchema = {
-  sender: { type: "string" },
-};

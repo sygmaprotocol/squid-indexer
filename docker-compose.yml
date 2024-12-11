@@ -17,13 +17,19 @@ services:
     depends_on: 
       - db
     env_file: ./envs/.env.init
-
-
-  indexer-substrate:
+  indexer-sepolia:
     build: 
       context: .
       dockerfile: ./Dockerfile 
     restart: on-failure
     depends_on: 
       - indexer-init
-    env_file: ./envs/.env.substrate
+    env_file: ./envs/.env.sepolia
+  indexer-holesky:
+    build: 
+      context: .
+      dockerfile: ./Dockerfile 
+    restart: on-failure
+    depends_on: 
+      - indexer-init
+    env_file: ./envs/.env.holesky

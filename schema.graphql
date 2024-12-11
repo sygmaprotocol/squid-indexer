@@ -73,6 +73,8 @@ type Domain @entity {
   name: String!
   transfersFrom: [Transfer!] @derivedFrom(field: "fromDomain")
   transfersTo: [Transfer!] @derivedFrom(field: "toDomain")
+  fromDomain: [Route!] @derivedFrom(field: "fromDomain")
+  toDomain: [Route!] @derivedFrom(field: "toDomain")
   token: [Token!] @derivedFrom(field: "domain")
 }
 

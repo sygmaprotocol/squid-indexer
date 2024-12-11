@@ -5,10 +5,9 @@ SPDX-License-Identifier: LGPL-3.0-only
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { DataSource, FindOptionsWhere } from "typeorm";
 
-import type { Transfer } from "../../model";
+import type { Deposit, Transfer } from "../../model";
 import { logger } from "../../utils/logger";
 import {
-  TransferComponent,
   type ITransferBySender,
   type ITransferByTxHash,
   type ITransfers,
@@ -33,18 +32,13 @@ export class TransfersController {
     try {
       const where: FindOptionsWhere<Transfer> = { status };
       if (txHash) {
-        if (
-          component != TransferComponent.Deposit &&
-          component != TransferComponent.Execution
-        ) {
-          throw new Error(
-            `Invalid type provided: must be 'deposit' or 'execution' when txHash is specified`,
-          );
-        }
         where[component] = { txHash };
-      } else if (sender) {
-        where.deposit = { accountID: sender };
       }
+
+      if (sender) {
+        where.deposit = { ...(where.deposit as Deposit), accountID: sender };
+      }
+
       const transfersResult = await this.transfersService.findTransfers(where, {
         page,
         limit,

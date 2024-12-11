@@ -19,7 +19,7 @@ export interface ITransferBySender {
   sender: string;
 }
 
-export enum TransferComponent {
+enum TransferComponent {
   Deposit = "deposit",
   Execution = "execution",
 }

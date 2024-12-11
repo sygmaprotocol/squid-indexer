@@ -47,15 +47,14 @@ export class TransfersService {
           timestamp: "DESC",
         },
       },
-      relations: [
-        "deposit",
-        "execution",
-        "deposit.resource",
-        "deposit.fee",
-        "deposit.account",
-        "deposit.fromDomain",
-        "deposit.toDomain",
-      ],
+      relations: {
+        deposit: true,
+        execution: true,
+        fromDomain: true,
+        toDomain: true,
+        fee: { token: true },
+        resource: true,
+      },
     });
 
     return transfers;

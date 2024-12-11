@@ -10,21 +10,10 @@ export const resourceSchema = {
     id: {
       type: "string",
       format: "ObjectId",
-      example: "1ffe10e3-c16c-4fdb-a357-380accf1eb66",
-    },
-    resourceID: {
-      type: "string",
-      format: "ObjectId",
       example:
         "0x0000000000000000000000000000000000000000000000000000000000000001",
     },
     type: { type: "string", example: "fungible" },
-    decimals: { type: "integer", nullable: true, example: 18 },
-    tokenAddress: {
-      type: "string",
-      example: "0x37356a2B2EbF65e5Ea18BD93DeA6869769099739",
-    },
-    tokenSymbol: { type: "string", example: "ERC20TST" },
   },
 };
 
@@ -33,6 +22,28 @@ export const domainSchema = {
   properties: {
     id: { type: "string", format: "ObjectId", example: "1" },
     name: { type: "string", example: "Ethereum" },
+  },
+};
+
+export const tokenSchema = {
+  tpye: "object",
+  properties: {
+    id: {
+      type: "string",
+      format: "ObjectId",
+      example: "1ffe10e3-c16c-4fdb-a357-380accf1eb66",
+    },
+    decimals: { type: "integer", example: 18 },
+    tokenAddress: {
+      type: "string",
+      example: "0x37356a2B2EbF65e5Ea18BD93DeA6869769099739",
+    },
+    tokenSymbol: { type: "string", example: "ERC20TST" },
+    resourceID: {
+      type: "string",
+      example:
+        "0x0000000000000000000000000000000000000000000000000000000000000001",
+    },
   },
 };
 
@@ -46,11 +57,12 @@ export const feeSchema = {
       example: "1ffe10e3-c16c-4fdb-a357-380accf1eb66",
     },
     amount: { type: "string", example: "10000000000000000" },
-    resourceID: {
+    tokenID: {
       type: "string",
       format: "ObjectId",
       example: "1ffe10e3-c16c-4fdb-a357-380accf1eb66",
     },
+    token: { ...tokenSchema },
   },
 };
 
@@ -83,7 +95,6 @@ export const depositSchema = {
       format: "ObjectId",
       example: "2-1-2",
     },
-    type: { type: "string", example: "fungible" },
     txHash: {
       type: "string",
       example:
@@ -102,32 +113,17 @@ export const depositSchema = {
       nullable: true,
       example: "2024-04-02T12:00:00Z",
     },
-    fee: { ...feeSchema },
     accountID: {
       type: "string",
       format: "ObjectId",
       nullable: true,
       example: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
     },
-    account: { ...accountSchema },
-    depositNonce: { type: "string", example: "2" },
-    resource: { ...resourceSchema },
-    resourceID: {
-      type: "string",
-      format: "ObjectId",
-      example:
-        "0x0000000000000000000000000000000000000000000000000000000000000300",
-    },
-    fromDomainID: { type: "string", example: "1" },
-    fromDomain: { ...domainSchema },
-    toDomainID: { type: "string", nullable: true, example: "2" },
-    toDomain: { ...domainSchema },
     destination: {
       type: "string",
       nullable: true,
       example: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
     },
-    amount: { type: "string", example: "0.0001" },
   },
 };
 
@@ -164,9 +160,23 @@ export const transferSchema = {
       format: "ObjectId",
       example: "2-1-2",
     },
+    amount: { type: "string", example: "0.0001" },
+    fromDomainID: { type: "string", example: "1" },
+    fromDomain: { ...domainSchema },
+    toDomainID: { type: "string", nullable: true, example: "2" },
+    toDomain: { ...domainSchema },
+    depositNonce: { type: "string", example: "2" },
+    resource: { ...resourceSchema },
+    resourceID: {
+      type: "string",
+      format: "ObjectId",
+      example:
+        "0x0000000000000000000000000000000000000000000000000000000000000300",
+    },
     status: { ...transferStatusSchema },
     deposit: { ...depositSchema },
     execution: { ...executionSchema },
+    fee: { ...feeSchema },
   },
 };
 

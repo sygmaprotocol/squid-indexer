@@ -39,8 +39,8 @@ async function insertDomains(
       {
         id: domain.id.toString(),
         name: domain.name,
-        iconUrl: domainMetadata[domain.id]?.iconUrl ?? "",
-        explorerUrl: domainMetadata[domain.id]?.explorerUrl ?? "",
+        iconURL: domainMetadata[domain.id]?.iconUrl ?? "",
+        explorerURL: domainMetadata[domain.id]?.explorerUrl ?? "",
       },
       ["id"],
     );

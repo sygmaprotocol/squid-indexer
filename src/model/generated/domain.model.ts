@@ -19,10 +19,10 @@ export class Domain {
     name!: string
 
     @Column_("text", {nullable: true})
-    iconUrl!: string | undefined | null
+    iconURL!: string | undefined | null
 
     @Column_("text", {nullable: true})
-    explorerUrl!: string | undefined | null
+    explorerURL!: string | undefined | null
 
     @OneToMany_(() => Transfer, e => e.fromDomain)
     transfersFrom!: Transfer[]

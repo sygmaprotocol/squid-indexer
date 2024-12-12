@@ -14,7 +14,6 @@ import { logger } from "../../utils/logger";
 import { EVMParser } from "../evmIndexer/evmParser";
 import type { IParser, IProcessor } from "../indexer";
 import { SubstrateParser } from "../substrateIndexer/substrateParser";
-import { createSubstrateProvider } from "../substrateIndexer/utils";
 
 import type { EnvVariables } from "./validator";
 
@@ -67,7 +66,7 @@ type Config = {
 export async function getConfig(envVars: EnvVariables): Promise<Config> {
   const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
   const rpcMap = createRpcMap(envVars.rpcUrls);
-  const parserMap = await initializeParserMap(sharedConfig, rpcMap);
+  const parserMap = initializeParserMap(sharedConfig, rpcMap);
 
   const domainConfig = getDomainConfig(
     sharedConfig,
@@ -110,10 +109,10 @@ function createRpcMap(rpcUrls: string): Map<number, string> {
   return rpcUrlMap;
 }
 
-async function initializeParserMap(
+function initializeParserMap(
   sharedConfig: SharedConfig,
   rpcMap: Map<number, string>,
-): Promise<Map<number, IParser>> {
+): Map<number, IParser> {
   const parserMap = new Map<number, IParser>();
   for (const domain of sharedConfig.domains) {
     const rpcUrl = rpcMap.get(domain.id);
@@ -129,8 +128,7 @@ async function initializeParserMap(
         break;
       }
       case Network.SUBSTRATE: {
-        const provider = await createSubstrateProvider(rpcUrl);
-        parserMap.set(domain.id, new SubstrateParser(provider));
+        parserMap.set(domain.id, new SubstrateParser());
         break;
       }
     }

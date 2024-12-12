@@ -6,7 +6,6 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { randomUUID } from "crypto";
 
 import { ResourceType } from "@buildwithsygma/core";
-import type { ApiPromise } from "@polkadot/api";
 import { TypeRegistry } from "@polkadot/types";
 import type { MultiLocation } from "@polkadot/types/interfaces";
 import { decodeHex } from "@subsquid/evm-processor";
@@ -38,12 +37,7 @@ export interface ISubstrateParser extends IParser {
 }
 
 export class SubstrateParser implements ISubstrateParser {
-  private provider: ApiPromise;
   private parsers!: Map<number, IParser>;
-
-  constructor(provider: ApiPromise) {
-    this.provider = provider;
-  }
 
   public setParsers(parsers: Map<number, IParser>): void {
     this.parsers = parsers;

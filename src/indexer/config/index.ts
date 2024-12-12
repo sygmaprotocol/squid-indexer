@@ -75,8 +75,6 @@ export async function getConfig(envVars: EnvVariables): Promise<Config> {
   );
   const parser = getDomainParser(domainConfig.id, parserMap);
 
-  parser.setParsers(parserMap);
-
   return { domain: domainConfig, parser, rpcMap: rpcMap };
 }
 

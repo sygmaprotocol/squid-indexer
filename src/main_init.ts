@@ -32,6 +32,7 @@ async function insertDomains(
       Domain,
       {
         id: domain.id.toString(),
+        type: domain.type,
         name: domain.name,
       },
       ["id"],

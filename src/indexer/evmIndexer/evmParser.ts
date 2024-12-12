@@ -5,14 +5,18 @@ SPDX-License-Identifier: LGPL-3.0-only
 
 import { randomUUID } from "crypto";
 
-import { ResourceType } from "@buildwithsygma/core";
+import type { Network, ResourceType } from "@buildwithsygma/core";
 import type { Log } from "@subsquid/evm-processor";
-import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
+import { assertNotNull } from "@subsquid/evm-processor";
 import type { JsonRpcProvider, Provider } from "ethers";
 import { ethers } from "ethers";
 
 import * as bridge from "../../abi/bridge";
-import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
+import {
+  decodeAmountOrTokenId,
+  generateTransferID,
+  parseDestination,
+} from "../../indexer/utils";
 import { Domain, Resource, Token } from "../../model";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
@@ -37,14 +41,10 @@ type FeeDataResponse = {
 export class EVMParser implements IParser {
   private STATIC_FEE_DATA = "0x00";
   private provider: JsonRpcProvider;
-  private parsers!: Map<number, IParser>;
   constructor(provider: JsonRpcProvider) {
     this.provider = provider;
   }
 
-  public setParsers(parsers: Map<number, IParser>): void {
-    this.parsers = parsers;
-  }
   public async parseDeposit(
     log: Log,
     fromDomain: DomainType,
@@ -54,8 +54,12 @@ export class EVMParser implements IParser {
     decodedFeeLog: FeeCollectedData;
   }> {
     const event = bridge.events.Deposit.decode(log);
-    const destinationParser = this.parsers.get(event.destinationDomainID);
-    if (!destinationParser) {
+    const destinationDomain = await ctx.store.findOne(Domain, {
+      where: {
+        id: event.destinationDomainID.toString(),
+      },
+    });
+    if (!destinationDomain) {
       throw new NotFoundError(
         `Destination domain id ${event.destinationDomainID} not supported`,
       );
@@ -97,7 +101,8 @@ export class EVMParser implements IParser {
         depositNonce: event.depositNonce.toString(),
         toDomainID: event.destinationDomainID.toString(),
         sender: transaction.from,
-        destination: destinationParser.parseDestination(
+        destination: parseDestination(
+          destinationDomain.type as Network,
           event.data,
           resource.type as ResourceType,
         ),
@@ -195,29 +200,6 @@ export class EVMParser implements IParser {
     };
   }
 
-  public parseDestination(hexData: string, resourceType: ResourceType): string {
-    const arrayifyData = decodeHex(hexData);
-    let recipient = "";
-    switch (resourceType) {
-      case ResourceType.FUNGIBLE:
-      case ResourceType.NON_FUNGIBLE: {
-        const recipientlen = Number(
-          "0x" + arrayifyData.subarray(32, 64).toString("hex"),
-        );
-        recipient =
-          "0x" + arrayifyData.subarray(64, 64 + recipientlen).toString("hex");
-        break;
-      }
-      case ResourceType.PERMISSIONLESS_GENERIC:
-        recipient = this.decodeGenericCall(arrayifyData);
-        break;
-      default:
-        logger.error(`Unsupported resource type: ${resourceType}`);
-        return "";
-    }
-    return recipient;
-  }
-
   public async getFee(
     event: bridge.DepositEventArgs,
     fromDomain: DomainType,
@@ -250,28 +232,5 @@ export class EVMParser implements IParser {
         amount: "0",
       };
     }
-  }
-
-  private decodeGenericCall(genericCallData: Buffer): string {
-    // 32 + 2 + 1 + 1 + 20 + 20
-    const lenExecuteFuncSignature = Number(
-      "0x" + genericCallData.subarray(32, 34).toString("hex"),
-    );
-    const lenExecuteContractAddress = Number(
-      "0x" +
-        genericCallData
-          .subarray(34 + lenExecuteFuncSignature, 35 + lenExecuteFuncSignature)
-          .toString("hex"),
-    );
-    const recipient =
-      "0x" +
-      genericCallData
-        .subarray(
-          35 + lenExecuteFuncSignature,
-          35 + lenExecuteFuncSignature + lenExecuteContractAddress,
-        )
-        .toString("hex");
-
-    return recipient;
   }
 }

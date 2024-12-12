@@ -12,7 +12,6 @@ import { FeeHandlerType, Network, ResourceType } from "@buildwithsygma/core";
 import * as bridge from "../../src/abi/bridge";
 import { generateTransferID } from "../../src/indexer/utils";
 import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
-import { IParser } from "../../src/indexer/indexer";
 import { Context } from "../../src/indexer/evmIndexer/evmProcessor";
 import { Domain, Resource, Token } from "../../src/model";
 import { NotFoundError } from "../../src/utils/error";
@@ -40,13 +39,15 @@ describe("EVMParser", () => {
     id: "2",
   };
 
+  const mockDestinationDomain = {
+    id: "3",
+    type: "evm"
+  }; 
+
   before(() => {
     // Mock provider
     provider = sinon.createStubInstance(JsonRpcProvider);
     parser = new EVMParser(provider as any);
-    const parsers = new Map<number, IParser>();
-    parsers.set(3, parser);
-    parser.setParsers(parsers);
   });
 
   describe("parseDeposit", () => {
@@ -68,6 +69,9 @@ describe("EVMParser", () => {
     });
 
     it("should parse a deposit log correctly", async () => {
+      findOneStub
+        .withArgs(Domain, { where: { id: mockDestinationDomain.id } })
+        .resolves(mockDestinationDomain);
       findOneStub
         .withArgs(Resource, { where: { id: mockResource.id } })
         .resolves(mockResource);

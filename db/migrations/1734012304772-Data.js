@@ -1,5 +1,5 @@
-module.exports = class Data1733840019584 {
-    name = 'Data1733840019584'
+module.exports = class Data1734012304772 {
+    name = 'Data1734012304772'
 
     async up(db) {
         await db.query(`CREATE TABLE "resource" ("id" character varying NOT NULL, "type" text NOT NULL, CONSTRAINT "PK_e2894a5867e06ae2e8889f1173f" PRIMARY KEY ("id"))`)
@@ -10,7 +10,7 @@ module.exports = class Data1733840019584 {
         await db.query(`CREATE INDEX "IDX_435ef0917a04e91698042dff2b" ON "token" ("resource_id") `)
         await db.query(`CREATE INDEX "IDX_3d565341b16e9c03d63e05eac8" ON "token" ("domain_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_ada3dfc11e70168668345b2951" ON "token" ("token_address", "domain_id") `)
-        await db.query(`CREATE TABLE "domain" ("id" character varying NOT NULL, "name" text NOT NULL, CONSTRAINT "PK_27e3ec3ea0ae02c8c5bceab3ba9" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "domain" ("id" character varying NOT NULL, "type" text NOT NULL, "name" text NOT NULL, CONSTRAINT "PK_27e3ec3ea0ae02c8c5bceab3ba9" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "address_status" text, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "deposit" ("id" character varying NOT NULL, "tx_hash" text NOT NULL, "block_number" text NOT NULL, "deposit_data" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE, "handler_response" text NOT NULL, "destination" text, "account_id" character varying, CONSTRAINT "PK_6654b4be449dadfd9d03a324b61" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_9ced91570695137ec1d60c1a61" ON "deposit" ("account_id") `)

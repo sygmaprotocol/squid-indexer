@@ -39,12 +39,17 @@ describe("Substrate parser", () => {
   const mockSourceDomain = {
     id: "1",
   };
+
+  const mockDestinationDomain = {
+    id: "1", 
+    type: "evm"
+  }
+
   before(() => {
     parser = new SubstrateParser();
 
     const parsers = new Map<number, IParser>();
     parsers.set(1, new EVMParser(new JsonRpcProvider()));
-    parser.setParsers(parsers);
   });
 
   describe("parseDeposit", () => {
@@ -65,6 +70,9 @@ describe("Substrate parser", () => {
       sinon.restore();
     });
     it("should parse a deposit correctly", async () => {
+      findOneStub
+        .withArgs(Domain, { where: { id: mockDestinationDomain.id } })
+        .resolves(mockDestinationDomain);
       findOneStub
         .withArgs(Resource, { where: { id: mockResource.id } })
         .resolves(mockResource);

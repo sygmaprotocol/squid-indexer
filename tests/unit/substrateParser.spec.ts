@@ -28,17 +28,17 @@ describe("Substrate parser", () => {
   let ctx: Context;
   // Mock Data
   const mockResource = {
-    id: '0x0000000000000000000000000000000000000000000000000000000000000300',
-    type: 'fungible',
+    id: "0x0000000000000000000000000000000000000000000000000000000000000300",
+    type: "fungible",
   };
-  
+
   const mockToken = {
-    id:"tokenID",
+    id: "tokenID",
     tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
     decimals: 18,
     tokenSymbol: "ERC20LRTest",
     domainID: 2,
-    resourceID: mockResource.id
+    resourceID: mockResource.id,
   };
 
 const mockDomain = {
@@ -63,17 +63,21 @@ const mockDomain = {
           findOne: sinon.stub(),
         },
       } as unknown as Context;
-  
+
       // Stub each findOne call with appropriate return values
       findOneStub = ctx.store.findOne as sinon.SinonStub;
     });
-  
+
     afterEach(() => {
       sinon.restore();
     });
     it("should parse a deposit correctly", async () => {
-      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
-      findOneStub.withArgs(Token, { where: { resource: mockResource, domainID: "4" } }).resolves(mockToken);
+      findOneStub
+        .withArgs(Resource, { where: { id: mockResource.id } })
+        .resolves(mockResource);
+      findOneStub
+        .withArgs(Token, { where: { resource: mockResource, domainID: "4" } })
+        .resolves(mockToken);
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
@@ -125,28 +129,29 @@ const mockDomain = {
 
       expect(result).to.deep.include({
         decodedDepositLog: {
-          id: '1-4-1',
+          id: "1-4-1",
           blockNumber: 1,
-          depositNonce: '1',
-          toDomainID: '1',
-          sender: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef',
-          destination: '0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b',
-          fromDomainID: '4',
-          resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
-          txHash: '0000000001-0ea58-000001',
+          depositNonce: "1",
+          toDomainID: "1",
+          sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
+          destination: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
+          fromDomainID: "4",
+          resourceID:
+            "0x0000000000000000000000000000000000000000000000000000000000000300",
+          txHash: "0000000001-0ea58-000001",
           timestamp: new Date(1633072800),
-          depositData: '0x00000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000000145c1f5961696bad2e73f73417f07ef55c62a2dc5b',
-          handlerResponse: '',
-          transferType: 'fungible',
-          amount: '0.000000000001'
+          depositData:
+            "0x00000000000000000000000000000000000000000000000000000000000f424000000000000000000000000000000000000000000000000000000000000000145c1f5961696bad2e73f73417f07ef55c62a2dc5b",
+          handlerResponse: "",
+          transferType: "fungible",
+          amount: "0.000000000001",
         },
         decodedFeeLog: {
           id: result?.decodedFeeLog.id,
-          amount: '50',
+          amount: "50",
           tokenID: mockToken.id,
-          txIdentifier: '0000000001-0ea58-000001'
-        }
-
+          txIdentifier: "0000000001-0ea58-000001",
+        },
       });
     });
 
@@ -246,11 +251,11 @@ const mockDomain = {
           findOne: sinon.stub(),
         },
       } as unknown as Context;
-  
+
       // Stub each findOne call with appropriate return values
       findOneStub = ctx.store.findOne as sinon.SinonStub;
     });
-  
+
     afterEach(() => {
       sinon.restore();
     });
@@ -295,11 +300,11 @@ const mockDomain = {
           findOne: sinon.stub(),
         },
       } as unknown as Context;
-  
+
       // Stub each findOne call with appropriate return values
       findOneStub = ctx.store.findOne as sinon.SinonStub;
     });
-  
+
     afterEach(() => {
       sinon.restore();
     });
@@ -322,7 +327,11 @@ const mockDomain = {
         .stub(events.sygmaBridge.failedHandlerExecution.v1250, "decode")
         .returns(decodedEvent);
 
-      const result = await parser.parseFailedHandlerExecution(event, toDomain, ctx);
+      const result = await parser.parseFailedHandlerExecution(
+        event,
+        toDomain,
+        ctx
+      );
 
       expect(result).to.deep.include({
         id: generateTransferID("1", "1", "4"),
@@ -346,17 +355,21 @@ const mockDomain = {
           findOne: sinon.stub(),
         },
       } as unknown as Context;
-  
+
       // Stub each findOne call with appropriate return values
       findOneStub = ctx.store.findOne as sinon.SinonStub;
     });
-  
+
     afterEach(() => {
       sinon.restore();
     });
     it("should parse fee correctly", async () => {
-      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
-      findOneStub.withArgs(Token, { where: { resource: mockResource, domainID: "4" } }).resolves(mockToken);
+      findOneStub
+        .withArgs(Resource, { where: { id: mockResource.id } })
+        .resolves(mockResource);
+      findOneStub
+        .withArgs(Token, { where: { resource: mockResource, domainID: "4" } })
+        .resolves(mockToken);
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
@@ -407,9 +420,9 @@ const mockDomain = {
       const result = await parser.parseFee(event, fromDomain, ctx);
       expect(result).to.deep.include({
         id: result?.id,
-        amount: '10',
-        tokenID: 'tokenID',
-        txIdentifier: '0000000001-0ea58-000001'
+        amount: "10",
+        tokenID: "tokenID",
+        txIdentifier: "0000000001-0ea58-000001",
       });
     });
 
@@ -438,8 +451,7 @@ const mockDomain = {
       const decodedEvent = {
         feePayer: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
         destDomainId: 1,
-        resourceId:
-          "0x1234567890abcdef1234567890abcdef12345678",
+        resourceId: "0x1234567890abcdef1234567890abcdef12345678",
         feeAmount: BigInt(10),
         feeAssetId: {
           __kind: "Concrete",

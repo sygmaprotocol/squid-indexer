@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, OneToMany as OneToMany_} from "@subsquid/typeorm-store"
 import {Transfer} from "./transfer.model"
 import {Route} from "./route.model"
 import {Token} from "./token.model"
@@ -16,7 +16,7 @@ export class Domain {
     @PrimaryColumn_()
     id!: string
 
-    @Column_("text", {nullable: false})
+    @StringColumn_({nullable: false})
     name!: string
 
     @OneToMany_(() => Transfer, e => e.fromDomain)

@@ -11,6 +11,7 @@ import type {
 } from "@subsquid/evm-processor";
 import type { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import { TypeormDatabase } from "@subsquid/typeorm-store";
+import { In } from "typeorm";
 
 import {
   Transfer,
@@ -156,6 +157,17 @@ export class Indexer {
         transfers.set(d.id, transfer);
       }
     }
+
+    const existingTransfers: Transfer[] = await ctx.store.findBy(Transfer, {
+      id: In(Array.from(transfers.keys())),
+    });
+
+    for (const existingTransfer of existingTransfers) {
+      const transfer = transfers.get(existingTransfer.id);
+      transfer!.status = TransferStatus.executed;
+      transfers.set(existingTransfer.id, transfer!);
+    }
+
     await ctx.store.upsert([...deposits.values()]);
     await ctx.store.upsert([...transfers.values()]);
   }

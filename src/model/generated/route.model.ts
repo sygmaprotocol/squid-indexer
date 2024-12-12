@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, Index as Index_, ManyToOne as ManyToOne_, PrimaryGeneratedColumn} from "typeorm"
+import {Entity as Entity_, PrimaryColumn as PrimaryColumn_, Index as Index_, StringColumn as StringColumn_, ManyToOne as ManyToOne_} from "@subsquid/typeorm-store"
 import {Domain} from "./domain.model"
 
 @Index_(["fromDomainID", "toDomainID", "resourceID"], {unique: true})
@@ -12,23 +12,23 @@ export class Route {
         Object.assign(this, props)
     }
 
-    @PrimaryGeneratedColumn("uuid")
+    @PrimaryColumn_()
     id!: string
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     fromDomainID!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Domain, {nullable: true})
     fromDomain!: Domain | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     toDomainID!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Domain, {nullable: true})
     toDomain!: Domain | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     resourceID!: string | undefined | null
 }

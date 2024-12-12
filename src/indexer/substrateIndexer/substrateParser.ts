@@ -7,6 +7,7 @@ import { randomUUID } from "crypto";
 
 import { ResourceType } from "@buildwithsygma/core";
 import type { ApiPromise } from "@polkadot/api";
+import { TypeRegistry } from "@polkadot/types";
 import type { MultiLocation } from "@polkadot/types/interfaces";
 import { decodeHex } from "@subsquid/evm-processor";
 import { assertNotNull } from "@subsquid/substrate-processor";
@@ -242,7 +243,9 @@ export class SubstrateParser implements ISubstrateParser {
         logger.error(`Unsupported resource type: ${resourceType}`);
         return "";
     }
-    const decodedData = this.provider.createType<MultiLocation>(
+
+    const registry = new TypeRegistry();
+    const decodedData = registry.createType<MultiLocation>(
       "MultiLocation",
       recipient,
     );

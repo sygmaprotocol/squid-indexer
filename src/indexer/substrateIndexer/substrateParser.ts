@@ -16,13 +16,15 @@ import { Domain, Resource, Token } from "../../model";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
-import type { IParser, RouteData, SubstrateRouteData } from "../indexer";
+import type { IParser } from "../indexer";
 import type { Event } from "../substrateIndexer/substrateProcessor";
 import type {
   DecodedDepositLog,
   DecodedProposalExecutionLog,
   DecodedFailedHandlerExecutionLog,
   FeeCollectedData,
+  SubstrateRouteData,
+  RouteData,
 } from "../types";
 
 import type { Context } from "./substrateProcessor";

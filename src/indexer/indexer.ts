@@ -30,13 +30,15 @@ import type {
   Fields,
   Context as SubstrateContext,
 } from "./substrateIndexer/substrateProcessor";
-import type { ConcreteAsset } from "./substrateIndexer/types/sygma-fee-handler-router/calls";
 import type {
   DecodedDepositLog,
+  DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   DecodedRoutes,
   FeeCollectedData,
+  RouteData,
+  SubstrateRouteData,
 } from "./types";
 
 type Context = EvmContext | SubstrateContext;
@@ -69,29 +71,12 @@ export interface IParser {
 }
 
 export interface IProcessor {
-  processEvents(
-    ctx: Context,
-    domain: Domain,
-  ): Promise<DecodedEvents> | DecodedEvents;
+  processEvents(ctx: Context, domain: Domain): Promise<DecodedEvents>;
   getProcessor(
     domain: Domain,
   ): EvmBatchProcessor | SubstrateBatchProcessor<Fields>;
 }
 
-export type RouteData = {
-  destinationDomainID: string;
-  resourceID: string;
-};
-export type SubstrateRouteData = {
-  args: { asset: ConcreteAsset; domainID: string };
-};
-export type DecodedEvents = {
-  deposits: DecodedDepositLog[];
-  executions: DecodedProposalExecutionLog[];
-  failedHandlerExecutions: DecodedFailedHandlerExecutionLog[];
-  fees: FeeCollectedData[];
-  routes: DecodedRoutes[];
-};
 export class Indexer {
   private domain: Domain;
   private processor: IProcessor;

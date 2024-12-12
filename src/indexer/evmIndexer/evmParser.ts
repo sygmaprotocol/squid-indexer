@@ -18,12 +18,13 @@ import { Domain, Resource, Token } from "../../model";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
-import type { IParser, RouteData } from "../indexer";
+import type { IParser } from "../indexer";
 import type {
   DecodedDepositLog,
   DecodedProposalExecutionLog,
   DecodedFailedHandlerExecutionLog,
   FeeCollectedData,
+  RouteData,
 } from "../types";
 
 import type { Context } from "./evmProcessor";

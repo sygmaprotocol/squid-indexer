@@ -14,9 +14,10 @@ import type { Store } from "@subsquid/typeorm-store";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
-import type { DecodedEvents, IProcessor } from "../indexer";
+import type { IProcessor } from "../indexer";
 import type {
   DecodedDepositLog,
+  DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   DecodedRoutes,
@@ -46,7 +47,7 @@ export class SubstrateProcessor implements IProcessor {
         url: this.rpcUrl,
         rateLimit: 10,
       })
-      .setBlockRange({ from: 2756266 })
+      .setBlockRange({ from: domain.startBlock })
       .setFinalityConfirmation(domain.blockConfirmations)
       .addEvent({
         name: [events.sygmaBridge.deposit.name],

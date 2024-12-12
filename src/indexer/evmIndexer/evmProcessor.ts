@@ -14,9 +14,10 @@ import * as bridge from "../../abi/bridge";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
-import type { DecodedEvents, IParser, IProcessor } from "../indexer";
+import type { IParser, IProcessor } from "../indexer";
 import type {
   DecodedDepositLog,
+  DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   DecodedRoutes,

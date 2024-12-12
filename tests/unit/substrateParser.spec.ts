@@ -19,7 +19,6 @@ import { Context } from "../../src/indexer/substrateIndexer/substrateProcessor";
 import { Domain, Resource, Token } from "../../src/model";
 
 describe("Substrate parser", () => {
-  let provider: sinon.SinonStubbedInstance<ApiPromise>;
   let parser: SubstrateParser;
   let ctx: Context;
   // Mock Data
@@ -41,9 +40,7 @@ describe("Substrate parser", () => {
     id: "1",
   };
   before(() => {
-    provider = sinon.createStubInstance(ApiPromise);
-
-    parser = new SubstrateParser(provider);
+    parser = new SubstrateParser();
 
     const parsers = new Map<number, IParser>();
     parsers.set(1, new EVMParser(new JsonRpcProvider()));

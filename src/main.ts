@@ -21,14 +21,14 @@ async function startProcessing(): Promise<void> {
     case Network.EVM: {
       processor = new EVMProcessor(
         config.parser,
-        config.rpcMap.get(config.domain.id)!,
+        envVars.domainMetadata.rpcUrl,
       );
       break;
     }
     case Network.SUBSTRATE: {
       processor = new SubstrateProcessor(
         config.parser as ISubstrateParser,
-        config.rpcMap.get(config.domain.id)!,
+        envVars.domainMetadata.rpcUrl,
       );
       break;
     }

@@ -10,6 +10,7 @@ import type {
 import { Network } from "@buildwithsygma/core";
 import { ethers } from "ethers";
 
+import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import { EVMParser } from "../evmIndexer/evmParser";
 import type { IParser, IProcessor } from "../indexer";
@@ -52,30 +53,39 @@ type Handler = {
   address: string;
 };
 
-type RpcUrlConfig = Array<{
-  id: number;
-  endpoint: string;
-}>;
-
 type Config = {
   domain: Domain;
   parser: IParser;
-  rpcMap: Map<number, string>;
 };
 
 export async function getConfig(envVars: EnvVariables): Promise<Config> {
   const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
-  const rpcMap = createRpcMap(envVars.rpcUrls);
-  const parserMap = initializeParserMap(sharedConfig, rpcMap);
 
   const domainConfig = getDomainConfig(
     sharedConfig,
     envVars.domainId,
-    envVars.domainGateway,
+    envVars.domainMetadata.domainGateway ?? "",
   );
-  const parser = getDomainParser(domainConfig.id, parserMap);
+  let parser: IParser;
+  switch (domainConfig.type) {
+    case Network.EVM: {
+      const provider = new ethers.JsonRpcProvider(
+        envVars.domainMetadata.rpcUrl,
+      );
+      parser = new EVMParser(provider);
+      break;
+    }
+    case Network.SUBSTRATE: {
+      parser = new SubstrateParser();
+      break;
+    }
+    default:
+      throw new NotFoundError(
+        `Domain type: ${domainConfig.type} doesn't exist, skipping`,
+      );
+  }
 
-  return { domain: domainConfig, parser, rpcMap: rpcMap };
+  return { domain: domainConfig, parser };
 }
 
 export async function fetchSharedConfig(url: string): Promise<SharedConfig> {
@@ -96,45 +106,6 @@ export async function fetchSharedConfig(url: string): Promise<SharedConfig> {
   }
 }
 
-function createRpcMap(rpcUrls: string): Map<number, string> {
-  const parsedResponse = JSON.parse(rpcUrls) as RpcUrlConfig;
-  const rpcUrlMap = new Map<number, string>();
-
-  for (const { id, endpoint } of parsedResponse) {
-    rpcUrlMap.set(id, endpoint);
-  }
-
-  return rpcUrlMap;
-}
-
-function initializeParserMap(
-  sharedConfig: SharedConfig,
-  rpcMap: Map<number, string>,
-): Map<number, IParser> {
-  const parserMap = new Map<number, IParser>();
-  for (const domain of sharedConfig.domains) {
-    const rpcUrl = rpcMap.get(domain.id);
-    if (!rpcUrl) {
-      throw new Error(
-        `Unsupported or missing RPC URL for domain ID: ${domain.id}`,
-      );
-    }
-    switch (domain.type) {
-      case Network.EVM: {
-        const provider = new ethers.JsonRpcProvider(rpcUrl);
-        parserMap.set(domain.id, new EVMParser(provider));
-        break;
-      }
-      case Network.SUBSTRATE: {
-        parserMap.set(domain.id, new SubstrateParser());
-        break;
-      }
-    }
-  }
-
-  return parserMap;
-}
-
 function getDomainConfig(
   sharedConfig: SharedConfig,
   domainId: number,
@@ -148,17 +119,4 @@ function getDomainConfig(
   }
   domainConfig.gateway = domainGateway;
   return domainConfig;
-}
-
-function getDomainParser(
-  domainID: number,
-  parserMap: Map<number, IParser>,
-): IParser {
-  const parser = parserMap.get(domainID);
-
-  if (!parser) {
-    throw new Error(`Parser not initialized for domain ID: ${domainID}`);
-  }
-
-  return parser;
 }

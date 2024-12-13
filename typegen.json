@@ -10,8 +10,5 @@
           "FeeCollected"
         ]
       }
-    },
-    "calls": [
-        "SygmaFeeHandlerRouter.set_fee_handler"
-      ]
+    }
 }

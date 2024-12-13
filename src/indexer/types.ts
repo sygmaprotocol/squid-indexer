@@ -2,7 +2,6 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import type { ConcreteAsset } from "./substrateIndexer/types/sygma-fee-handler-router/calls";
 
 export type DecodedDepositLog = {
   id: string;
@@ -18,10 +17,6 @@ export type DecodedDepositLog = {
   transferType: string;
   amount: string;
   senderStatus?: string;
-};
-export type DecodedRoutes = {
-  destinationDomainID: string;
-  resourceID: string;
 };
 
 export type DecodedProposalExecutionLog = {
@@ -52,18 +47,9 @@ export type FeeCollectedData = {
   txIdentifier: string;
 };
 
-export type RouteData = {
-  destinationDomainID: string;
-  resourceID: string;
-};
-
-export type SubstrateRouteData = {
-  args: { asset: ConcreteAsset; domainID: string };
-};
 export type DecodedEvents = {
   deposits: DecodedDepositLog[];
   executions: DecodedProposalExecutionLog[];
   failedHandlerExecutions: DecodedFailedHandlerExecutionLog[];
   fees: FeeCollectedData[];
-  routes: DecodedRoutes[];
 };

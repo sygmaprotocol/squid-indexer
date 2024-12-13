@@ -23,8 +23,6 @@ import type {
   DecodedProposalExecutionLog,
   DecodedFailedHandlerExecutionLog,
   FeeCollectedData,
-  SubstrateRouteData,
-  RouteData,
 } from "../types";
 
 import type { Context } from "./substrateProcessor";
@@ -89,7 +87,7 @@ export class SubstrateParser implements ISubstrateParser {
     }
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
-    const route = await ctx.store.findOne(Route, {
+    let route = await ctx.store.findOne(Route, {
       where: {
         fromDomainID: fromDomain.id.toString(),
         toDomainID: event.destDomainId.toString(),
@@ -97,9 +95,13 @@ export class SubstrateParser implements ISubstrateParser {
       },
     });
     if (!route) {
-      throw new Error(
-        `Route fromDomain: ${fromDomain.id.toString()}, toDomain: ${event.destDomainId.toString()}, resource: ${resource.id} not found`,
-      );
+      route = new Route({
+        fromDomainID: fromDomain.id.toString(),
+        toDomainID: event.destDomainId.toString(),
+        resourceID: resource.id,
+      });
+
+      await ctx.store.insert(route);
     }
     return {
       decodedDepositLog: {
@@ -196,47 +198,6 @@ export class SubstrateParser implements ISubstrateParser {
       message: event.error,
       blockNumber: log.block.height,
       timestamp: new Date(log.block.timestamp!),
-    };
-  }
-
-  public async parseSubstrateAsset(
-    call: SubstrateRouteData,
-    ctx: Context,
-  ): Promise<RouteData> {
-    const asset = call.args.asset;
-    let decodedAsset;
-    if (asset.__kind === "Concrete" && asset.value) {
-      const assetValue = asset.value;
-
-      if (assetValue.interior && assetValue.interior.__kind === "Here") {
-        decodedAsset = {
-          concrete: {
-            parents: assetValue.parents,
-            interior: assetValue.interior.__kind.toLowerCase(),
-          },
-        };
-      }
-    }
-    const token = await ctx.store.findOne(Token, {
-      where: { tokenAddress: JSON.stringify(decodedAsset) },
-    });
-    if (!token) {
-      throw new NotFoundError(
-        `Unsupported resource for token ${JSON.stringify(decodedAsset)}`,
-      );
-    }
-
-    const destinationDomain = await ctx.store.findOne(Domain, {
-      where: { id: call.args.domainID },
-    });
-    if (!destinationDomain) {
-      throw new NotFoundError(
-        `Destination domain id ${call.args.domainID.toString()} not supported`,
-      );
-    }
-    return {
-      destinationDomainID: call.args.domainID,
-      resourceID: token.resourceID!,
     };
   }
 

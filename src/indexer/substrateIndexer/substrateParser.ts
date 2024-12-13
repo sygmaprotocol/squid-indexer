@@ -210,7 +210,6 @@ export class SubstrateParser implements ISubstrateParser {
     const token = await ctx.store.findOne(Token, {
       where: { tokenAddress: JSON.stringify(decodedAsset) },
     });
-
     if (!token) {
       throw new NotFoundError(
         `Unsupported resource for token ${JSON.stringify(decodedAsset)}`,

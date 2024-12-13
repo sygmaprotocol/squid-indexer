@@ -136,7 +136,6 @@ export class EVMParser implements IParser {
         id: decoded.resourceID.toLowerCase(),
       },
     });
-
     if (!resource) {
       throw new NotFoundError(
         `Unsupported resource with ID ${decoded.resourceID.toLowerCase()}`,

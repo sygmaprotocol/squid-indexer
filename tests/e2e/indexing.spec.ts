@@ -138,16 +138,16 @@ describe("Indexer e2e tests", function () {
       fromDomain: { name: "Ethereum 1", id: "1" },
       toDomainID: "2",
       toDomain: { name: "evm2", id: "2" },
-      feeID: transfers[0].fee?.id,
       fee: {
         id: transfers[0].fee?.id,
         amount: "100000000000000",
         tokenID: transfers[0].fee?.tokenID,
         token: {
           id: transfers[0].fee?.tokenID,
+          resourceID: "",
           decimals: 18,
-          tokenAddress: "0x37356a2B2EbF65e5Ea18BD93DeA6869769099739",
-          tokenSymbol: "ERC20TST",
+          tokenAddress: "0x0000000000000000000000000000000000000000",
+          tokenSymbol: "eth",
         },
       },
       resourceID:
@@ -157,7 +157,6 @@ describe("Indexer e2e tests", function () {
         type: ResourceType.FUNGIBLE,
       },
       amount: "0.0000000000000001",
-
       deposit: {
         id: transfers[0].deposit.id,
         txHash:
@@ -170,10 +169,6 @@ describe("Indexer e2e tests", function () {
         timestamp: "2024-11-14T08:16:41.000Z",
 
         accountID: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-        account: {
-          id: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-          addressStatus: "",
-        },
         destination: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
       },
       execution: {
@@ -189,7 +184,7 @@ describe("Indexer e2e tests", function () {
 
   it("should succesfully fetch evm fungible transfer by execution hash", async () => {
     const res = await fetch(
-      `http://localhost:8000/api/transfers/txHash/${FUNGIBLE_EVM_EXECUTION_TXHASH}?type=execution`
+      `http://localhost:8000/api/transfers?txHash=${FUNGIBLE_EVM_EXECUTION_TXHASH}&component=execution`
     );
     const transfers: TransferResponse[] = await res.json();
 
@@ -203,16 +198,16 @@ describe("Indexer e2e tests", function () {
       fromDomain: { name: "Ethereum 1", id: "1" },
       toDomainID: "2",
       toDomain: { name: "evm2", id: "2" },
-      feeID: transfers[0].fee?.id,
       fee: {
         id: transfers[0].fee?.id,
         amount: "100000000000000",
         tokenID: transfers[0].fee?.tokenID,
         token: {
           id: transfers[0].fee?.tokenID,
+          resourceID: "",
           decimals: 18,
-          tokenAddress: "0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6",
-          tokenSymbol: "ERC20LRTest",
+          tokenAddress: "0x0000000000000000000000000000000000000000",
+          tokenSymbol: "eth",
         },
       },
       resourceID:
@@ -222,7 +217,6 @@ describe("Indexer e2e tests", function () {
         type: ResourceType.FUNGIBLE,
       },
       amount: "0.0000000000000001",
-
       deposit: {
         id: transfers[0].deposit.id,
         txHash:
@@ -235,10 +229,6 @@ describe("Indexer e2e tests", function () {
         timestamp: "2024-11-14T08:18:21.000Z",
 
         accountID: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-        account: {
-          id: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-          addressStatus: "",
-        },
         destination: "0x8e0a907331554af72563bd8d43051c2e64be5d35",
       },
       execution: {
@@ -254,7 +244,7 @@ describe("Indexer e2e tests", function () {
 
   it("should succesfully fetch evm non-fungible transfer", async () => {
     const res = await fetch(
-      `http://localhost:8000/api/transfers/txHash/${NONFUNGIBLE_EVM_DEPOSIT_TXHASH}?domainID=${DOMAIN_1}`
+      `http://localhost:8000/api/transfers?txHash=${NONFUNGIBLE_EVM_DEPOSIT_TXHASH}`
     );
     const transfers: TransferResponse[] = await res.json();
 
@@ -268,16 +258,16 @@ describe("Indexer e2e tests", function () {
       fromDomain: { name: "Ethereum 1", id: "1" },
       toDomainID: "2",
       toDomain: { name: "evm2", id: "2" },
-      feeID: transfers[0].fee?.id,
       fee: {
         id: transfers[0].fee?.id,
         amount: "100000000000000",
         tokenID: transfers[0].fee?.tokenID,
         token: {
           id: transfers[0].fee?.tokenID,
+          resourceID: "",
           decimals: 18,
-          tokenAddress: "0xE54Dc792c226AEF99D6086527b98b36a4ADDe56a",
-          tokenSymbol: "ERC721TST",
+          tokenAddress: "0x0000000000000000000000000000000000000000",
+          tokenSymbol: "eth",
         },
       },
       resourceID:
@@ -287,7 +277,6 @@ describe("Indexer e2e tests", function () {
         type: ResourceType.NON_FUNGIBLE,
       },
       amount: "2935717020161974584",
-
       deposit: {
         id: transfers[0].deposit.id,
         txHash:
@@ -299,10 +288,6 @@ describe("Indexer e2e tests", function () {
         timestamp: "2024-11-14T08:17:11.000Z",
 
         accountID: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-        account: {
-          id: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-          addressStatus: "",
-        },
         destination: "0x8e0a907331554af72563bd8d43051c2e64be5d35",
       },
       execution: {
@@ -318,7 +303,7 @@ describe("Indexer e2e tests", function () {
 
   it("should succesfully fetch substrate to evm fungible transfer", async () => {
     const res = await fetch(
-      `http://localhost:8000/api/transfers/txHash/${FUNGIBLE_SUBSTRATE_TO_EVM_DEPOSIT_TXHASH}`
+      `http://localhost:8000/api/transfers?txHash=${FUNGIBLE_SUBSTRATE_TO_EVM_DEPOSIT_TXHASH}`
     );
     const transfers: TransferResponse[] = await res.json();
 
@@ -332,17 +317,18 @@ describe("Indexer e2e tests", function () {
       fromDomain: { name: "Substrate", id: "3" },
       toDomainID: "1",
       toDomain: { name: "Ethereum 1", id: "1" },
-      feeID: transfers[0].fee?.id,
       fee: {
         id: transfers[0].fee?.id,
-        amount: "0", // change
+        amount: "0",
         tokenID: transfers[0].fee?.tokenID,
         token: {
           id: transfers[0].fee?.tokenID,
-          decimals: null, //change
+          resourceID:
+            "0x0000000000000000000000000000000000000000000000000000000000000300",
+          decimals: 6,
           tokenAddress:
             '{"concrete":{"parents":1,"interior":{"x3":[{"parachain":2004},{"generalKey":[5,"0x7379676d61000000000000000000000000000000000000000000000000000000"]},{"generalKey":[4,"0x7573646300000000000000000000000000000000000000000000000000000000"]}]}}}',
-          tokenSymbol: "", //change,
+          tokenSymbol: "USDC",
         },
       },
       resourceID:
@@ -351,8 +337,7 @@ describe("Indexer e2e tests", function () {
         id: "0x0000000000000000000000000000000000000000000000000000000000000300",
         type: ResourceType.FUNGIBLE,
       },
-      amount: "0.000001",
-
+      amount: "1.0",
       deposit: {
         id: transfers[0].deposit.id,
         txHash: "0000000279-f6443-000001",
@@ -363,10 +348,6 @@ describe("Indexer e2e tests", function () {
         timestamp: "2024-11-14T08:19:48.001Z",
         accountID:
           "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
-        account: {
-          id: "0xd43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d",
-          addressStatus: "",
-        },
         destination: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
       },
       execution: {
@@ -382,7 +363,7 @@ describe("Indexer e2e tests", function () {
 
   it("should succesfully fetch evm to substrate fungible transfer", async () => {
     const res = await fetch(
-      `http://localhost:8000/api/transfers/txHash/${FUNGIBLE_EVM_TO_SUBSTRATE_DEPOSIT_TXHASH}?domainID=${DOMAIN_1}`
+      `http://localhost:8000/api/transfers?txHash=${FUNGIBLE_EVM_TO_SUBSTRATE_DEPOSIT_TXHASH}`
     );
     const transfers: TransferResponse[] = await res.json();
 
@@ -396,16 +377,16 @@ describe("Indexer e2e tests", function () {
       fromDomain: { name: "Ethereum 1", id: "1" },
       toDomainID: "3",
       toDomain: { name: "Substrate", id: "3" },
-      feeID: transfers[0].fee?.id,
       fee: {
         id: transfers[0].fee?.id,
         amount: "100000000000000",
         tokenID: transfers[0].fee?.tokenID,
         token: {
           id: transfers[0].fee?.tokenID,
+          resourceID: "",
           decimals: 18,
-          tokenAddress: "0x78E5b9cEC9aEA29071f070C8cC561F692B3511A6",
-          tokenSymbol: "ERC20LRTest",
+          tokenAddress: "0x0000000000000000000000000000000000000000",
+          tokenSymbol: "eth",
         },
       },
       resourceID:
@@ -415,7 +396,6 @@ describe("Indexer e2e tests", function () {
         type: ResourceType.FUNGIBLE,
       },
       amount: "0.0001",
-
       deposit: {
         id: transfers[0].deposit.id,
         txHash:
@@ -427,11 +407,7 @@ describe("Indexer e2e tests", function () {
           "0x00000000000000000000000000000000000000000000000000005af3107a4000",
         timestamp: "2024-11-14T08:19:23.000Z",
         accountID: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-        account: {
-          id: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-          addressStatus: "",
-        },
-        destination: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
+        destination: "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
       },
       execution: {
         id: transfers[0].execution.id,
@@ -445,7 +421,7 @@ describe("Indexer e2e tests", function () {
 
   it("should succesfully fetch evm permissionless generic transfer", async () => {
     const res = await fetch(
-      `http://localhost:8000/api/transfers/txHash/${PERMISSIONLESS_GENERIC_EVM_DEPOSIT_TXHASH}`
+      `http://localhost:8000/api/transfers?txHash=${PERMISSIONLESS_GENERIC_EVM_DEPOSIT_TXHASH}`
     );
     const transfers: TransferResponse[] = await res.json();
 
@@ -459,16 +435,16 @@ describe("Indexer e2e tests", function () {
       fromDomain: { name: "Ethereum 1", id: "1" },
       toDomainID: "2",
       toDomain: { name: "evm2", id: "2" },
-      feeID: transfers[0].fee?.id,
       fee: {
         id: transfers[0].fee?.id,
         amount: "100000000000000",
         tokenID: transfers[0].fee?.tokenID,
         token: {
           id: transfers[0].fee?.tokenID,
-          decimals: 0, // change
-          tokenAddress: "",
-          tokenSymbol: "",
+          decimals: 18,
+          resourceID: "",
+          tokenAddress: "0x0000000000000000000000000000000000000000",
+          tokenSymbol: "eth",
         },
       },
       resourceID:
@@ -478,7 +454,6 @@ describe("Indexer e2e tests", function () {
         type: ResourceType.PERMISSIONLESS_GENERIC,
       },
       amount: "",
-
       deposit: {
         id: transfers[0].deposit.id,
         txHash:
@@ -489,10 +464,6 @@ describe("Indexer e2e tests", function () {
         handlerResponse: "0x",
         timestamp: "2024-11-14T08:18:03.000Z",
         accountID: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-        account: {
-          id: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-          addressStatus: "",
-        },
         destination: "0xa2451c8553371e754f5e93a440adcca1c0dcf395",
       },
       execution: {
@@ -508,7 +479,7 @@ describe("Indexer e2e tests", function () {
 
   it("should succesfully fetch all transfers by one sender", async () => {
     const res = await fetch(
-      `http://localhost:8000/api/transfers/sender/${SENDER_ADDRESS}?page=1&limit=100`
+      `http://localhost:8000/api/transfers?sender=${SENDER_ADDRESS}&page=1&limit=100`
     );
     const transfers: TransferResponse[] = await res.json();
 

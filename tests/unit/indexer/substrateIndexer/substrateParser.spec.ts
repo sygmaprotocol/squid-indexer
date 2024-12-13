@@ -4,18 +4,18 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import { expect } from "chai";
 import sinon from "sinon";
-import { SubstrateParser } from "../../src/indexer/substrateIndexer/substrateParser";
-import { IParser } from "../../src/indexer/indexer";
+import { SubstrateParser } from "../../../../src/indexer/substrateIndexer/substrateParser";
+import { IParser } from "../../../../src/indexer/indexer";
 import { Network, ResourceType } from "@buildwithsygma/core";
-import { Domain as DomainType } from "../../src/indexer/config";
-import { events } from "../../src/indexer/substrateIndexer/types";
-import type { Event } from "../../src/indexer/substrateIndexer/substrateProcessor";
-import { generateTransferID } from "../../src/indexer/utils";
-import { EVMParser } from "../../src/indexer/evmIndexer/evmParser";
+import { Domain as DomainType } from "../../../../src/indexer/config";
+import { events } from "../../../../src/indexer/substrateIndexer/types";
+import type { Event } from "../../../../src/indexer/substrateIndexer/substrateProcessor";
+import { generateTransferID } from "../../../../src/indexer/utils";
+import { EVMParser } from "../../../../src/indexer/evmIndexer/evmParser";
 import { JsonRpcProvider } from "ethers";
-import { V3AssetId } from "../../src/indexer/substrateIndexer/types/v1260";
-import { Context } from "../../src/indexer/substrateIndexer/substrateProcessor";
-import { Domain, Resource, Token } from "../../src/model";
+import { V3AssetId } from "../../../../src/indexer/substrateIndexer/types/v1260";
+import { Context } from "../../../../src/indexer/substrateIndexer/substrateProcessor";
+import { Domain, Resource, Token } from "../../../../src/model";
 
 describe("Substrate parser", () => {
   let parser: SubstrateParser;

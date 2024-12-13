@@ -6,15 +6,15 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { expect } from "chai";
 import sinon from "sinon";
 import { JsonRpcProvider } from "ethers";
-import { EVMParser } from "../../src/indexer/evmIndexer/evmParser";
+import { EVMParser } from "../../../../src/indexer/evmIndexer/evmParser";
 import { Log } from "@subsquid/evm-processor";
 import { FeeHandlerType, Network, ResourceType } from "@buildwithsygma/core";
-import * as bridge from "../../src/abi/bridge";
-import { generateTransferID } from "../../src/indexer/utils";
-import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
-import { Context } from "../../src/indexer/evmIndexer/evmProcessor";
-import { Domain, Resource, Token } from "../../src/model";
-import { NotFoundError } from "../../src/utils/error";
+import * as bridge from "../../../../src/abi/bridge";
+import { generateTransferID } from "../../../../src/indexer/utils";
+import { Domain as DomainType, HandlerType } from "../../../../src/indexer/config";
+import { Context } from "../../../../src/indexer/evmIndexer/evmProcessor";
+import { Domain, Resource, Token } from "../../../../src/model";
+import { NotFoundError } from "../../../../src/utils/error";
 
 describe("EVMParser", () => {
   let provider: sinon.SinonStubbedInstance<JsonRpcProvider>;

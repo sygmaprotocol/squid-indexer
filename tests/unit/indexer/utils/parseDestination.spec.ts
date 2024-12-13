@@ -4,8 +4,8 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import { expect } from "chai";
 import { Network, ResourceType } from "@buildwithsygma/core";
-import { parseDestination } from "../../src/indexer/utils";
-import { NotFoundError } from "../../src/utils/error";
+import { parseDestination } from "../../../../src/indexer/utils";
+import { NotFoundError } from "../../../../src/utils/error";
 
 describe("Parse destination", function () {
   it("should parse evm destination for fungible evm deposit log", async function () {

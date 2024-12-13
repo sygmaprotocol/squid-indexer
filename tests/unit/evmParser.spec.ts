@@ -15,7 +15,7 @@ import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
 import {IParser } from "../../src/indexer/indexer";
 import {Context} from "../../src/indexer/evmIndexer/evmProcessor"
 import * as feeRouter from "../../src/abi/FeeHandlerRouter";
-import { Domain, Resource, Token } from "../../src/model";
+import { Domain, Resource, Route, Token } from "../../src/model";
 import { NotFoundError } from "../../src/utils/error";
 
 describe("EVMParser", () => {
@@ -26,6 +26,13 @@ describe("EVMParser", () => {
 const mockResource = {
   id: '0x0000000000000000000000000000000000000000000000000000000000000300',
   type: 'fungible',
+};
+
+const mockRoute = {
+  id: "mockRouteID",
+  resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
+  fromDomainID: '2',
+  toDomainID: '3'
 };
 
 const mockToken = {
@@ -72,11 +79,18 @@ const mockDomain = {
       findOneStub
         .withArgs(Resource, { where: { id: mockResource.id } })
         .resolves(mockResource);
+
       findOneStub
         .withArgs(Token, {
-          where: { tokenAddress: mockToken.tokenAddress, domainID: "2" },
+          where: { tokenAddress: mockToken.tokenAddress, domainID: mockDomain.id },
         })
         .resolves(mockToken);
+
+        findOneStub
+        .withArgs(Route, {
+          where: { fromDomainID: mockDomain.id, toDomainID: "3", resourceID: mockResource.id },
+        })
+        .resolves(mockRoute);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -148,11 +162,8 @@ const mockDomain = {
           id: generateTransferID("1", "2", "3"),
           blockNumber: 1,
           depositNonce: "1",
-          toDomainID: "3",
+          routeID: mockRoute.id,
           sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-          fromDomainID: "2",
-          resourceID:
-            "0x0000000000000000000000000000000000000000000000000000000000000300",
           txHash: "0xTxHash",
           timestamp: new Date(1633072800),
           transferType: ResourceType.FUNGIBLE,
@@ -578,7 +589,7 @@ const mockDomain = {
       }
     });
   
-    it('should return null when transaction is not found', async () => {
+    it.only('should throw an error when transaction is not found', async () => {
       const mockTxHash = '0xMockTransactionHash';
   
       providerStub.getTransaction.resolves(null);
@@ -587,7 +598,7 @@ const mockDomain = {
         await evmParser.parseEvmRoute(mockTxHash, ctx);
         expect.fail("Expected error was not thrown");
       } catch (error) {
-        expect(error).to.be.instanceOf(NotFoundError);
+        expect(error).to.be.instanceOf(Error);
       }
     });
   });

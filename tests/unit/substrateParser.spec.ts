@@ -19,7 +19,7 @@ import {
 } from "../../src/indexer/substrateIndexer/types/v1260";
 import {Context} from "../../src/indexer/substrateIndexer/substrateProcessor"
 import { Call } from "@subsquid/substrate-processor";
-import { Domain, Resource, Token } from "../../src/model";
+import { Domain, Resource, Route, Token } from "../../src/model";
 import { NotFoundError } from "../../src/utils/error";
 
 describe("Substrate parser", () => {
@@ -32,6 +32,13 @@ describe("Substrate parser", () => {
     type: "fungible",
   };
 
+  const mockRoute = {
+    id: "mockRouteID",
+    resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
+    fromDomainID: '4',
+    toDomainID: '1'
+  };
+  
   const mockToken = {
     id: "tokenID",
     tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
@@ -75,9 +82,16 @@ const mockDomain = {
       findOneStub
         .withArgs(Resource, { where: { id: mockResource.id } })
         .resolves(mockResource);
+
       findOneStub
         .withArgs(Token, { where: { resource: mockResource, domainID: "4" } })
         .resolves(mockToken);
+
+      findOneStub
+        .withArgs(Route, {
+          where: { fromDomainID: "4", toDomainID: mockDomain.id, resourceID: mockResource.id },
+        })
+        .resolves(mockRoute);
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
@@ -132,12 +146,9 @@ const mockDomain = {
           id: "1-4-1",
           blockNumber: 1,
           depositNonce: "1",
-          toDomainID: "1",
           sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
           destination: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-          fromDomainID: "4",
-          resourceID:
-            "0x0000000000000000000000000000000000000000000000000000000000000300",
+          routeID: mockRoute.id,
           txHash: "0000000001-0ea58-000001",
           timestamp: new Date(1633072800),
           depositData:
@@ -527,7 +538,6 @@ const mockDomain = {
     });
 
     it('should throw NotFoundError when route with deprecated resource found', async () => {
-
       const tokenAddress = JSON.stringify({
         concrete: {
           parents: 0,

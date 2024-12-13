@@ -4,6 +4,8 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import {Entity as Entity_, PrimaryColumn as PrimaryColumn_, Index as Index_, StringColumn as StringColumn_, ManyToOne as ManyToOne_} from "@subsquid/typeorm-store"
 import {Domain} from "./domain.model"
+import { OneToMany, PrimaryGeneratedColumn } from "typeorm"
+import { Transfer } from "./transfer.model"
 
 @Index_(["fromDomainID", "toDomainID", "resourceID"], {unique: true})
 @Entity_()
@@ -12,7 +14,7 @@ export class Route {
         Object.assign(this, props)
     }
 
-    @PrimaryColumn_()
+    @PrimaryGeneratedColumn("uuid")
     id!: string
 
     @StringColumn_({nullable: true})
@@ -31,4 +33,7 @@ export class Route {
 
     @StringColumn_({nullable: true})
     resourceID!: string | undefined | null
+
+    @OneToMany(() => Transfer, e => e.route)
+    transfers!: Transfer[]
 }

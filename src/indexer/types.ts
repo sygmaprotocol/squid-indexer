@@ -8,11 +8,9 @@ export type DecodedDepositLog = {
   id: string;
   blockNumber: number;
   depositNonce: string;
-  toDomainID: string;
   sender: string;
   destination: string;
-  fromDomainID: string;
-  resourceID: string;
+  routeID: string;
   txHash: string;
   timestamp: Date;
   depositData: string;

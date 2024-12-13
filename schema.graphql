@@ -70,6 +70,7 @@ type Token @entity @index(fields: ["tokenAddress", "domainID"], unique: true) {
 
 type Domain @entity {
   id: ID!
+  type: String!
   name: String!
   iconURL: String
   explorerURL: String

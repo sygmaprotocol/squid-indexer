@@ -6,7 +6,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { Network } from "@buildwithsygma/core";
 
 import { getConfig } from "./indexer/config";
-import { getIndexerEnv } from "./indexer/config/validator";
+import { getEnv } from "./indexer/config/envLoader";
 import { EVMProcessor } from "./indexer/evmIndexer/evmProcessor";
 import { Indexer } from "./indexer/indexer";
 import type { ISubstrateParser } from "./indexer/substrateIndexer/substrateParser";
@@ -21,14 +21,14 @@ async function startProcessing(): Promise<void> {
     case Network.EVM: {
       processor = new EVMProcessor(
         config.parser,
-        config.rpcMap.get(config.domain.id)!,
+        envVars.domainMetadata.rpcUrl,
       );
       break;
     }
     case Network.SUBSTRATE: {
       processor = new SubstrateProcessor(
         config.parser as ISubstrateParser,
-        config.rpcMap.get(config.domain.id)!,
+        envVars.domainMetadata.rpcUrl,
       );
       break;
     }

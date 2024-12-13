@@ -11,10 +11,6 @@ deploy:
   processor:
     - name: sepolia-processor
       cmd: ["sqd", "start-sepolia"]
-    - name: arbitrum-sepolia-processor
-      cmd: ["sqd", "start-arbitrum-sepolia"]
-    - name: base-sepolia-processor
-      cmd: ["sqd", "start-base-sepolia"]
     - name: holesky-processor
       cmd: ["sqd", "start-holesky"]
   api:

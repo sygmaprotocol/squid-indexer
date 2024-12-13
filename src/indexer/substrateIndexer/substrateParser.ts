@@ -5,13 +5,18 @@ SPDX-License-Identifier: LGPL-3.0-only
 
 import { randomUUID } from "crypto";
 
+import type { Network } from "@buildwithsygma/core";
 import { ResourceType } from "@buildwithsygma/core";
-import type { ApiPromise } from "@polkadot/api";
+import { TypeRegistry } from "@polkadot/types";
 import type { MultiLocation } from "@polkadot/types/interfaces";
 import { decodeHex } from "@subsquid/evm-processor";
 import { assertNotNull } from "@subsquid/substrate-processor";
 
-import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
+import {
+  decodeAmountOrTokenId,
+  generateTransferID,
+  parseDestination,
+} from "../../indexer/utils";
 import { Domain, Resource, Token } from "../../model";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
@@ -37,17 +42,6 @@ export interface ISubstrateParser extends IParser {
 }
 
 export class SubstrateParser implements ISubstrateParser {
-  private provider: ApiPromise;
-  private parsers!: Map<number, IParser>;
-
-  constructor(provider: ApiPromise) {
-    this.provider = provider;
-  }
-
-  public setParsers(parsers: Map<number, IParser>): void {
-    this.parsers = parsers;
-  }
-
   public async parseDeposit(
     log: Event,
     fromDomain: DomainType,
@@ -57,8 +51,12 @@ export class SubstrateParser implements ISubstrateParser {
     decodedFeeLog: FeeCollectedData;
   }> {
     const event = events.sygmaBridge.deposit.v1250.decode(log);
-    const destinationParser = this.parsers.get(event.destDomainId);
-    if (!destinationParser) {
+    const destinationDomain = await ctx.store.findOne(Domain, {
+      where: {
+        id: event.destDomainId.toString(),
+      },
+    });
+    if (!destinationDomain) {
       throw new NotFoundError(
         `Destination domain id ${event.destDomainId} not supported`,
       );
@@ -98,7 +96,8 @@ export class SubstrateParser implements ISubstrateParser {
         depositNonce: event.depositNonce.toString(),
         toDomainID: event.destDomainId.toString(),
         sender: event.sender,
-        destination: destinationParser.parseDestination(
+        destination: parseDestination(
+          destinationDomain.type as Network,
           event.depositData,
           resource.type as ResourceType,
         ),
@@ -242,7 +241,9 @@ export class SubstrateParser implements ISubstrateParser {
         logger.error(`Unsupported resource type: ${resourceType}`);
         return "";
     }
-    const decodedData = this.provider.createType<MultiLocation>(
+
+    const registry = new TypeRegistry();
+    const decodedData = registry.createType<MultiLocation>(
       "MultiLocation",
       recipient,
     );

@@ -2,7 +2,6 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import type { ResourceType } from "@buildwithsygma/core";
 import type {
   Log as _Log,
   Transaction as _Transaction,
@@ -11,6 +10,7 @@ import type {
 } from "@subsquid/evm-processor";
 import type { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import { TypeormDatabase } from "@subsquid/typeorm-store";
+import { In } from "typeorm";
 
 import {
   Transfer,
@@ -38,7 +38,6 @@ import type {
 
 type Context = EvmContext | SubstrateContext;
 export interface IParser {
-  setParsers(parsers: Map<number, IParser>): void;
   parseDeposit(
     log: Log | Event,
     fromDomain: Domain,
@@ -57,7 +56,6 @@ export interface IParser {
     toDomain: Domain,
     ctx: Context,
   ): Promise<DecodedFailedHandlerExecutionLog>;
-  parseDestination(hexData: string, resourceType: ResourceType): string;
 }
 
 export interface IProcessor {
@@ -154,6 +152,17 @@ export class Indexer {
         transfers.set(d.id, transfer);
       }
     }
+
+    const existingTransfers: Transfer[] = await ctx.store.findBy(Transfer, {
+      id: In(Array.from(transfers.keys())),
+    });
+
+    for (const existingTransfer of existingTransfers) {
+      const transfer = transfers.get(existingTransfer.id);
+      transfer!.status = TransferStatus.executed;
+      transfers.set(existingTransfer.id, transfer!);
+    }
+
     await ctx.store.upsert([...deposits.values()]);
     await ctx.store.upsert([...transfers.values()]);
   }

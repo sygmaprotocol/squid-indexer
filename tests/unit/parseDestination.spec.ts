@@ -5,9 +5,9 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { expect } from "chai";
 import { Network, ResourceType } from "@buildwithsygma/core";
 import { parseDestination } from "../../src/indexer/utils";
+import { NotFoundError } from "../../src/utils/error";
 
 describe("Parse destination", function () {
-
   it("should parse evm destination for fungible evm deposit log", async function () {
     const hexData =
       "0x000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000000145c1f5961696bad2e73f73417f07ef55c62a2dc5b0102";
@@ -58,5 +58,35 @@ describe("Parse destination", function () {
       ResourceType.FUNGIBLE
     );
     expect(result).to.equal("");
+  });
+
+  it("should throw an error when resource type is not supported", async () => {
+    const hexData =
+      "0x000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000000145c1f5961696bad2e73f73417f07ef55c62a2dc5b0102";
+    try {
+      parseDestination(
+        Network.EVM,
+        hexData,
+        "UnsupportedResource" as ResourceType
+      );
+      expect.fail("Expected error was not thrown");
+    } catch (error) {
+      expect(error).to.be.instanceOf(NotFoundError);
+    }
+  });
+
+  it("should throw an error when domain type is not supported", async () => {
+    const hexData =
+      "0x000000000000000000000000000000000000000000000000000000000000006400000000000000000000000000000000000000000000000000000000000000145c1f5961696bad2e73f73417f07ef55c62a2dc5b0102";
+    try {
+      parseDestination(
+        "UnsupportedDomain" as Network,
+        hexData,
+        ResourceType.FUNGIBLE
+      );
+      expect.fail("Expected error was not thrown");
+    } catch (error) {
+      expect(error).to.be.instanceOf(NotFoundError);
+    }
   });
 });

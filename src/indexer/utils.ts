@@ -66,7 +66,6 @@ export function parseDestination(
       recipient = decodeGenericCall(arrayifyData);
       break;
     default:
-      logger.error(`Unsupported resource type: ${resourceType}`);
       throw new NotFoundError(`Unsupported resource type: ${resourceType}`);
   }
 

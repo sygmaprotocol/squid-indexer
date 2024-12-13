@@ -3,21 +3,25 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 import type {
+  BlockData,
   DataHandlerContext,
   EvmBatchProcessorFields,
 } from "@subsquid/evm-processor";
 import { EvmBatchProcessor } from "@subsquid/evm-processor";
 import type { Store } from "@subsquid/typeorm-store";
 
+import * as feeRouter from "../../abi/FeeHandlerRouter";
 import * as bridge from "../../abi/bridge";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
-import type { DecodedEvents, IParser, IProcessor } from "../indexer";
+import type { IParser, IProcessor } from "../indexer";
 import type {
   DecodedDepositLog,
+  DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
+  DecodedRoutes,
   FeeCollectedData,
 } from "../types";
 
@@ -50,6 +54,10 @@ export class EVMProcessor implements IProcessor {
         address: [domain.bridge],
         topic0: [bridge.events.FailedHandlerExecution.topic],
         transaction: true,
+      })
+      .addTransaction({
+        to: [domain.feeRouter],
+        sighash: [feeRouter.functions.adminSetResourceHandler.sighash],
       });
 
     if (domain.gateway) {
@@ -63,11 +71,13 @@ export class EVMProcessor implements IProcessor {
     domain: Domain,
   ): Promise<DecodedEvents> {
     const deposits: DecodedDepositLog[] = [];
+    let routes: DecodedRoutes[] = [];
     const executions: DecodedProposalExecutionLog[] = [];
     const failedHandlerExecutions: DecodedFailedHandlerExecutionLog[] = [];
     const fees: FeeCollectedData[] = [];
 
     for (const block of ctx.blocks) {
+      routes = await this.processRoutes(block, ctx, domain);
       for (const log of block.logs) {
         try {
           switch (log.topics[0]) {
@@ -108,7 +118,30 @@ export class EVMProcessor implements IProcessor {
         }
       }
     }
-    return { deposits, executions, failedHandlerExecutions, fees };
+    return { deposits, executions, failedHandlerExecutions, fees, routes };
+  }
+
+  private async processRoutes(
+    block: BlockData,
+    ctx: Context,
+    domain: Domain,
+  ): Promise<DecodedRoutes[]> {
+    const routes: DecodedRoutes[] = [];
+    for (const tx of block.transactions) {
+      try {
+        if (tx.to?.toLowerCase() === domain.feeRouter.toLowerCase()) {
+          const route = await this.parser.parseEvmRoute!(tx.hash, ctx);
+          routes.push(route);
+        }
+      } catch (error) {
+        if (error instanceof NotFoundError) {
+          logger.error(error.message);
+        } else {
+          throw error;
+        }
+      }
+    }
+    return routes;
   }
 }
 

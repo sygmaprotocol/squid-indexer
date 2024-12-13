@@ -11,9 +11,10 @@ import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
 import type { JsonRpcProvider, Provider } from "ethers";
 import { ethers } from "ethers";
 
+import * as feeRouter from "../../abi/FeeHandlerRouter";
 import * as bridge from "../../abi/bridge";
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
-import { Domain, Resource, Token } from "../../model";
+import { Domain, Resource, Route, Token } from "../../model";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
@@ -23,6 +24,7 @@ import type {
   DecodedProposalExecutionLog,
   DecodedFailedHandlerExecutionLog,
   FeeCollectedData,
+  RouteData,
 } from "../types";
 
 import type { Context } from "./evmProcessor";
@@ -86,6 +88,19 @@ export class EVMParser implements IParser {
         `Token with resourceID: ${event.resourceID.toLowerCase()} doesn't exist, skipping`,
       );
     }
+
+    const route = await ctx.store.findOne(Route, {
+      where: {
+        fromDomainID: fromDomain.id.toString(),
+        toDomainID: event.destinationDomainID.toString(),
+        resourceID: resource.id,
+      },
+    });
+    if (!route) {
+      throw new Error(
+        `Route fromDomain: ${fromDomain.id.toString()}, toDomain: ${event.destinationDomainID.toString()}, resource: ${resource.id} not found`,
+      );
+    }
     return {
       decodedDepositLog: {
         id: generateTransferID(
@@ -95,14 +110,12 @@ export class EVMParser implements IParser {
         ),
         blockNumber: log.block.height,
         depositNonce: event.depositNonce.toString(),
-        toDomainID: event.destinationDomainID.toString(),
         sender: transaction.from,
         destination: destinationParser.parseDestination(
           event.data,
           resource.type as ResourceType,
         ),
-        fromDomainID: fromDomain.id.toString(),
-        resourceID: resource.id,
+        routeID: route.id,
         txHash: transaction.hash,
         timestamp: new Date(log.block.timestamp),
         depositData: event.data,
@@ -120,6 +133,37 @@ export class EVMParser implements IParser {
         tokenID: token.id,
         txIdentifier: transaction.hash,
       },
+    };
+  }
+
+  public async parseEvmRoute(txHash: string, ctx: Context): Promise<RouteData> {
+    const tx = await this.provider.getTransaction(txHash);
+    if (!tx) {
+      throw new Error(`Tx not found ${txHash}`);
+    }
+    const decoded = feeRouter.functions.adminSetResourceHandler.decode(tx.data);
+    const resource = await ctx.store.findOne(Resource, {
+      where: {
+        id: decoded.resourceID.toLowerCase(),
+      },
+    });
+    if (!resource) {
+      throw new NotFoundError(
+        `Unsupported resource with ID ${decoded.resourceID.toLowerCase()}`,
+      );
+    }
+
+    const destinationDomain = await ctx.store.findOne(Domain, {
+      where: { id: decoded.destinationDomainID.toString() },
+    });
+    if (!destinationDomain) {
+      throw new NotFoundError(
+        `Destination domain id ${decoded.destinationDomainID.toString()} not supported`,
+      );
+    }
+    return {
+      ...decoded,
+      destinationDomainID: decoded.destinationDomainID.toString(),
     };
   }
 

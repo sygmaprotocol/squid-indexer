@@ -21,6 +21,7 @@ import {
   TransferStatus,
   Fee,
 } from "../model";
+import { Route } from "../model/generated/route.model";
 import { logger } from "../utils/logger";
 
 import type { Domain } from "./config";
@@ -32,9 +33,13 @@ import type {
 } from "./substrateIndexer/substrateProcessor";
 import type {
   DecodedDepositLog,
+  DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
+  DecodedRoutes,
   FeeCollectedData,
+  RouteData,
+  SubstrateRouteData,
 } from "./types";
 
 type Context = EvmContext | SubstrateContext;
@@ -59,24 +64,20 @@ export interface IParser {
     ctx: Context,
   ): Promise<DecodedFailedHandlerExecutionLog>;
   parseDestination(hexData: string, resourceType: ResourceType): string;
+  parseEvmRoute?(txHash: string, ctx: Context): Promise<RouteData>;
+  parseSubstrateAsset?(
+    call: SubstrateRouteData,
+    ctx: Context,
+  ): Promise<RouteData>;
 }
 
 export interface IProcessor {
-  processEvents(
-    ctx: Context,
-    domain: Domain,
-  ): Promise<DecodedEvents> | DecodedEvents;
+  processEvents(ctx: Context, domain: Domain): Promise<DecodedEvents>;
   getProcessor(
     domain: Domain,
   ): EvmBatchProcessor | SubstrateBatchProcessor<Fields>;
 }
 
-export type DecodedEvents = {
-  deposits: DecodedDepositLog[];
-  executions: DecodedProposalExecutionLog[];
-  failedHandlerExecutions: DecodedFailedHandlerExecutionLog[];
-  fees: FeeCollectedData[];
-};
 export class Indexer {
   private domain: Domain;
   private processor: IProcessor;
@@ -105,6 +106,7 @@ export class Indexer {
           decodedEvents.failedHandlerExecutions,
         );
         await this.storeFees(ctx, decodedEvents.fees);
+        await this.storeRoutes(ctx, decodedEvents.routes);
       },
     );
   }
@@ -143,9 +145,7 @@ export class Indexer {
         deposit: deposit,
         depositNonce: d.depositNonce.toString(),
         amount: d.amount,
-        resourceID: d.resourceID,
-        fromDomainID: d.fromDomainID,
-        toDomainID: d.toDomainID,
+        routeID: d.routeID,
       });
 
       if (!deposits.has(d.id)) {
@@ -189,8 +189,6 @@ export class Indexer {
         id: e.id,
         status: TransferStatus.executed,
         execution: execution,
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
         depositNonce: e.depositNonce,
       });
 
@@ -224,8 +222,6 @@ export class Indexer {
         id: e.id,
         status: TransferStatus.failed,
         execution: failedExecution,
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
         depositNonce: e.depositNonce,
       });
 
@@ -277,5 +273,22 @@ export class Indexer {
     }
     await ctx.store.upsert([...fees.values()]);
     await ctx.store.upsert([...transfers.values()]);
+  }
+
+  public async storeRoutes(
+    ctx: EvmContext | SubstrateContext,
+    routesData: DecodedRoutes[],
+  ): Promise<void> {
+    const routes = [];
+    for (const r of routesData) {
+      routes.push(
+        new Route({
+          fromDomainID: this.domain.id.toString(),
+          toDomainID: r.destinationDomainID.toString(),
+          resourceID: r.resourceID,
+        }),
+      );
+    }
+    await ctx.store.upsert(routes);
   }
 }

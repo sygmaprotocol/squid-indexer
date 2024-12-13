@@ -14,9 +14,13 @@ import type { Event } from "../../src/indexer/substrateIndexer/substrateProcesso
 import { generateTransferID } from "../../src/indexer/utils";
 import { EVMParser } from "../../src/indexer/evmIndexer/evmParser";
 import { JsonRpcProvider } from "ethers";
-import { V3AssetId } from "../../src/indexer/substrateIndexer/types/v1260";
-import { Context } from "../../src/indexer/substrateIndexer/substrateProcessor";
-import { Domain, Resource, Token } from "../../src/model";
+import {
+  V3AssetId,
+} from "../../src/indexer/substrateIndexer/types/v1260";
+import {Context} from "../../src/indexer/substrateIndexer/substrateProcessor"
+import { Call } from "@subsquid/substrate-processor";
+import { Domain, Resource, Route, Token } from "../../src/model";
+import { NotFoundError } from "../../src/utils/error";
 
 describe("Substrate parser", () => {
   let provider: sinon.SinonStubbedInstance<ApiPromise>;
@@ -28,6 +32,13 @@ describe("Substrate parser", () => {
     type: "fungible",
   };
 
+  const mockRoute = {
+    id: "mockRouteID",
+    resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
+    fromDomainID: '4',
+    toDomainID: '1'
+  };
+  
   const mockToken = {
     id: "tokenID",
     tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
@@ -37,9 +48,9 @@ describe("Substrate parser", () => {
     resourceID: mockResource.id,
   };
 
-  const mockSourceDomain = {
-    id: "1",
-  };
+const mockDomain = {
+  id: '1',
+};
   before(() => {
     provider = sinon.createStubInstance(ApiPromise);
 
@@ -71,9 +82,16 @@ describe("Substrate parser", () => {
       findOneStub
         .withArgs(Resource, { where: { id: mockResource.id } })
         .resolves(mockResource);
+
       findOneStub
         .withArgs(Token, { where: { resource: mockResource, domainID: "4" } })
         .resolves(mockToken);
+
+      findOneStub
+        .withArgs(Route, {
+          where: { fromDomainID: "4", toDomainID: mockDomain.id, resourceID: mockResource.id },
+        })
+        .resolves(mockRoute);
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
@@ -128,12 +146,9 @@ describe("Substrate parser", () => {
           id: "1-4-1",
           blockNumber: 1,
           depositNonce: "1",
-          toDomainID: "1",
           sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
           destination: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-          fromDomainID: "4",
-          resourceID:
-            "0x0000000000000000000000000000000000000000000000000000000000000300",
+          routeID: mockRoute.id,
           txHash: "0000000001-0ea58-000001",
           timestamp: new Date(1633072800),
           depositData:
@@ -256,9 +271,7 @@ describe("Substrate parser", () => {
       sinon.restore();
     });
     it("should parse a proposal execution correctly", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
 
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
@@ -307,9 +320,7 @@ describe("Substrate parser", () => {
       sinon.restore();
     });
     it("should parse a failed handler execution correctly", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
 
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
@@ -474,5 +485,92 @@ describe("Substrate parser", () => {
 
   afterEach(() => {
     sinon.restore();
+  });
+
+  describe('parseSubstrateAsset', function () {
+    let substrateParser: SubstrateParser;
+    let mockCall: sinon.SinonStubbedInstance<Call>;
+    let providerStub: sinon.SinonStubbedInstance<ApiPromise>;
+    let findOneStub: sinon.SinonStub;
+    beforeEach(() => {
+      ctx = {
+        store: {
+          findOne: sinon.stub(),
+        },
+      } as unknown as Context;
+  
+      // Stub each findOne call with appropriate return values
+      findOneStub = ctx.store.findOne as sinon.SinonStub;
+      providerStub = sinon.createStubInstance(ApiPromise);
+  
+      substrateParser = new SubstrateParser(providerStub as unknown as ApiPromise);
+      mockCall = {
+        args: {
+          asset: {
+            __kind: 'Concrete',
+            value: {
+              interior: {
+                __kind: 'Here',
+              },
+              parents: 0,
+            },
+          },
+          domainID: mockDomain.id
+        }
+      } as unknown as sinon.SinonStubbedInstance<Call>;
+    });
+  
+    it('should correctly return decoded route', async () => {
+
+      const tokenAddress = JSON.stringify({
+        concrete: {
+          parents: 0,
+          interior: 'here',
+        },
+      });
+      const expectedResult = { destinationDomainID: mockDomain.id, resourceID: mockResource.id };
+
+      findOneStub.withArgs(Token, { where: { tokenAddress: tokenAddress } }).resolves({resourceID: mockResource.id});
+
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+      const result = await substrateParser.parseSubstrateAsset(mockCall, ctx);
+        expect(result).to.be.deep.equal(expectedResult);
+    });
+
+    it('should throw NotFoundError when route with deprecated resource found', async () => {
+      const tokenAddress = JSON.stringify({
+        concrete: {
+          parents: 0,
+          interior: 'here',
+        },
+      });
+      findOneStub.withArgs(Token, { where: { tokenAddress: tokenAddress } }).resolves(null);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+
+      try {
+        await substrateParser.parseSubstrateAsset(mockCall, ctx);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(NotFoundError);
+      }
+    });
+
+    it('should throw NotFoundError when route with deprecated domain found', async () => {
+      const tokenAddress = JSON.stringify({
+        concrete: {
+          parents: 0,
+          interior: 'here',
+        },
+      });
+      findOneStub.withArgs(Token, { where: { tokenAddress: tokenAddress } }).resolves({resourceID: mockResource.id});
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(null);
+
+      try {
+        await substrateParser.parseSubstrateAsset(mockCall, ctx);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(NotFoundError);
+      }
+    });
   });
 });

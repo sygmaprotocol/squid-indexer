@@ -2,457 +2,380 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import type { Bytes } from "./support";
-import { sts, Result, Option, BitSequence } from "./support";
+import {sts, Result, Option, Bytes, BitSequence} from './support'
+
+export const FeeHandlerType: sts.Type<FeeHandlerType> = sts.closedEnum(() => {
+    return  {
+        BasicFeeHandler: sts.unit(),
+        DynamicFeeHandler: sts.unit(),
+        PercentageFeeHandler: sts.unit(),
+    }
+})
+
+export type FeeHandlerType = FeeHandlerType_BasicFeeHandler | FeeHandlerType_DynamicFeeHandler | FeeHandlerType_PercentageFeeHandler
+
+export interface FeeHandlerType_BasicFeeHandler {
+    __kind: 'BasicFeeHandler'
+}
+
+export interface FeeHandlerType_DynamicFeeHandler {
+    __kind: 'DynamicFeeHandler'
+}
+
+export interface FeeHandlerType_PercentageFeeHandler {
+    __kind: 'PercentageFeeHandler'
+}
 
 export const V3AssetId: sts.Type<V3AssetId> = sts.closedEnum(() => {
-  return {
-    Abstract: sts.bytes(),
-    Concrete: V3MultiLocation,
-  };
-});
+    return  {
+        Abstract: sts.bytes(),
+        Concrete: V3MultiLocation,
+    }
+})
 
 export const V3MultiLocation: sts.Type<V3MultiLocation> = sts.struct(() => {
-  return {
-    parents: sts.number(),
-    interior: V3Junctions,
-  };
-});
+    return  {
+        parents: sts.number(),
+        interior: V3Junctions,
+    }
+})
 
 export const V3Junctions: sts.Type<V3Junctions> = sts.closedEnum(() => {
-  return {
-    Here: sts.unit(),
-    X1: V3Junction,
-    X2: sts.tuple(() => [V3Junction, V3Junction]),
-    X3: sts.tuple(() => [V3Junction, V3Junction, V3Junction]),
-    X4: sts.tuple(() => [V3Junction, V3Junction, V3Junction, V3Junction]),
-    X5: sts.tuple(() => [
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-    ]),
-    X6: sts.tuple(() => [
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-    ]),
-    X7: sts.tuple(() => [
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-    ]),
-    X8: sts.tuple(() => [
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-      V3Junction,
-    ]),
-  };
-});
+    return  {
+        Here: sts.unit(),
+        X1: V3Junction,
+        X2: sts.tuple(() => [V3Junction, V3Junction]),
+        X3: sts.tuple(() => [V3Junction, V3Junction, V3Junction]),
+        X4: sts.tuple(() => [V3Junction, V3Junction, V3Junction, V3Junction]),
+        X5: sts.tuple(() => [V3Junction, V3Junction, V3Junction, V3Junction, V3Junction]),
+        X6: sts.tuple(() => [V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction]),
+        X7: sts.tuple(() => [V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction]),
+        X8: sts.tuple(() => [V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction]),
+    }
+})
 
 export const V3Junction: sts.Type<V3Junction> = sts.closedEnum(() => {
-  return {
-    AccountId32: sts.enumStruct({
-      network: sts.option(() => V3NetworkId),
-      id: sts.bytes(),
-    }),
-    AccountIndex64: sts.enumStruct({
-      network: sts.option(() => V3NetworkId),
-      index: sts.bigint(),
-    }),
-    AccountKey20: sts.enumStruct({
-      network: sts.option(() => V3NetworkId),
-      key: sts.bytes(),
-    }),
-    GeneralIndex: sts.bigint(),
-    GeneralKey: sts.enumStruct({
-      length: sts.number(),
-      data: sts.bytes(),
-    }),
-    GlobalConsensus: V3NetworkId,
-    OnlyChild: sts.unit(),
-    PalletInstance: sts.number(),
-    Parachain: sts.number(),
-    Plurality: sts.enumStruct({
-      id: V3BodyId,
-      part: V3BodyPart,
-    }),
-  };
-});
+    return  {
+        AccountId32: sts.enumStruct({
+            network: sts.option(() => V3NetworkId),
+            id: sts.bytes(),
+        }),
+        AccountIndex64: sts.enumStruct({
+            network: sts.option(() => V3NetworkId),
+            index: sts.bigint(),
+        }),
+        AccountKey20: sts.enumStruct({
+            network: sts.option(() => V3NetworkId),
+            key: sts.bytes(),
+        }),
+        GeneralIndex: sts.bigint(),
+        GeneralKey: sts.enumStruct({
+            length: sts.number(),
+            data: sts.bytes(),
+        }),
+        GlobalConsensus: V3NetworkId,
+        OnlyChild: sts.unit(),
+        PalletInstance: sts.number(),
+        Parachain: sts.number(),
+        Plurality: sts.enumStruct({
+            id: V3BodyId,
+            part: V3BodyPart,
+        }),
+    }
+})
 
 export const V3BodyPart: sts.Type<V3BodyPart> = sts.closedEnum(() => {
-  return {
-    AtLeastProportion: sts.enumStruct({
-      nom: sts.number(),
-      denom: sts.number(),
-    }),
-    Fraction: sts.enumStruct({
-      nom: sts.number(),
-      denom: sts.number(),
-    }),
-    Members: sts.enumStruct({
-      count: sts.number(),
-    }),
-    MoreThanProportion: sts.enumStruct({
-      nom: sts.number(),
-      denom: sts.number(),
-    }),
-    Voice: sts.unit(),
-  };
-});
+    return  {
+        AtLeastProportion: sts.enumStruct({
+            nom: sts.number(),
+            denom: sts.number(),
+        }),
+        Fraction: sts.enumStruct({
+            nom: sts.number(),
+            denom: sts.number(),
+        }),
+        Members: sts.enumStruct({
+            count: sts.number(),
+        }),
+        MoreThanProportion: sts.enumStruct({
+            nom: sts.number(),
+            denom: sts.number(),
+        }),
+        Voice: sts.unit(),
+    }
+})
 
-export type V3BodyPart =
-  | V3BodyPart_AtLeastProportion
-  | V3BodyPart_Fraction
-  | V3BodyPart_Members
-  | V3BodyPart_MoreThanProportion
-  | V3BodyPart_Voice;
+export type V3BodyPart = V3BodyPart_AtLeastProportion | V3BodyPart_Fraction | V3BodyPart_Members | V3BodyPart_MoreThanProportion | V3BodyPart_Voice
 
 export interface V3BodyPart_AtLeastProportion {
-  __kind: "AtLeastProportion";
-  nom: number;
-  denom: number;
+    __kind: 'AtLeastProportion'
+    nom: number
+    denom: number
 }
 
 export interface V3BodyPart_Fraction {
-  __kind: "Fraction";
-  nom: number;
-  denom: number;
+    __kind: 'Fraction'
+    nom: number
+    denom: number
 }
 
 export interface V3BodyPart_Members {
-  __kind: "Members";
-  count: number;
+    __kind: 'Members'
+    count: number
 }
 
 export interface V3BodyPart_MoreThanProportion {
-  __kind: "MoreThanProportion";
-  nom: number;
-  denom: number;
+    __kind: 'MoreThanProportion'
+    nom: number
+    denom: number
 }
 
 export interface V3BodyPart_Voice {
-  __kind: "Voice";
+    __kind: 'Voice'
 }
 
 export const V3BodyId: sts.Type<V3BodyId> = sts.closedEnum(() => {
-  return {
-    Administration: sts.unit(),
-    Defense: sts.unit(),
-    Executive: sts.unit(),
-    Index: sts.number(),
-    Judicial: sts.unit(),
-    Legislative: sts.unit(),
-    Moniker: sts.bytes(),
-    Technical: sts.unit(),
-    Treasury: sts.unit(),
-    Unit: sts.unit(),
-  };
-});
+    return  {
+        Administration: sts.unit(),
+        Defense: sts.unit(),
+        Executive: sts.unit(),
+        Index: sts.number(),
+        Judicial: sts.unit(),
+        Legislative: sts.unit(),
+        Moniker: sts.bytes(),
+        Technical: sts.unit(),
+        Treasury: sts.unit(),
+        Unit: sts.unit(),
+    }
+})
 
-export type V3BodyId =
-  | V3BodyId_Administration
-  | V3BodyId_Defense
-  | V3BodyId_Executive
-  | V3BodyId_Index
-  | V3BodyId_Judicial
-  | V3BodyId_Legislative
-  | V3BodyId_Moniker
-  | V3BodyId_Technical
-  | V3BodyId_Treasury
-  | V3BodyId_Unit;
+export type V3BodyId = V3BodyId_Administration | V3BodyId_Defense | V3BodyId_Executive | V3BodyId_Index | V3BodyId_Judicial | V3BodyId_Legislative | V3BodyId_Moniker | V3BodyId_Technical | V3BodyId_Treasury | V3BodyId_Unit
 
 export interface V3BodyId_Administration {
-  __kind: "Administration";
+    __kind: 'Administration'
 }
 
 export interface V3BodyId_Defense {
-  __kind: "Defense";
+    __kind: 'Defense'
 }
 
 export interface V3BodyId_Executive {
-  __kind: "Executive";
+    __kind: 'Executive'
 }
 
 export interface V3BodyId_Index {
-  __kind: "Index";
-  value: number;
+    __kind: 'Index'
+    value: number
 }
 
 export interface V3BodyId_Judicial {
-  __kind: "Judicial";
+    __kind: 'Judicial'
 }
 
 export interface V3BodyId_Legislative {
-  __kind: "Legislative";
+    __kind: 'Legislative'
 }
 
 export interface V3BodyId_Moniker {
-  __kind: "Moniker";
-  value: Bytes;
+    __kind: 'Moniker'
+    value: Bytes
 }
 
 export interface V3BodyId_Technical {
-  __kind: "Technical";
+    __kind: 'Technical'
 }
 
 export interface V3BodyId_Treasury {
-  __kind: "Treasury";
+    __kind: 'Treasury'
 }
 
 export interface V3BodyId_Unit {
-  __kind: "Unit";
+    __kind: 'Unit'
 }
 
 export const V3NetworkId: sts.Type<V3NetworkId> = sts.closedEnum(() => {
-  return {
-    BitcoinCash: sts.unit(),
-    BitcoinCore: sts.unit(),
-    ByFork: sts.enumStruct({
-      blockNumber: sts.bigint(),
-      blockHash: sts.bytes(),
-    }),
-    ByGenesis: sts.bytes(),
-    Ethereum: sts.enumStruct({
-      chainId: sts.bigint(),
-    }),
-    Kusama: sts.unit(),
-    Polkadot: sts.unit(),
-    Rococo: sts.unit(),
-    Westend: sts.unit(),
-    Wococo: sts.unit(),
-  };
-});
+    return  {
+        BitcoinCash: sts.unit(),
+        BitcoinCore: sts.unit(),
+        ByFork: sts.enumStruct({
+            blockNumber: sts.bigint(),
+            blockHash: sts.bytes(),
+        }),
+        ByGenesis: sts.bytes(),
+        Ethereum: sts.enumStruct({
+            chainId: sts.bigint(),
+        }),
+        Kusama: sts.unit(),
+        Polkadot: sts.unit(),
+        Rococo: sts.unit(),
+        Westend: sts.unit(),
+        Wococo: sts.unit(),
+    }
+})
 
-export type V3NetworkId =
-  | V3NetworkId_BitcoinCash
-  | V3NetworkId_BitcoinCore
-  | V3NetworkId_ByFork
-  | V3NetworkId_ByGenesis
-  | V3NetworkId_Ethereum
-  | V3NetworkId_Kusama
-  | V3NetworkId_Polkadot
-  | V3NetworkId_Rococo
-  | V3NetworkId_Westend
-  | V3NetworkId_Wococo;
+export type V3NetworkId = V3NetworkId_BitcoinCash | V3NetworkId_BitcoinCore | V3NetworkId_ByFork | V3NetworkId_ByGenesis | V3NetworkId_Ethereum | V3NetworkId_Kusama | V3NetworkId_Polkadot | V3NetworkId_Rococo | V3NetworkId_Westend | V3NetworkId_Wococo
 
 export interface V3NetworkId_BitcoinCash {
-  __kind: "BitcoinCash";
+    __kind: 'BitcoinCash'
 }
 
 export interface V3NetworkId_BitcoinCore {
-  __kind: "BitcoinCore";
+    __kind: 'BitcoinCore'
 }
 
 export interface V3NetworkId_ByFork {
-  __kind: "ByFork";
-  blockNumber: bigint;
-  blockHash: Bytes;
+    __kind: 'ByFork'
+    blockNumber: bigint
+    blockHash: Bytes
 }
 
 export interface V3NetworkId_ByGenesis {
-  __kind: "ByGenesis";
-  value: Bytes;
+    __kind: 'ByGenesis'
+    value: Bytes
 }
 
 export interface V3NetworkId_Ethereum {
-  __kind: "Ethereum";
-  chainId: bigint;
+    __kind: 'Ethereum'
+    chainId: bigint
 }
 
 export interface V3NetworkId_Kusama {
-  __kind: "Kusama";
+    __kind: 'Kusama'
 }
 
 export interface V3NetworkId_Polkadot {
-  __kind: "Polkadot";
+    __kind: 'Polkadot'
 }
 
 export interface V3NetworkId_Rococo {
-  __kind: "Rococo";
+    __kind: 'Rococo'
 }
 
 export interface V3NetworkId_Westend {
-  __kind: "Westend";
+    __kind: 'Westend'
 }
 
 export interface V3NetworkId_Wococo {
-  __kind: "Wococo";
+    __kind: 'Wococo'
 }
 
-export type V3Junction =
-  | V3Junction_AccountId32
-  | V3Junction_AccountIndex64
-  | V3Junction_AccountKey20
-  | V3Junction_GeneralIndex
-  | V3Junction_GeneralKey
-  | V3Junction_GlobalConsensus
-  | V3Junction_OnlyChild
-  | V3Junction_PalletInstance
-  | V3Junction_Parachain
-  | V3Junction_Plurality;
+export type V3Junction = V3Junction_AccountId32 | V3Junction_AccountIndex64 | V3Junction_AccountKey20 | V3Junction_GeneralIndex | V3Junction_GeneralKey | V3Junction_GlobalConsensus | V3Junction_OnlyChild | V3Junction_PalletInstance | V3Junction_Parachain | V3Junction_Plurality
 
 export interface V3Junction_AccountId32 {
-  __kind: "AccountId32";
-  network?: V3NetworkId | undefined;
-  id: Bytes;
+    __kind: 'AccountId32'
+    network?: (V3NetworkId | undefined)
+    id: Bytes
 }
 
 export interface V3Junction_AccountIndex64 {
-  __kind: "AccountIndex64";
-  network?: V3NetworkId | undefined;
-  index: bigint;
+    __kind: 'AccountIndex64'
+    network?: (V3NetworkId | undefined)
+    index: bigint
 }
 
 export interface V3Junction_AccountKey20 {
-  __kind: "AccountKey20";
-  network?: V3NetworkId | undefined;
-  key: Bytes;
+    __kind: 'AccountKey20'
+    network?: (V3NetworkId | undefined)
+    key: Bytes
 }
 
 export interface V3Junction_GeneralIndex {
-  __kind: "GeneralIndex";
-  value: bigint;
+    __kind: 'GeneralIndex'
+    value: bigint
 }
 
 export interface V3Junction_GeneralKey {
-  __kind: "GeneralKey";
-  length: number;
-  data: Bytes;
+    __kind: 'GeneralKey'
+    length: number
+    data: Bytes
 }
 
 export interface V3Junction_GlobalConsensus {
-  __kind: "GlobalConsensus";
-  value: V3NetworkId;
+    __kind: 'GlobalConsensus'
+    value: V3NetworkId
 }
 
 export interface V3Junction_OnlyChild {
-  __kind: "OnlyChild";
+    __kind: 'OnlyChild'
 }
 
 export interface V3Junction_PalletInstance {
-  __kind: "PalletInstance";
-  value: number;
+    __kind: 'PalletInstance'
+    value: number
 }
 
 export interface V3Junction_Parachain {
-  __kind: "Parachain";
-  value: number;
+    __kind: 'Parachain'
+    value: number
 }
 
 export interface V3Junction_Plurality {
-  __kind: "Plurality";
-  id: V3BodyId;
-  part: V3BodyPart;
+    __kind: 'Plurality'
+    id: V3BodyId
+    part: V3BodyPart
 }
 
-export type V3Junctions =
-  | V3Junctions_Here
-  | V3Junctions_X1
-  | V3Junctions_X2
-  | V3Junctions_X3
-  | V3Junctions_X4
-  | V3Junctions_X5
-  | V3Junctions_X6
-  | V3Junctions_X7
-  | V3Junctions_X8;
+export type V3Junctions = V3Junctions_Here | V3Junctions_X1 | V3Junctions_X2 | V3Junctions_X3 | V3Junctions_X4 | V3Junctions_X5 | V3Junctions_X6 | V3Junctions_X7 | V3Junctions_X8
 
 export interface V3Junctions_Here {
-  __kind: "Here";
+    __kind: 'Here'
 }
 
 export interface V3Junctions_X1 {
-  __kind: "X1";
-  value: V3Junction;
+    __kind: 'X1'
+    value: V3Junction
 }
 
 export interface V3Junctions_X2 {
-  __kind: "X2";
-  value: [V3Junction, V3Junction];
+    __kind: 'X2'
+    value: [V3Junction, V3Junction]
 }
 
 export interface V3Junctions_X3 {
-  __kind: "X3";
-  value: [V3Junction, V3Junction, V3Junction];
+    __kind: 'X3'
+    value: [V3Junction, V3Junction, V3Junction]
 }
 
 export interface V3Junctions_X4 {
-  __kind: "X4";
-  value: [V3Junction, V3Junction, V3Junction, V3Junction];
+    __kind: 'X4'
+    value: [V3Junction, V3Junction, V3Junction, V3Junction]
 }
 
 export interface V3Junctions_X5 {
-  __kind: "X5";
-  value: [V3Junction, V3Junction, V3Junction, V3Junction, V3Junction];
+    __kind: 'X5'
+    value: [V3Junction, V3Junction, V3Junction, V3Junction, V3Junction]
 }
 
 export interface V3Junctions_X6 {
-  __kind: "X6";
-  value: [
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-  ];
+    __kind: 'X6'
+    value: [V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction]
 }
 
 export interface V3Junctions_X7 {
-  __kind: "X7";
-  value: [
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-  ];
+    __kind: 'X7'
+    value: [V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction]
 }
 
 export interface V3Junctions_X8 {
-  __kind: "X8";
-  value: [
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-    V3Junction,
-  ];
+    __kind: 'X8'
+    value: [V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction, V3Junction]
 }
 
 export interface V3MultiLocation {
-  parents: number;
-  interior: V3Junctions;
+    parents: number
+    interior: V3Junctions
 }
 
-export type V3AssetId = V3AssetId_Abstract | V3AssetId_Concrete;
+export type V3AssetId = V3AssetId_Abstract | V3AssetId_Concrete
 
 export interface V3AssetId_Abstract {
-  __kind: "Abstract";
-  value: Bytes;
+    __kind: 'Abstract'
+    value: Bytes
 }
 
 export interface V3AssetId_Concrete {
-  __kind: "Concrete";
-  value: V3MultiLocation;
+    __kind: 'Concrete'
+    value: V3MultiLocation
 }
 
-export const AccountId32 = sts.bytes();
+export const AccountId32 = sts.bytes()

@@ -9,6 +9,7 @@ import {Execution} from "./execution.model"
 import {Fee} from "./fee.model"
 import {Route} from "./route.model"
 
+@Index_(["routeID", "depositNonce"], {unique: true})
 @Entity_()
 export class Transfer {
     constructor(props?: Partial<Transfer>) {

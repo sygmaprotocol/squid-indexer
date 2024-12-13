@@ -1,4 +1,4 @@
-type Transfer @entity {
+type Transfer @entity @index(fields: ["routeID", "depositNonce"], unique: true){
   id: ID!
   status: TransferStatus!
   depositNonce: String!

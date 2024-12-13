@@ -546,7 +546,6 @@ const mockDomain = {
     });
 
     it('should throw NotFoundError when route with deprecated domain found', async () => {
-
       const tokenAddress = JSON.stringify({
         concrete: {
           parents: 0,

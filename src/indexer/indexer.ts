@@ -145,9 +145,7 @@ export class Indexer {
         deposit: deposit,
         depositNonce: d.depositNonce.toString(),
         amount: d.amount,
-        resourceID: d.resourceID,
-        fromDomainID: d.fromDomainID,
-        toDomainID: d.toDomainID,
+        routeID: d.routeID,
       });
 
       if (!deposits.has(d.id)) {
@@ -191,8 +189,6 @@ export class Indexer {
         id: e.id,
         status: TransferStatus.executed,
         execution: execution,
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
         depositNonce: e.depositNonce,
       });
 
@@ -226,8 +222,6 @@ export class Indexer {
         id: e.id,
         status: TransferStatus.failed,
         execution: failedExecution,
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
         depositNonce: e.depositNonce,
       });
 

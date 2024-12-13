@@ -12,12 +12,12 @@ export type DbConfig = {
 };
 
 export type DomainMetadata = {
+  domainId?: number;
   rpcUrl: string;
   domainGateway?: string;
 };
 
 export type EnvVariables = {
-  domainId: number;
   sharedConfigURL: string;
   domainMetadata: DomainMetadata;
   dbConfig: DbConfig;
@@ -72,9 +72,9 @@ export function getEnv(): EnvVariables {
 
   return {
     sharedConfigURL,
-    domainId: domainId,
     domainMetadata: {
-      domainGateway: parsedDomainMetadata.domainGateway || "",
+      domainId: domainId,
+      domainGateway: parsedDomainMetadata.domainGateway,
       rpcUrl: parsedDomainMetadata.rpcUrl,
     },
     dbConfig: {

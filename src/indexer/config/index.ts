@@ -16,7 +16,7 @@ import { EVMParser } from "../evmIndexer/evmParser";
 import type { IParser, IProcessor } from "../indexer";
 import { SubstrateParser } from "../substrateIndexer/substrateParser";
 
-import type { EnvVariables } from "./validator";
+import type { EnvVariables } from "./envLoader";
 
 export type DomainConfig = {
   domainData: Domain;
@@ -63,7 +63,7 @@ export async function getConfig(envVars: EnvVariables): Promise<Config> {
 
   const domainConfig = getDomainConfig(
     sharedConfig,
-    envVars.domainId,
+    envVars.domainMetadata.domainId!,
     envVars.domainMetadata.domainGateway ?? "",
   );
   let parser: IParser;

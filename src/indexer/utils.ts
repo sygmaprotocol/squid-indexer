@@ -82,12 +82,11 @@ export function parseDestination(
       );
 
       const junction = decodedData.interior;
-      if (junction.isX1) {
-        if (junction.asX1.isAccountId32) {
-          return junction.asX1.asAccountId32.id.toString();
-        }
+      if (!junction.isX1 || !junction.asX1.isAccountId32) {
+        logger.warn(`Unknown destination format for recipient: ${recipient}`);
+        return "";
       }
-      return "";
+      return junction.asX1.asAccountId32.id.toString();
     }
     default:
       throw new NotFoundError(

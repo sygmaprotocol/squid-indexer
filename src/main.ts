@@ -6,7 +6,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { Network } from "@buildwithsygma/core";
 
 import { getConfig } from "./indexer/config";
-import { getEnv } from "./indexer/config/validator";
+import { getEnv } from "./indexer/config/envLoader";
 import { EVMProcessor } from "./indexer/evmIndexer/evmProcessor";
 import { Indexer } from "./indexer/indexer";
 import type { ISubstrateParser } from "./indexer/substrateIndexer/substrateParser";

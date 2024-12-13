@@ -7,7 +7,7 @@ import type { EntityManager } from "typeorm";
 
 import type { Domain as DomainConfig } from "./indexer/config";
 import { fetchSharedConfig } from "./indexer/config";
-import { getEnv } from "./indexer/config/validator";
+import { getEnv } from "./indexer/config/envLoader";
 import { Domain, Resource, Token } from "./model";
 import { initDatabase } from "./utils";
 import { logger } from "./utils/logger";

@@ -2,7 +2,6 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import { ApiPromise } from "@polkadot/api";
 import { expect } from "chai";
 import sinon from "sinon";
 import { SubstrateParser } from "../../src/indexer/substrateIndexer/substrateParser";

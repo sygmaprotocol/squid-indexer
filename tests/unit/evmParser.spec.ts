@@ -12,9 +12,10 @@ import { FeeHandlerType, Network, ResourceType } from "@buildwithsygma/core";
 import * as bridge from "../../src/abi/bridge";
 import { generateTransferID } from "../../src/indexer/utils";
 import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
-import { IParser } from "../../src/indexer/indexer";
-import { Context } from "../../src/indexer/evmIndexer/evmProcessor";
-import { Domain, Resource, Token } from "../../src/model";
+import {IParser } from "../../src/indexer/indexer";
+import {Context} from "../../src/indexer/evmIndexer/evmProcessor"
+import * as feeRouter from "../../src/abi/FeeHandlerRouter";
+import { Domain, Resource, Route, Token } from "../../src/model";
 import { NotFoundError } from "../../src/utils/error";
 
 describe("EVMParser", () => {
@@ -22,23 +23,30 @@ describe("EVMParser", () => {
   let parser: EVMParser;
   let ctx: Context;
   // Mock Data
-  const mockResource = {
-    id: "0x0000000000000000000000000000000000000000000000000000000000000300",
-    type: "fungible",
-  };
+const mockResource = {
+  id: '0x0000000000000000000000000000000000000000000000000000000000000300',
+  type: 'fungible',
+};
 
-  const mockToken = {
-    id: "tokenID",
-    tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
-    decimals: 18,
-    tokenSymbol: "ERC20LRTest",
-    domainID: 2,
-    resourceID: mockResource.id,
-  };
+const mockRoute = {
+  id: "mockRouteID",
+  resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
+  fromDomainID: '2',
+  toDomainID: '3'
+};
 
-  const mockSourceDomain = {
-    id: "2",
-  };
+const mockToken = {
+  id:"tokenID",
+  tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
+  decimals: 18,
+  tokenSymbol: "ERC20LRTest",
+  domainID: 2,
+  resourceID: mockResource.id
+};
+
+const mockDomain = {
+  id: '2',
+};
 
   before(() => {
     // Mock provider
@@ -71,11 +79,18 @@ describe("EVMParser", () => {
       findOneStub
         .withArgs(Resource, { where: { id: mockResource.id } })
         .resolves(mockResource);
+
       findOneStub
         .withArgs(Token, {
-          where: { tokenAddress: mockToken.tokenAddress, domainID: "2" },
+          where: { tokenAddress: mockToken.tokenAddress, domainID: mockDomain.id },
         })
         .resolves(mockToken);
+
+        findOneStub
+        .withArgs(Route, {
+          where: { fromDomainID: mockDomain.id, toDomainID: "3", resourceID: mockResource.id },
+        })
+        .resolves(mockRoute);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -147,11 +162,8 @@ describe("EVMParser", () => {
           id: generateTransferID("1", "2", "3"),
           blockNumber: 1,
           depositNonce: "1",
-          toDomainID: "3",
+          routeID: mockRoute.id,
           sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-          fromDomainID: "2",
-          resourceID:
-            "0x0000000000000000000000000000000000000000000000000000000000000300",
           txHash: "0xTxHash",
           timestamp: new Date(1633072800),
           transferType: ResourceType.FUNGIBLE,
@@ -360,9 +372,7 @@ describe("EVMParser", () => {
       sinon.restore();
     });
     it("should parse a proposal execution log correctly", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -393,9 +403,7 @@ describe("EVMParser", () => {
     });
 
     it("should skip execution from unsupported domain", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(undefined);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(undefined);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -440,9 +448,7 @@ describe("EVMParser", () => {
       sinon.restore();
     });
     it("should parse a failed handler execution log correctly", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -479,9 +485,7 @@ describe("EVMParser", () => {
     });
 
     it("should skip failed executions from unsupported domain", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(undefined);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(undefined);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -504,6 +508,97 @@ describe("EVMParser", () => {
         expect.fail("Expected error was not thrown");
       } catch (error) {
         expect(error).to.be.instanceOf(NotFoundError);
+      }
+    });
+  });
+
+  describe('parseEvmRoute', function () {
+    let evmParser: EVMParser;
+    let providerStub: sinon.SinonStubbedInstance<JsonRpcProvider>;
+    let decodeStub: sinon.SinonStub;
+    let findOneStub: sinon.SinonStub;
+
+    beforeEach(() => {
+      providerStub = sinon.createStubInstance(JsonRpcProvider);
+      evmParser = new EVMParser(providerStub as unknown as JsonRpcProvider);
+      decodeStub = sinon.stub(feeRouter.functions.adminSetResourceHandler, 'decode');
+      ctx = {
+        store: {
+          findOne: sinon.stub(),
+        },
+      } as unknown as Context;
+  
+      // Stub each findOne call with appropriate return values
+      findOneStub = ctx.store.findOne as sinon.SinonStub;
+    });
+  
+    afterEach(() => {
+      sinon.restore(); // Restore original methods after each test
+    });
+  
+    it('should return decoded data when transaction data is valid', async () => {
+      const mockTxHash = '0xMockTransactionHash';
+      const mockTxData = '0xMockTransactionData';
+      const mockDecodedData = { destinationDomainID: mockDomain.id, resourceID: mockResource.id };
+      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+
+      providerStub.getTransaction.resolves({ data: mockTxData } as any);
+      decodeStub.withArgs(mockTxData).returns(mockDecodedData);
+  
+      const result = await evmParser.parseEvmRoute(mockTxHash, ctx);
+  
+      expect(result).to.deep.equal(mockDecodedData);
+      expect(providerStub.getTransaction.calledOnceWithExactly(mockTxHash)).to.be.true;
+      expect(decodeStub.calledOnceWithExactly(mockTxData)).to.be.true;
+    });
+  
+    it('should throw notFoundError when found route with deprecated resource', async () => {
+      const mockTxHash = '0xMockTransactionHash';
+      const mockTxData = '0xMockTransactionData';
+      const mockDecodedData = { destinationDomainID: 1, resourceID: '0xMockResourceID' };
+
+      findOneStub.withArgs(Resource, { where: { id: mockDomain.id } }).resolves(null);
+      providerStub.getTransaction.resolves({ data: mockTxData } as any);
+      decodeStub.withArgs(mockTxData).returns(mockDecodedData);
+
+      try {
+        await evmParser.parseEvmRoute(mockTxHash, ctx);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(NotFoundError);
+      }
+    });
+
+    it('should throw notFoundError when found route with deprecated domain', async () => {
+      const mockTxHash = '0xMockTransactionHash';
+      const mockTxData = '0xMockTransactionData';
+      const mockDecodedData = { destinationDomainID: 1, resourceID: '0xMockResourceID' };
+
+      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(null);
+
+      providerStub.getTransaction.resolves({ data: mockTxData } as any);
+      decodeStub.withArgs(mockTxData).returns(mockDecodedData);
+
+      try {
+        await evmParser.parseEvmRoute(mockTxHash, ctx);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(NotFoundError);
+      }
+    });
+  
+    it.only('should throw an error when transaction is not found', async () => {
+      const mockTxHash = '0xMockTransactionHash';
+  
+      providerStub.getTransaction.resolves(null);
+    
+      try {
+        await evmParser.parseEvmRoute(mockTxHash, ctx);
+        expect.fail("Expected error was not thrown");
+      } catch (error) {
+        expect(error).to.be.instanceOf(Error);
       }
     });
   });

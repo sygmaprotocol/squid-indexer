@@ -12,7 +12,7 @@ import { decodeHex } from "@subsquid/evm-processor";
 import { assertNotNull } from "@subsquid/substrate-processor";
 
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
-import { Domain, Resource, Token } from "../../model";
+import { Domain, Resource, Route, Token } from "../../model";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
@@ -23,6 +23,8 @@ import type {
   DecodedProposalExecutionLog,
   DecodedFailedHandlerExecutionLog,
   FeeCollectedData,
+  SubstrateRouteData,
+  RouteData,
 } from "../types";
 
 import type { Context } from "./substrateProcessor";
@@ -87,6 +89,18 @@ export class SubstrateParser implements ISubstrateParser {
     }
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
+    const route = await ctx.store.findOne(Route, {
+      where: {
+        fromDomainID: fromDomain.id.toString(),
+        toDomainID: event.destDomainId.toString(),
+        resourceID: resource.id,
+      },
+    });
+    if (!route) {
+      throw new Error(
+        `Route fromDomain: ${fromDomain.id.toString()}, toDomain: ${event.destDomainId.toString()}, resource: ${resource.id} not found`,
+      );
+    }
     return {
       decodedDepositLog: {
         id: generateTransferID(
@@ -96,14 +110,12 @@ export class SubstrateParser implements ISubstrateParser {
         ),
         blockNumber: log.block.height,
         depositNonce: event.depositNonce.toString(),
-        toDomainID: event.destDomainId.toString(),
         sender: event.sender,
         destination: destinationParser.parseDestination(
           event.depositData,
           resource.type as ResourceType,
         ),
-        fromDomainID: fromDomain.id.toString(),
-        resourceID: resource.id,
+        routeID: route.id,
         txHash: extrinsic.id,
         timestamp: new Date(log.block.timestamp ?? ""),
         depositData: event.depositData,
@@ -184,6 +196,47 @@ export class SubstrateParser implements ISubstrateParser {
       message: event.error,
       blockNumber: log.block.height,
       timestamp: new Date(log.block.timestamp!),
+    };
+  }
+
+  public async parseSubstrateAsset(
+    call: SubstrateRouteData,
+    ctx: Context,
+  ): Promise<RouteData> {
+    const asset = call.args.asset;
+    let decodedAsset;
+    if (asset.__kind === "Concrete" && asset.value) {
+      const assetValue = asset.value;
+
+      if (assetValue.interior && assetValue.interior.__kind === "Here") {
+        decodedAsset = {
+          concrete: {
+            parents: assetValue.parents,
+            interior: assetValue.interior.__kind.toLowerCase(),
+          },
+        };
+      }
+    }
+    const token = await ctx.store.findOne(Token, {
+      where: { tokenAddress: JSON.stringify(decodedAsset) },
+    });
+    if (!token) {
+      throw new NotFoundError(
+        `Unsupported resource for token ${JSON.stringify(decodedAsset)}`,
+      );
+    }
+
+    const destinationDomain = await ctx.store.findOne(Domain, {
+      where: { id: call.args.domainID },
+    });
+    if (!destinationDomain) {
+      throw new NotFoundError(
+        `Destination domain id ${call.args.domainID.toString()} not supported`,
+      );
+    }
+    return {
+      destinationDomainID: call.args.domainID,
+      resourceID: token.resourceID!,
     };
   }
 

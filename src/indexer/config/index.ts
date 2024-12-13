@@ -58,7 +58,7 @@ type Config = {
   parser: IParser;
 };
 
-export async function getConfig(envVars: EnvIndexerVariables): Promise<Config> {
+export async function getConfig(envVars: EnvVariables): Promise<Config> {
   const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
 
   const domainConfig = getDomainConfig(

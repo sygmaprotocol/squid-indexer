@@ -15,6 +15,8 @@ export type DomainMetadata = {
   domainId?: number;
   rpcUrl: string;
   domainGateway?: string;
+  iconUrl?: string;
+  explorerUrl?: string;
 };
 
 export type EnvVariables = {
@@ -76,6 +78,8 @@ export function getEnv(): EnvVariables {
       domainId: domainId,
       domainGateway: parsedDomainMetadata.domainGateway,
       rpcUrl: parsedDomainMetadata.rpcUrl,
+      iconUrl: parsedDomainMetadata.iconUrl,
+      explorerUrl: parsedDomainMetadata.explorerUrl,
     },
     dbConfig: {
       host: dbHost,

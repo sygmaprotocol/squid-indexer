@@ -7,6 +7,7 @@ import type { EntityManager } from "typeorm";
 
 import type { Domain as DomainConfig } from "./indexer/config";
 import { fetchSharedConfig } from "./indexer/config";
+import type { DomainMetadata } from "./indexer/config/envLoader";
 import { getEnv } from "./indexer/config/envLoader";
 import { Domain, Resource, Token } from "./model";
 import { initDatabase } from "./utils";
@@ -15,7 +16,7 @@ import { logger } from "./utils/logger";
 const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 async function main(): Promise<void> {
-  const envVars = getInitEnv();
+  const envVars = getEnv();
   const dataSource = await initDatabase(envVars.dbConfig);
   const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
 
@@ -39,8 +40,8 @@ async function insertDomains(
         id: domain.id.toString(),
         type: domain.type,
         name: domain.name,
-        iconURL: domainMetadata[domain.id]?.iconUrl ?? "",
-        explorerURL: domainMetadata[domain.id]?.explorerUrl ?? "",
+        iconURL: domainMetadata.iconUrl ?? "",
+        explorerURL: domainMetadata.explorerUrl ?? "",
       },
       ["id"],
     );

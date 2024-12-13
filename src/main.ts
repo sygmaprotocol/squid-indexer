@@ -14,7 +14,7 @@ import { SubstrateProcessor } from "./indexer/substrateIndexer/substrateProcesso
 import { logger } from "./utils/logger";
 
 async function startProcessing(): Promise<void> {
-  const envVars = getIndexerEnv();
+  const envVars = getEnv();
   const config = await getConfig(envVars);
   let processor;
   switch (config.domain.type) {

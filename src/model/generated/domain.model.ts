@@ -21,10 +21,10 @@ export class Domain {
     @StringColumn_({nullable: false})
     name!: string
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     iconURL!: string | undefined | null
 
-    @Column_("text", {nullable: true})
+    @StringColumn_({nullable: true})
     explorerURL!: string | undefined | null
 
     @OneToMany_(() => Transfer, e => e.fromDomain)

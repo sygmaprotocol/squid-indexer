@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Run Docker
-        run: docker compose up --build
+        run: docker compose up --build -d
       - name: Wait
         run: sleep 80s
       - name: Install dependencies

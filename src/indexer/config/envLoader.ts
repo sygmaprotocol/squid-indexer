@@ -11,24 +11,24 @@ export type DbConfig = {
   password: string;
 };
 
+export type DomainMetadata = {
+  domainId: number;
+  rpcUrl: string;
+  domainGateway?: string;
+};
+
 export type EnvVariables = {
   sharedConfigURL: string;
-  rpcUrls: string;
-  domainId: number;
-  domainGateway: string;
+  domainMetadata: DomainMetadata;
   dbConfig: DbConfig;
   logLevel: string;
   version: string;
 };
+
 export function getEnv(): EnvVariables {
   const sharedConfigURL = process.env.SHARED_CONFIG_URL;
   if (!sharedConfigURL) {
     throw new Error(`SHARED_CONFIG_URL is not defined in the environment.`);
-  }
-
-  const rpcUrls = process.env.RPC_URL;
-  if (!rpcUrls) {
-    throw new Error(`RPC_URL environment variable is not defined.`);
   }
 
   const domainId = Number(process.env.DOMAIN_ID);
@@ -36,7 +36,11 @@ export function getEnv(): EnvVariables {
     throw new Error(`DOMAIN_ID environment variable is invalid or not set.`);
   }
 
-  const domainGateway = process.env.DOMAIN_GATEWAY || "";
+  const domainMetadata = process.env[`${domainId}_METADATA`];
+  if (!domainMetadata) {
+    throw new Error(`Environment variable ${domainId}_METADATA is not set`);
+  }
+  const parsedDomainMetadata = JSON.parse(domainMetadata) as DomainMetadata;
 
   const dbHost = process.env.DB_HOST;
   if (!dbHost) {
@@ -68,9 +72,11 @@ export function getEnv(): EnvVariables {
 
   return {
     sharedConfigURL,
-    rpcUrls,
-    domainId,
-    domainGateway,
+    domainMetadata: {
+      domainId: domainId,
+      domainGateway: parsedDomainMetadata.domainGateway,
+      rpcUrl: parsedDomainMetadata.rpcUrl,
+    },
     dbConfig: {
       host: dbHost,
       name: dbName,

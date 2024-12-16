@@ -2,28 +2,22 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import { ApiPromise } from "@polkadot/api";
 import { expect } from "chai";
 import sinon from "sinon";
-import { SubstrateParser } from "../../src/indexer/substrateIndexer/substrateParser";
-import { IParser } from "../../src/indexer/indexer";
+import { SubstrateParser } from "../../../../src/indexer/substrateIndexer/substrateParser";
+import { IParser } from "../../../../src/indexer/indexer";
 import { Network, ResourceType } from "@buildwithsygma/core";
-import { Domain as DomainType } from "../../src/indexer/config";
-import { events } from "../../src/indexer/substrateIndexer/types";
-import type { Event } from "../../src/indexer/substrateIndexer/substrateProcessor";
-import { generateTransferID } from "../../src/indexer/utils";
-import { EVMParser } from "../../src/indexer/evmIndexer/evmParser";
+import { Domain as DomainType } from "../../../../src/indexer/config";
+import { events } from "../../../../src/indexer/substrateIndexer/types";
+import type { Event } from "../../../../src/indexer/substrateIndexer/substrateProcessor";
+import { generateTransferID } from "../../../../src/indexer/utils";
+import { EVMParser } from "../../../../src/indexer/evmIndexer/evmParser";
 import { JsonRpcProvider } from "ethers";
-import {
-  V3AssetId,
-} from "../../src/indexer/substrateIndexer/types/v1260";
-import {Context} from "../../src/indexer/substrateIndexer/substrateProcessor"
-import { Call } from "@subsquid/substrate-processor";
-import { Domain, Resource, Route, Token } from "../../src/model";
-import { NotFoundError } from "../../src/utils/error";
+import { V3AssetId } from "../../../../src/indexer/substrateIndexer/types/v1260";
+import { Context } from "../../../../src/indexer/substrateIndexer/substrateProcessor";
+import { Domain, Resource, Route, Token } from "../../../../src/model";
 
 describe("Substrate parser", () => {
-  let provider: sinon.SinonStubbedInstance<ApiPromise>;
   let parser: SubstrateParser;
   let ctx: Context;
   // Mock Data
@@ -48,17 +42,20 @@ describe("Substrate parser", () => {
     resourceID: mockResource.id,
   };
 
-const mockDomain = {
-  id: '1',
-};
-  before(() => {
-    provider = sinon.createStubInstance(ApiPromise);
+  const mockSourceDomain = {
+    id: "1",
+  };
 
-    parser = new SubstrateParser(provider);
+  const mockDestinationDomain = {
+    id: "1", 
+    type: "evm"
+  }
+
+  before(() => {
+    parser = new SubstrateParser();
 
     const parsers = new Map<number, IParser>();
     parsers.set(1, new EVMParser(new JsonRpcProvider()));
-    parser.setParsers(parsers);
   });
 
   describe("parseDeposit", () => {
@@ -80,6 +77,9 @@ const mockDomain = {
     });
     it("should parse a deposit correctly", async () => {
       findOneStub
+        .withArgs(Domain, { where: { id: mockDestinationDomain.id } })
+        .resolves(mockDestinationDomain);
+      findOneStub
         .withArgs(Resource, { where: { id: mockResource.id } })
         .resolves(mockResource);
 
@@ -89,7 +89,7 @@ const mockDomain = {
 
       findOneStub
         .withArgs(Route, {
-          where: { fromDomainID: "4", toDomainID: mockDomain.id, resourceID: mockResource.id },
+          where: { fromDomainID: "4", toDomainID: mockSourceDomain.id, resourceID: mockResource.id },
         })
         .resolves(mockRoute);
       let event: Event = {
@@ -271,7 +271,7 @@ const mockDomain = {
       sinon.restore();
     });
     it("should parse a proposal execution correctly", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
 
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
@@ -320,7 +320,7 @@ const mockDomain = {
       sinon.restore();
     });
     it("should parse a failed handler execution correctly", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
 
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
@@ -485,39 +485,5 @@ const mockDomain = {
 
   afterEach(() => {
     sinon.restore();
-  });
-
-  describe('parseSubstrateAsset', function () {
-    let substrateParser: SubstrateParser;
-    let mockCall: sinon.SinonStubbedInstance<Call>;
-    let providerStub: sinon.SinonStubbedInstance<ApiPromise>;
-    let findOneStub: sinon.SinonStub;
-    beforeEach(() => {
-      ctx = {
-        store: {
-          findOne: sinon.stub(),
-        },
-      } as unknown as Context;
-  
-      // Stub each findOne call with appropriate return values
-      findOneStub = ctx.store.findOne as sinon.SinonStub;
-      providerStub = sinon.createStubInstance(ApiPromise);
-  
-      substrateParser = new SubstrateParser(providerStub as unknown as ApiPromise);
-      mockCall = {
-        args: {
-          asset: {
-            __kind: 'Concrete',
-            value: {
-              interior: {
-                __kind: 'Here',
-              },
-              parents: 0,
-            },
-          },
-          domainID: mockDomain.id
-        }
-      } as unknown as sinon.SinonStubbedInstance<Call>;
-    });
   });
 });

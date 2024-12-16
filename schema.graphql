@@ -65,6 +65,7 @@ type Token @entity @index(fields: ["tokenAddress", "domainID"], unique: true) {
 
 type Domain @entity {
   id: ID!
+  type: String!
   name: String!
   routesFrom: [Route!] @derivedFrom(field: "fromDomain")
   routesTo: [Route!] @derivedFrom(field: "toDomain")

@@ -14,9 +14,10 @@ import type { Store } from "@subsquid/typeorm-store";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
-import type { DecodedEvents, IProcessor } from "../indexer";
+import type { IProcessor } from "../indexer";
 import type {
   DecodedDepositLog,
+  DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   FeeCollectedData,
@@ -63,6 +64,7 @@ export class SubstrateProcessor implements IProcessor {
         extrinsic: true,
       })
       .setFields(this.fieldSelection);
+
     if (domain.gateway) {
       substrateProcessor.setGateway(domain.gateway);
     }

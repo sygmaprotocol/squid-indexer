@@ -17,7 +17,7 @@ import {
   generateTransferID,
   parseDestination,
 } from "../../indexer/utils";
-import { Domain, Resource, Token } from "../../model";
+import { Domain, Resource, Route, Token } from "../../model";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
@@ -85,6 +85,22 @@ export class SubstrateParser implements ISubstrateParser {
     }
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
+    let route = await ctx.store.findOne(Route, {
+      where: {
+        fromDomainID: fromDomain.id.toString(),
+        toDomainID: event.destDomainId.toString(),
+        resourceID: resource.id,
+      },
+    });
+    if (!route) {
+      route = new Route({
+        fromDomainID: fromDomain.id.toString(),
+        toDomainID: event.destDomainId.toString(),
+        resourceID: resource.id,
+      });
+
+      await ctx.store.insert(route);
+    }
     return {
       decodedDepositLog: {
         id: generateTransferID(
@@ -94,15 +110,13 @@ export class SubstrateParser implements ISubstrateParser {
         ),
         blockNumber: log.block.height,
         depositNonce: event.depositNonce.toString(),
-        toDomainID: event.destDomainId.toString(),
         sender: event.sender,
         destination: parseDestination(
           destinationDomain.type as Network,
           event.depositData,
           resource.type as ResourceType,
         ),
-        fromDomainID: fromDomain.id.toString(),
-        resourceID: resource.id,
+        routeID: route.id,
         txHash: extrinsic.id,
         timestamp: new Date(log.block.timestamp ?? ""),
         depositData: event.depositData,

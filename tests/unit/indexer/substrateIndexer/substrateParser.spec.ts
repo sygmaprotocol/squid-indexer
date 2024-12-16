@@ -26,6 +26,13 @@ describe("Substrate parser", () => {
     type: "fungible",
   };
 
+  const mockRoute = {
+    id: "mockRouteID",
+    resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
+    fromDomainID: '4',
+    toDomainID: '1'
+  };
+  
   const mockToken = {
     id: "tokenID",
     tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
@@ -75,9 +82,16 @@ describe("Substrate parser", () => {
       findOneStub
         .withArgs(Resource, { where: { id: mockResource.id } })
         .resolves(mockResource);
+
       findOneStub
         .withArgs(Token, { where: { resource: mockResource, domainID: "4" } })
         .resolves(mockToken);
+
+      findOneStub
+        .withArgs(Route, {
+          where: { fromDomainID: "4", toDomainID: mockDomain.id, resourceID: mockResource.id },
+        })
+        .resolves(mockRoute);
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
@@ -132,12 +146,9 @@ describe("Substrate parser", () => {
           id: "1-4-1",
           blockNumber: 1,
           depositNonce: "1",
-          toDomainID: "1",
           sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
           destination: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-          fromDomainID: "4",
-          resourceID:
-            "0x0000000000000000000000000000000000000000000000000000000000000300",
+          routeID: mockRoute.id,
           txHash: "0000000001-0ea58-000001",
           timestamp: new Date(1633072800),
           depositData:
@@ -260,9 +271,7 @@ describe("Substrate parser", () => {
       sinon.restore();
     });
     it("should parse a proposal execution correctly", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
 
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
@@ -311,9 +320,7 @@ describe("Substrate parser", () => {
       sinon.restore();
     });
     it("should parse a failed handler execution correctly", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
 
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
@@ -478,5 +485,39 @@ describe("Substrate parser", () => {
 
   afterEach(() => {
     sinon.restore();
+  });
+
+  describe('parseSubstrateAsset', function () {
+    let substrateParser: SubstrateParser;
+    let mockCall: sinon.SinonStubbedInstance<Call>;
+    let providerStub: sinon.SinonStubbedInstance<ApiPromise>;
+    let findOneStub: sinon.SinonStub;
+    beforeEach(() => {
+      ctx = {
+        store: {
+          findOne: sinon.stub(),
+        },
+      } as unknown as Context;
+  
+      // Stub each findOne call with appropriate return values
+      findOneStub = ctx.store.findOne as sinon.SinonStub;
+      providerStub = sinon.createStubInstance(ApiPromise);
+  
+      substrateParser = new SubstrateParser(providerStub as unknown as ApiPromise);
+      mockCall = {
+        args: {
+          asset: {
+            __kind: 'Concrete',
+            value: {
+              interior: {
+                __kind: 'Here',
+              },
+              parents: 0,
+            },
+          },
+          domainID: mockDomain.id
+        }
+      } as unknown as sinon.SinonStubbedInstance<Call>;
+    });
   });
 });

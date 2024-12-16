@@ -31,6 +31,7 @@ import type {
 } from "./substrateIndexer/substrateProcessor";
 import type {
   DecodedDepositLog,
+  DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   FeeCollectedData,
@@ -59,21 +60,12 @@ export interface IParser {
 }
 
 export interface IProcessor {
-  processEvents(
-    ctx: Context,
-    domain: Domain,
-  ): Promise<DecodedEvents> | DecodedEvents;
+  processEvents(ctx: Context, domain: Domain): Promise<DecodedEvents>;
   getProcessor(
     domain: Domain,
   ): EvmBatchProcessor | SubstrateBatchProcessor<Fields>;
 }
 
-export type DecodedEvents = {
-  deposits: DecodedDepositLog[];
-  executions: DecodedProposalExecutionLog[];
-  failedHandlerExecutions: DecodedFailedHandlerExecutionLog[];
-  fees: FeeCollectedData[];
-};
 export class Indexer {
   private domain: Domain;
   private processor: IProcessor;
@@ -140,9 +132,7 @@ export class Indexer {
         deposit: deposit,
         depositNonce: d.depositNonce.toString(),
         amount: d.amount,
-        resourceID: d.resourceID,
-        fromDomainID: d.fromDomainID,
-        toDomainID: d.toDomainID,
+        routeID: d.routeID,
       });
 
       if (!deposits.has(d.id)) {
@@ -186,8 +176,6 @@ export class Indexer {
         id: e.id,
         status: TransferStatus.executed,
         execution: execution,
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
         depositNonce: e.depositNonce,
       });
 
@@ -221,8 +209,6 @@ export class Indexer {
         id: e.id,
         status: TransferStatus.failed,
         execution: failedExecution,
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
         depositNonce: e.depositNonce,
       });
 

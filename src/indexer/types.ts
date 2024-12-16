@@ -7,11 +7,9 @@ export type DecodedDepositLog = {
   id: string;
   blockNumber: number;
   depositNonce: string;
-  toDomainID: string;
   sender: string;
   destination: string;
-  fromDomainID: string;
-  resourceID: string;
+  routeID: string;
   txHash: string;
   timestamp: Date;
   depositData: string;
@@ -47,4 +45,11 @@ export type FeeCollectedData = {
   amount: string;
   tokenID: string;
   txIdentifier: string;
+};
+
+export type DecodedEvents = {
+  deposits: DecodedDepositLog[];
+  executions: DecodedProposalExecutionLog[];
+  failedHandlerExecutions: DecodedFailedHandlerExecutionLog[];
+  fees: FeeCollectedData[];
 };

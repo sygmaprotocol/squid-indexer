@@ -50,10 +50,8 @@ export class TransfersService {
       relations: {
         deposit: true,
         execution: true,
-        fromDomain: true,
-        toDomain: true,
+        route: true,
         fee: { token: true },
-        resource: true,
       },
     });
 

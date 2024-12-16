@@ -21,7 +21,6 @@ import {
   TransferStatus,
   Fee,
 } from "../model";
-import { Route } from "../model/generated/route.model";
 import { logger } from "../utils/logger";
 
 import type { Domain } from "./config";

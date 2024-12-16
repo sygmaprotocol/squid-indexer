@@ -1,0 +1,29 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2.4.0
+      - name: Install Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2.5.1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Run Docker
+        run: docker compose up --build -d
+      - name: Wait
+        run: sleep 120s
+      - name: Run tests
+        run: yarn run test:e2e
+      - name: Clean up Docker containers
+        if: always()
+        run: docker compose down

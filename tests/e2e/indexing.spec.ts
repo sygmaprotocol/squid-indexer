@@ -65,10 +65,10 @@ describe("Indexer e2e tests", function () {
     const transfers: Array<TransferResponse> = await response.json();
 
     for (const transfer of transfers) {
-      if (transfer.fromDomain.name.toLowerCase() == Network.SUBSTRATE) {
+      if (transfer.route.fromDomain?.name.toLowerCase() == Network.SUBSTRATE) {
         substrateDeposits++;
       }
-      switch (transfer.resource?.type) {
+      switch (transfer.route.resource?.type) {
         case ResourceType.FUNGIBLE: {
           fungibleDeposits++;
           break;
@@ -94,12 +94,10 @@ describe("Indexer e2e tests", function () {
       expect(transfer.id).to.be.not.null;
       expect(transfer.status).to.be.not.null;
       expect(transfer.depositNonce).to.be.not.null;
-      expect(transfer.fromDomainID).to.be.not.null;
-      expect(transfer.fromDomain).to.be.not.null;
-      expect(transfer.toDomainID).to.be.not.null;
-      expect(transfer.toDomain).to.be.not.null;
-      expect(transfer.resourceID).to.be.not.null;
-      expect(transfer.resource).to.be.not.null;
+      expect(transfer.route).to.be.not.null;
+      expect(transfer.route.fromDomainID).to.be.not.null;
+      expect(transfer.route.toDomainID).to.be.not.null;
+      expect(transfer.route.resourceID).to.be.not.null;
       expect(transfer.feeID).to.be.not.null;
       expect(transfer.fee).to.be.not.null;
       expect(transfer.amount).to.be.not.null;
@@ -132,10 +130,20 @@ describe("Indexer e2e tests", function () {
       id: transfers[0].id,
       status: TransferStatus.executed,
       depositNonce: "1",
-      fromDomainID: "1",
-      fromDomain: { name: "Ethereum 1", id: "1" },
-      toDomainID: "2",
-      toDomain: { name: "evm2", id: "2" },
+      routeID: transfers[0].routeID,
+      route: {
+        id: transfers[0].route.id,
+        fromDomainID: "1",
+        fromDomain: { name: "Ethereum 1", id: "1" },
+        toDomainID: "2",
+        toDomain: { name: "evm2", id: "2" },
+        resourceID:
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+        resource: {
+          id: "0x0000000000000000000000000000000000000000000000000000000000000000",
+          type: ResourceType.FUNGIBLE,
+        },
+      },
       fee: {
         id: transfers[0].fee?.id,
         amount: "100000000000000",
@@ -147,12 +155,6 @@ describe("Indexer e2e tests", function () {
           tokenAddress: "0x0000000000000000000000000000000000000000",
           tokenSymbol: "eth",
         },
-      },
-      resourceID:
-        "0x0000000000000000000000000000000000000000000000000000000000000000",
-      resource: {
-        id: "0x0000000000000000000000000000000000000000000000000000000000000000",
-        type: ResourceType.FUNGIBLE,
       },
       amount: "0.0000000000000001",
       deposit: {
@@ -192,10 +194,20 @@ describe("Indexer e2e tests", function () {
       id: transfers[0].id,
       status: TransferStatus.executed,
       depositNonce: "29",
-      fromDomainID: "1",
-      fromDomain: { name: "Ethereum 1", id: "1" },
-      toDomainID: "2",
-      toDomain: { name: "evm2", id: "2" },
+      routeID: transfers[0].routeID,
+      route: {
+        id: transfers[0].route.id,
+        fromDomainID: "1",
+        fromDomain: { name: "Ethereum 1", id: "1" },
+        toDomainID: "2",
+        toDomain: { name: "evm2", id: "2" },
+        resourceID:
+          "0x0000000000000000000000000000000000000000000000000000000000000300",
+        resource: {
+          id: "0x0000000000000000000000000000000000000000000000000000000000000300",
+          type: ResourceType.FUNGIBLE,
+        },
+      },
       fee: {
         id: transfers[0].fee?.id,
         amount: "100000000000000",
@@ -207,12 +219,6 @@ describe("Indexer e2e tests", function () {
           tokenAddress: "0x0000000000000000000000000000000000000000",
           tokenSymbol: "eth",
         },
-      },
-      resourceID:
-        "0x0000000000000000000000000000000000000000000000000000000000000300",
-      resource: {
-        id: "0x0000000000000000000000000000000000000000000000000000000000000300",
-        type: ResourceType.FUNGIBLE,
       },
       amount: "0.0000000000000001",
       deposit: {
@@ -252,10 +258,20 @@ describe("Indexer e2e tests", function () {
       id: transfers[0].id,
       status: TransferStatus.executed,
       depositNonce: "2",
-      fromDomainID: "1",
-      fromDomain: { name: "Ethereum 1", id: "1" },
-      toDomainID: "2",
-      toDomain: { name: "evm2", id: "2" },
+      routeID: transfers[0].routeID,
+      route: {
+        id: transfers[0].route.id,
+        fromDomainID: "1",
+        fromDomain: { name: "Ethereum 1", id: "1" },
+        toDomainID: "2",
+        toDomain: { name: "evm2", id: "2" },
+        resourceID:
+          "0x0000000000000000000000000000000000000000000000000000000000000200",
+        resource: {
+          id: "0x0000000000000000000000000000000000000000000000000000000000000200",
+          type: ResourceType.NON_FUNGIBLE,
+        },
+      },
       fee: {
         id: transfers[0].fee?.id,
         amount: "100000000000000",
@@ -267,12 +283,6 @@ describe("Indexer e2e tests", function () {
           tokenAddress: "0x0000000000000000000000000000000000000000",
           tokenSymbol: "eth",
         },
-      },
-      resourceID:
-        "0x0000000000000000000000000000000000000000000000000000000000000200",
-      resource: {
-        id: "0x0000000000000000000000000000000000000000000000000000000000000200",
-        type: ResourceType.NON_FUNGIBLE,
       },
       amount: "2935717020161974584",
       deposit: {
@@ -311,10 +321,20 @@ describe("Indexer e2e tests", function () {
       id: transfers[0].id,
       status: TransferStatus.executed,
       depositNonce: "0",
-      fromDomainID: "3",
-      fromDomain: { name: "Substrate", id: "3" },
-      toDomainID: "1",
-      toDomain: { name: "Ethereum 1", id: "1" },
+      routeID: transfers[0].routeID,
+      route: {
+        id: transfers[0].route.id,
+        fromDomainID: "3",
+        fromDomain: { name: "Substrate", id: "3" },
+        toDomainID: "1",
+        toDomain: { name: "Ethereum 1", id: "1" },
+        resourceID:
+          "0x0000000000000000000000000000000000000000000000000000000000000300",
+        resource: {
+          id: "0x0000000000000000000000000000000000000000000000000000000000000300",
+          type: ResourceType.FUNGIBLE,
+        },
+      },
       fee: {
         id: transfers[0].fee?.id,
         amount: "0",
@@ -328,12 +348,6 @@ describe("Indexer e2e tests", function () {
             '{"concrete":{"parents":1,"interior":{"x3":[{"parachain":2004},{"generalKey":[5,"0x7379676d61000000000000000000000000000000000000000000000000000000"]},{"generalKey":[4,"0x7573646300000000000000000000000000000000000000000000000000000000"]}]}}}',
           tokenSymbol: "USDC",
         },
-      },
-      resourceID:
-        "0x0000000000000000000000000000000000000000000000000000000000000300",
-      resource: {
-        id: "0x0000000000000000000000000000000000000000000000000000000000000300",
-        type: ResourceType.FUNGIBLE,
       },
       amount: "1.0",
       deposit: {
@@ -371,10 +385,20 @@ describe("Indexer e2e tests", function () {
       id: transfers[0].id,
       status: TransferStatus.executed,
       depositNonce: "1",
-      fromDomainID: "1",
-      fromDomain: { name: "Ethereum 1", id: "1" },
-      toDomainID: "3",
-      toDomain: { name: "Substrate", id: "3" },
+      routeID: transfers[0].routeID,
+      route: {
+        id: transfers[0].route.id,
+        fromDomainID: "1",
+        fromDomain: { name: "Ethereum 1", id: "1" },
+        toDomainID: "3",
+        toDomain: { name: "Substrate", id: "3" },
+        resourceID:
+          "0x0000000000000000000000000000000000000000000000000000000000000300",
+        resource: {
+          id: "0x0000000000000000000000000000000000000000000000000000000000000300",
+          type: ResourceType.FUNGIBLE,
+        },
+      },
       fee: {
         id: transfers[0].fee?.id,
         amount: "100000000000000",
@@ -386,12 +410,6 @@ describe("Indexer e2e tests", function () {
           tokenAddress: "0x0000000000000000000000000000000000000000",
           tokenSymbol: "eth",
         },
-      },
-      resourceID:
-        "0x0000000000000000000000000000000000000000000000000000000000000300",
-      resource: {
-        id: "0x0000000000000000000000000000000000000000000000000000000000000300",
-        type: ResourceType.FUNGIBLE,
       },
       amount: "0.0001",
       deposit: {
@@ -429,10 +447,20 @@ describe("Indexer e2e tests", function () {
       id: transfers[0].id,
       status: TransferStatus.executed,
       depositNonce: "28",
-      fromDomainID: "1",
-      fromDomain: { name: "Ethereum 1", id: "1" },
-      toDomainID: "2",
-      toDomain: { name: "evm2", id: "2" },
+      routeID: transfers[0].routeID,
+      route: {
+        id: transfers[0].route.id,
+        fromDomainID: "1",
+        fromDomain: { name: "Ethereum 1", id: "1" },
+        toDomainID: "2",
+        toDomain: { name: "evm2", id: "2" },
+        resourceID:
+          "0x0000000000000000000000000000000000000000000000000000000000000500",
+        resource: {
+          id: "0x0000000000000000000000000000000000000000000000000000000000000500",
+          type: ResourceType.PERMISSIONLESS_GENERIC,
+        },
+      },
       fee: {
         id: transfers[0].fee?.id,
         amount: "100000000000000",
@@ -444,12 +472,6 @@ describe("Indexer e2e tests", function () {
           tokenAddress: "0x0000000000000000000000000000000000000000",
           tokenSymbol: "eth",
         },
-      },
-      resourceID:
-        "0x0000000000000000000000000000000000000000000000000000000000000500",
-      resource: {
-        id: "0x0000000000000000000000000000000000000000000000000000000000000500",
-        type: ResourceType.PERMISSIONLESS_GENERIC,
       },
       amount: "",
       deposit: {

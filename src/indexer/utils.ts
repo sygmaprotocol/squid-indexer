@@ -10,7 +10,7 @@ import type { BigNumberish } from "ethers";
 import { AbiCoder, formatUnits } from "ethers";
 
 import { NotFoundError } from "../utils/error";
-import { logger } from "../utils/logger";
+import { getLogger } from "../utils/logger";
 
 export function generateTransferID(
   depositNonce: string,
@@ -82,7 +82,9 @@ export function parseDestination(
 
       const junction = decodedData.interior;
       if (!junction.isX1 || !junction.asX1.isAccountId32) {
-        logger.warn(`Unknown destination format for recipient: ${recipient}`);
+        getLogger().warn(
+          `Unknown destination format for recipient: ${recipient}`,
+        );
         return "";
       }
       return junction.asX1.asAccountId32.id.toString();

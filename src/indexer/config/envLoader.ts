@@ -3,6 +3,8 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 
+import { NotFoundError } from "../../utils/error";
+
 export type DbConfig = {
   host: string;
   name: string;
@@ -19,7 +21,6 @@ export type DomainMetadata = {
 
 export type EnvVariables = {
   sharedConfigURL: string;
-  domainMetadata: DomainMetadata;
   dbConfig: DbConfig;
   logLevel: string;
   version: string;
@@ -30,17 +31,6 @@ export function getEnv(): EnvVariables {
   if (!sharedConfigURL) {
     throw new Error(`SHARED_CONFIG_URL is not defined in the environment.`);
   }
-
-  const domainId = Number(process.env.DOMAIN_ID);
-  if (isNaN(domainId)) {
-    throw new Error(`DOMAIN_ID environment variable is invalid or not set.`);
-  }
-
-  const domainMetadata = process.env[`${domainId}_METADATA`];
-  if (!domainMetadata) {
-    throw new Error(`Environment variable ${domainId}_METADATA is not set`);
-  }
-  const parsedDomainMetadata = JSON.parse(domainMetadata) as DomainMetadata;
 
   const dbHost = process.env.DB_HOST;
   if (!dbHost) {
@@ -72,11 +62,6 @@ export function getEnv(): EnvVariables {
 
   return {
     sharedConfigURL,
-    domainMetadata: {
-      domainId: domainId,
-      domainGateway: parsedDomainMetadata.domainGateway,
-      rpcUrl: parsedDomainMetadata.rpcUrl,
-    },
     dbConfig: {
       host: dbHost,
       name: dbName,
@@ -87,4 +72,14 @@ export function getEnv(): EnvVariables {
     logLevel,
     version,
   };
+}
+
+export function getDomainMetadata(domainID: string): DomainMetadata {
+  const domainMetadata = process.env[`${domainID}_METADATA`];
+  if (!domainMetadata) {
+    throw new NotFoundError(
+      `domain metadata not configured for domain: ${domainID}`,
+    );
+  }
+  return JSON.parse(domainMetadata) as DomainMetadata;
 }

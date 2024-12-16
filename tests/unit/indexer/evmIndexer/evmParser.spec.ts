@@ -15,6 +15,8 @@ import { Domain as DomainType, HandlerType } from "../../../../src/indexer/confi
 import { Context } from "../../../../src/indexer/evmIndexer/evmProcessor";
 import { Domain, Resource, Route, Token } from "../../../../src/model";
 import { NotFoundError } from "../../../../src/utils/error";
+import { getLogger } from "../../../../src/utils/logger";
+import * as feeRouter from "../../../../src/abi/FeeHandlerRouter";
 
 describe("EVMParser", () => {
   let provider: sinon.SinonStubbedInstance<JsonRpcProvider>;
@@ -54,7 +56,7 @@ const mockDomain = {
   before(() => {
     // Mock provider
     provider = sinon.createStubInstance(JsonRpcProvider);
-    parser = new EVMParser(provider as any);
+    parser = new EVMParser(provider as any, getLogger());
   });
 
   describe("parseDeposit", () => {
@@ -521,7 +523,7 @@ const mockDomain = {
 
     beforeEach(() => {
       providerStub = sinon.createStubInstance(JsonRpcProvider);
-      evmParser = new EVMParser(providerStub as unknown as JsonRpcProvider);
+      evmParser = new EVMParser(providerStub as unknown as JsonRpcProvider, getLogger());
       decodeStub = sinon.stub(feeRouter.functions.adminSetResourceHandler, 'decode');
       ctx = {
         store: {

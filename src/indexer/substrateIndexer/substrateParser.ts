@@ -11,11 +11,15 @@ import { TypeRegistry } from "@polkadot/types";
 import type { MultiLocation } from "@polkadot/types/interfaces";
 import { decodeHex } from "@subsquid/evm-processor";
 import { assertNotNull } from "@subsquid/substrate-processor";
+import type winston from "winston";
 
-import { decodeAmountOrTokenId, generateTransferID, parseDestination } from "../../indexer/utils";
+import {
+  decodeAmountOrTokenId,
+  generateTransferID,
+  parseDestination,
+} from "../../indexer/utils";
 import { Domain, Resource, Route, Token } from "../../model";
 import { NotFoundError } from "../../utils/error";
-import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
 import type { IParser } from "../indexer";
 import type { Event } from "../substrateIndexer/substrateProcessor";
@@ -38,6 +42,11 @@ export interface ISubstrateParser extends IParser {
 }
 
 export class SubstrateParser implements ISubstrateParser {
+  private logger: winston.Logger;
+
+  constructor(logger: winston.Logger) {
+    this.logger = logger;
+  }
   public async parseDeposit(
     log: Event,
     fromDomain: DomainType,
@@ -248,7 +257,7 @@ export class SubstrateParser implements ISubstrateParser {
         break;
       }
       default:
-        logger.error(`Unsupported resource type: ${resourceType}`);
+        this.logger.error(`Unsupported resource type: ${resourceType}`);
         return "";
     }
 

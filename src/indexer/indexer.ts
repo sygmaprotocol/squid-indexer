@@ -21,7 +21,6 @@ import {
   TransferStatus,
   Fee,
 } from "../model";
-import { Route } from "../model/generated/route.model";
 import { logger } from "../utils/logger";
 
 import type { Domain } from "./config";
@@ -36,10 +35,7 @@ import type {
   DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
-  DecodedRoutes,
   FeeCollectedData,
-  RouteData,
-  SubstrateRouteData,
 } from "./types";
 
 type Context = EvmContext | SubstrateContext;
@@ -64,11 +60,6 @@ export interface IParser {
     ctx: Context,
   ): Promise<DecodedFailedHandlerExecutionLog>;
   parseDestination(hexData: string, resourceType: ResourceType): string;
-  parseEvmRoute?(txHash: string, ctx: Context): Promise<RouteData>;
-  parseSubstrateAsset?(
-    call: SubstrateRouteData,
-    ctx: Context,
-  ): Promise<RouteData>;
 }
 
 export interface IProcessor {
@@ -106,7 +97,6 @@ export class Indexer {
           decodedEvents.failedHandlerExecutions,
         );
         await this.storeFees(ctx, decodedEvents.fees);
-        await this.storeRoutes(ctx, decodedEvents.routes);
       },
     );
   }
@@ -273,22 +263,5 @@ export class Indexer {
     }
     await ctx.store.upsert([...fees.values()]);
     await ctx.store.upsert([...transfers.values()]);
-  }
-
-  public async storeRoutes(
-    ctx: EvmContext | SubstrateContext,
-    routesData: DecodedRoutes[],
-  ): Promise<void> {
-    const routes = [];
-    for (const r of routesData) {
-      routes.push(
-        new Route({
-          fromDomainID: this.domain.id.toString(),
-          toDomainID: r.destinationDomainID.toString(),
-          resourceID: r.resourceID,
-        }),
-      );
-    }
-    await ctx.store.upsert(routes);
   }
 }

@@ -519,58 +519,5 @@ const mockDomain = {
         }
       } as unknown as sinon.SinonStubbedInstance<Call>;
     });
-  
-    it('should correctly return decoded route', async () => {
-
-      const tokenAddress = JSON.stringify({
-        concrete: {
-          parents: 0,
-          interior: 'here',
-        },
-      });
-      const expectedResult = { destinationDomainID: mockDomain.id, resourceID: mockResource.id };
-
-      findOneStub.withArgs(Token, { where: { tokenAddress: tokenAddress } }).resolves({resourceID: mockResource.id});
-
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
-      const result = await substrateParser.parseSubstrateAsset(mockCall, ctx);
-        expect(result).to.be.deep.equal(expectedResult);
-    });
-
-    it('should throw NotFoundError when route with deprecated resource found', async () => {
-      const tokenAddress = JSON.stringify({
-        concrete: {
-          parents: 0,
-          interior: 'here',
-        },
-      });
-      findOneStub.withArgs(Token, { where: { tokenAddress: tokenAddress } }).resolves(null);
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
-
-      try {
-        await substrateParser.parseSubstrateAsset(mockCall, ctx);
-        expect.fail("Expected error was not thrown");
-      } catch (error) {
-        expect(error).to.be.instanceOf(NotFoundError);
-      }
-    });
-
-    it('should throw NotFoundError when route with deprecated domain found', async () => {
-      const tokenAddress = JSON.stringify({
-        concrete: {
-          parents: 0,
-          interior: 'here',
-        },
-      });
-      findOneStub.withArgs(Token, { where: { tokenAddress: tokenAddress } }).resolves({resourceID: mockResource.id});
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(null);
-
-      try {
-        await substrateParser.parseSubstrateAsset(mockCall, ctx);
-        expect.fail("Expected error was not thrown");
-      } catch (error) {
-        expect(error).to.be.instanceOf(NotFoundError);
-      }
-    });
   });
 });

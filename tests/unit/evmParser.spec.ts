@@ -364,7 +364,6 @@ const mockDomain = {
         },
       } as unknown as Context;
 
-      // Stub each findOne call with appropriate return values
       findOneStub = ctx.store.findOne as sinon.SinonStub;
     });
 
@@ -440,7 +439,6 @@ const mockDomain = {
         },
       } as unknown as Context;
 
-      // Stub each findOne call with appropriate return values
       findOneStub = ctx.store.findOne as sinon.SinonStub;
     });
 
@@ -528,78 +526,11 @@ const mockDomain = {
         },
       } as unknown as Context;
   
-      // Stub each findOne call with appropriate return values
       findOneStub = ctx.store.findOne as sinon.SinonStub;
     });
   
     afterEach(() => {
-      sinon.restore(); // Restore original methods after each test
-    });
-  
-    it('should return decoded data when transaction data is valid', async () => {
-      const mockTxHash = '0xMockTransactionHash';
-      const mockTxData = '0xMockTransactionData';
-      const mockDecodedData = { destinationDomainID: mockDomain.id, resourceID: mockResource.id };
-      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
-
-      providerStub.getTransaction.resolves({ data: mockTxData } as any);
-      decodeStub.withArgs(mockTxData).returns(mockDecodedData);
-  
-      const result = await evmParser.parseEvmRoute(mockTxHash, ctx);
-  
-      expect(result).to.deep.equal(mockDecodedData);
-      expect(providerStub.getTransaction.calledOnceWithExactly(mockTxHash)).to.be.true;
-      expect(decodeStub.calledOnceWithExactly(mockTxData)).to.be.true;
-    });
-  
-    it('should throw notFoundError when found route with deprecated resource', async () => {
-      const mockTxHash = '0xMockTransactionHash';
-      const mockTxData = '0xMockTransactionData';
-      const mockDecodedData = { destinationDomainID: 1, resourceID: '0xMockResourceID' };
-
-      findOneStub.withArgs(Resource, { where: { id: mockDomain.id } }).resolves(null);
-      providerStub.getTransaction.resolves({ data: mockTxData } as any);
-      decodeStub.withArgs(mockTxData).returns(mockDecodedData);
-
-      try {
-        await evmParser.parseEvmRoute(mockTxHash, ctx);
-        expect.fail("Expected error was not thrown");
-      } catch (error) {
-        expect(error).to.be.instanceOf(NotFoundError);
-      }
-    });
-
-    it('should throw notFoundError when found route with deprecated domain', async () => {
-      const mockTxHash = '0xMockTransactionHash';
-      const mockTxData = '0xMockTransactionData';
-      const mockDecodedData = { destinationDomainID: 1, resourceID: '0xMockResourceID' };
-
-      findOneStub.withArgs(Resource, { where: { id: mockResource.id } }).resolves(mockResource);
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(null);
-
-      providerStub.getTransaction.resolves({ data: mockTxData } as any);
-      decodeStub.withArgs(mockTxData).returns(mockDecodedData);
-
-      try {
-        await evmParser.parseEvmRoute(mockTxHash, ctx);
-        expect.fail("Expected error was not thrown");
-      } catch (error) {
-        expect(error).to.be.instanceOf(NotFoundError);
-      }
-    });
-  
-    it.only('should throw an error when transaction is not found', async () => {
-      const mockTxHash = '0xMockTransactionHash';
-  
-      providerStub.getTransaction.resolves(null);
-    
-      try {
-        await evmParser.parseEvmRoute(mockTxHash, ctx);
-        expect.fail("Expected error was not thrown");
-      } catch (error) {
-        expect(error).to.be.instanceOf(Error);
-      }
+      sinon.restore();
     });
   });
 });

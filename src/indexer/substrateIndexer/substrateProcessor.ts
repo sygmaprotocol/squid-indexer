@@ -20,13 +20,11 @@ import type {
   DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
-  DecodedRoutes,
   FeeCollectedData,
 } from "../types";
 
 import type { ISubstrateParser } from "./substrateParser";
 import { events } from "./types";
-import { setFeeHandler } from "./types/sygma-fee-handler-router/calls";
 
 export class SubstrateProcessor implements IProcessor {
   private parser: ISubstrateParser;
@@ -65,10 +63,6 @@ export class SubstrateProcessor implements IProcessor {
         name: [events.sygmaBridge.feeCollected.name],
         extrinsic: true,
       })
-      .addCall({
-        name: [setFeeHandler.name],
-        extrinsic: true,
-      })
       .setFields(this.fieldSelection);
 
     if (domain.gateway) {
@@ -82,18 +76,10 @@ export class SubstrateProcessor implements IProcessor {
     domain: Domain,
   ): Promise<DecodedEvents> {
     const deposits: DecodedDepositLog[] = [];
-    const routes: DecodedRoutes[] = [];
     const executions: DecodedProposalExecutionLog[] = [];
     const failedHandlerExecutions: DecodedFailedHandlerExecutionLog[] = [];
     const fees: FeeCollectedData[] = [];
     for (const block of ctx.blocks) {
-      if (block.calls.length) {
-        for (const call of block.calls) {
-          const route = await this.parser.parseSubstrateAsset!(call, ctx);
-          routes.push(route);
-        }
-      }
-
       for (const event of block.events) {
         try {
           switch (event.name) {
@@ -156,7 +142,7 @@ export class SubstrateProcessor implements IProcessor {
         }
       }
     }
-    return { deposits, executions, failedHandlerExecutions, fees, routes };
+    return { deposits, executions, failedHandlerExecutions, fees };
   }
 }
 

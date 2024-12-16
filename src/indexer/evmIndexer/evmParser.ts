@@ -11,7 +11,6 @@ import { assertNotNull, decodeHex } from "@subsquid/evm-processor";
 import type { JsonRpcProvider, Provider } from "ethers";
 import { ethers } from "ethers";
 
-import * as feeRouter from "../../abi/FeeHandlerRouter";
 import * as bridge from "../../abi/bridge";
 import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
 import { Domain, Resource, Route, Token } from "../../model";
@@ -24,7 +23,6 @@ import type {
   DecodedProposalExecutionLog,
   DecodedFailedHandlerExecutionLog,
   FeeCollectedData,
-  RouteData,
 } from "../types";
 
 import type { Context } from "./evmProcessor";
@@ -89,7 +87,7 @@ export class EVMParser implements IParser {
       );
     }
 
-    const route = await ctx.store.findOne(Route, {
+    let route = await ctx.store.findOne(Route, {
       where: {
         fromDomainID: fromDomain.id.toString(),
         toDomainID: event.destinationDomainID.toString(),
@@ -97,9 +95,13 @@ export class EVMParser implements IParser {
       },
     });
     if (!route) {
-      throw new Error(
-        `Route fromDomain: ${fromDomain.id.toString()}, toDomain: ${event.destinationDomainID.toString()}, resource: ${resource.id} not found`,
-      );
+      route = new Route({
+        fromDomainID: fromDomain.id.toString(),
+        toDomainID: event.destinationDomainID.toString(),
+        resourceID: resource.id,
+      });
+
+      await ctx.store.insert(route);
     }
     return {
       decodedDepositLog: {
@@ -133,37 +135,6 @@ export class EVMParser implements IParser {
         tokenID: token.id,
         txIdentifier: transaction.hash,
       },
-    };
-  }
-
-  public async parseEvmRoute(txHash: string, ctx: Context): Promise<RouteData> {
-    const tx = await this.provider.getTransaction(txHash);
-    if (!tx) {
-      throw new Error(`Tx not found ${txHash}`);
-    }
-    const decoded = feeRouter.functions.adminSetResourceHandler.decode(tx.data);
-    const resource = await ctx.store.findOne(Resource, {
-      where: {
-        id: decoded.resourceID.toLowerCase(),
-      },
-    });
-    if (!resource) {
-      throw new NotFoundError(
-        `Unsupported resource with ID ${decoded.resourceID.toLowerCase()}`,
-      );
-    }
-
-    const destinationDomain = await ctx.store.findOne(Domain, {
-      where: { id: decoded.destinationDomainID.toString() },
-    });
-    if (!destinationDomain) {
-      throw new NotFoundError(
-        `Destination domain id ${decoded.destinationDomainID.toString()} not supported`,
-      );
-    }
-    return {
-      ...decoded,
-      destinationDomainID: decoded.destinationDomainID.toString(),
     };
   }
 

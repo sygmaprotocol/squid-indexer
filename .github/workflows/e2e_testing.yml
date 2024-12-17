@@ -21,7 +21,7 @@ jobs:
       - name: Run Docker
         run: docker compose up --build -d
       - name: Wait
-        run: sleep 80s
+        run: sleep 81s
       - name: Install dependencies
         run: yarn install
       - name: Run tests

@@ -17,7 +17,7 @@ import {
   generateTransferID,
   parseDestination,
 } from "../../indexer/utils";
-import { Domain, Resource, Token } from "../../model";
+import { Domain, Resource, Route, Token } from "../../model";
 import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
@@ -90,6 +90,23 @@ export class EVMParser implements IParser {
         `Token with resourceID: ${event.resourceID.toLowerCase()} doesn't exist, skipping`,
       );
     }
+
+    let route = await ctx.store.findOne(Route, {
+      where: {
+        fromDomainID: fromDomain.id.toString(),
+        toDomainID: event.destinationDomainID.toString(),
+        resourceID: resource.id,
+      },
+    });
+    if (!route) {
+      route = new Route({
+        fromDomainID: fromDomain.id.toString(),
+        toDomainID: event.destinationDomainID.toString(),
+        resourceID: resource.id,
+      });
+
+      await ctx.store.insert(route);
+    }
     return {
       decodedDepositLog: {
         id: generateTransferID(
@@ -99,15 +116,13 @@ export class EVMParser implements IParser {
         ),
         blockNumber: log.block.height,
         depositNonce: event.depositNonce.toString(),
-        toDomainID: event.destinationDomainID.toString(),
         sender: transaction.from,
         destination: parseDestination(
           destinationDomain.type as Network,
           event.data,
           resource.type as ResourceType,
         ),
-        fromDomainID: fromDomain.id.toString(),
-        resourceID: resource.id,
+        routeID: route.id,
         txHash: transaction.hash,
         timestamp: new Date(log.block.timestamp),
         depositData: event.data,

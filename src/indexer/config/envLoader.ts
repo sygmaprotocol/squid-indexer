@@ -12,7 +12,7 @@ export type DbConfig = {
 };
 
 export type DomainMetadata = {
-  domainId?: number;
+  domainId: number;
   rpcUrl: string;
   domainGateway?: string;
   iconUrl?: string;

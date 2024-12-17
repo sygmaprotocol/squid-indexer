@@ -7,22 +7,11 @@ import type {
   Domain as DomainSDK,
   Resource,
 } from "@buildwithsygma/core";
-import { Network } from "@buildwithsygma/core";
-import { ethers } from "ethers";
 
-import { NotFoundError } from "../../utils/error";
 import { logger } from "../../utils/logger";
-import { EVMParser } from "../evmIndexer/evmParser";
-import type { IParser, IProcessor } from "../indexer";
-import { SubstrateParser } from "../substrateIndexer/substrateParser";
 
 import type { EnvVariables } from "./envLoader";
 
-export type DomainConfig = {
-  domainData: Domain;
-  parser: IParser;
-  processor: IProcessor;
-};
 export type SharedConfig = {
   domains: Array<Domain>;
 };
@@ -53,39 +42,19 @@ type Handler = {
   address: string;
 };
 
-type Config = {
-  domain: Domain;
-  parser: IParser;
-};
-
-export async function getConfig(envVars: EnvVariables): Promise<Config> {
+export async function getDomainConfig(envVars: EnvVariables): Promise<Domain> {
   const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
 
-  const domainConfig = getDomainConfig(
-    sharedConfig,
-    envVars.domainMetadata.domainId!,
-    envVars.domainMetadata.domainGateway ?? "",
+  const domainConfig = sharedConfig.domains.find(
+    (domain) => domain.id === envVars.domainMetadata.domainId,
   );
-  let parser: IParser;
-  switch (domainConfig.type) {
-    case Network.EVM: {
-      const provider = new ethers.JsonRpcProvider(
-        envVars.domainMetadata.rpcUrl,
-      );
-      parser = new EVMParser(provider);
-      break;
-    }
-    case Network.SUBSTRATE: {
-      parser = new SubstrateParser();
-      break;
-    }
-    default:
-      throw new NotFoundError(
-        `Domain type: ${domainConfig.type} doesn't exist, skipping`,
-      );
+  if (!domainConfig) {
+    throw new Error(
+      `No configuration found for domain ID: ${envVars.domainMetadata.domainId}`,
+    );
   }
-
-  return { domain: domainConfig, parser };
+  domainConfig.gateway = envVars.domainMetadata.domainGateway;
+  return domainConfig;
 }
 
 export async function fetchSharedConfig(url: string): Promise<SharedConfig> {
@@ -104,19 +73,4 @@ export async function fetchSharedConfig(url: string): Promise<SharedConfig> {
     );
     throw error;
   }
-}
-
-function getDomainConfig(
-  sharedConfig: SharedConfig,
-  domainId: number,
-  domainGateway: string,
-): Domain {
-  const domainConfig = sharedConfig.domains.find(
-    (domain) => domain.id === domainId,
-  );
-  if (!domainConfig) {
-    throw new Error(`No configuration found for domain ID: ${domainId}`);
-  }
-  domainConfig.gateway = domainGateway;
-  return domainConfig;
 }

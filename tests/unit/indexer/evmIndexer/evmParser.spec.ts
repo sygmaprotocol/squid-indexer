@@ -6,34 +6,41 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { expect } from "chai";
 import sinon from "sinon";
 import { JsonRpcProvider } from "ethers";
-import { EVMParser } from "../../src/indexer/evmIndexer/evmParser";
+import { EVMParser } from "../../../../src/indexer/evmIndexer/evmParser";
 import { Log } from "@subsquid/evm-processor";
 import { FeeHandlerType, Network, ResourceType } from "@buildwithsygma/core";
-import * as bridge from "../../src/abi/bridge";
-import { generateTransferID } from "../../src/indexer/utils";
-import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
-import { Context } from "../../src/indexer/evmIndexer/evmProcessor";
-import { Domain, Resource, Token } from "../../src/model";
-import { NotFoundError } from "../../src/utils/error";
+import * as bridge from "../../../../src/abi/bridge";
+import { generateTransferID } from "../../../../src/indexer/utils";
+import { Domain as DomainType, HandlerType } from "../../../../src/indexer/config";
+import { Context } from "../../../../src/indexer/evmIndexer/evmProcessor";
+import { Domain, Resource, Route, Token } from "../../../../src/model";
+import { NotFoundError } from "../../../../src/utils/error";
 
 describe("EVMParser", () => {
   let provider: sinon.SinonStubbedInstance<JsonRpcProvider>;
   let parser: EVMParser;
   let ctx: Context;
   // Mock Data
-  const mockResource = {
-    id: "0x0000000000000000000000000000000000000000000000000000000000000300",
-    type: "fungible",
-  };
+const mockResource = {
+  id: '0x0000000000000000000000000000000000000000000000000000000000000300',
+  type: 'fungible',
+};
 
-  const mockToken = {
-    id: "tokenID",
-    tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
-    decimals: 18,
-    tokenSymbol: "ERC20LRTest",
-    domainID: 2,
-    resourceID: mockResource.id,
-  };
+const mockRoute = {
+  id: "mockRouteID",
+  resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
+  fromDomainID: '2',
+  toDomainID: '3'
+};
+
+const mockToken = {
+  id:"tokenID",
+  tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
+  decimals: 18,
+  tokenSymbol: "ERC20LRTest",
+  domainID: 2,
+  resourceID: mockResource.id
+};
 
   const mockSourceDomain = {
     id: "2",
@@ -75,11 +82,18 @@ describe("EVMParser", () => {
       findOneStub
         .withArgs(Resource, { where: { id: mockResource.id } })
         .resolves(mockResource);
+
       findOneStub
         .withArgs(Token, {
-          where: { tokenAddress: mockToken.tokenAddress, domainID: "2" },
+          where: { tokenAddress: mockToken.tokenAddress, domainID: mockSourceDomain.id },
         })
         .resolves(mockToken);
+
+        findOneStub
+        .withArgs(Route, {
+          where: { fromDomainID: mockSourceDomain.id, toDomainID: "3", resourceID: mockResource.id },
+        })
+        .resolves(mockRoute);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -151,11 +165,8 @@ describe("EVMParser", () => {
           id: generateTransferID("1", "2", "3"),
           blockNumber: 1,
           depositNonce: "1",
-          toDomainID: "3",
+          routeID: mockRoute.id,
           sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
-          fromDomainID: "2",
-          resourceID:
-            "0x0000000000000000000000000000000000000000000000000000000000000300",
           txHash: "0xTxHash",
           timestamp: new Date(1633072800),
           transferType: ResourceType.FUNGIBLE,
@@ -356,7 +367,6 @@ describe("EVMParser", () => {
         },
       } as unknown as Context;
 
-      // Stub each findOne call with appropriate return values
       findOneStub = ctx.store.findOne as sinon.SinonStub;
     });
 
@@ -364,9 +374,7 @@ describe("EVMParser", () => {
       sinon.restore();
     });
     it("should parse a proposal execution log correctly", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -397,9 +405,7 @@ describe("EVMParser", () => {
     });
 
     it("should skip execution from unsupported domain", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(undefined);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(undefined);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -436,7 +442,6 @@ describe("EVMParser", () => {
         },
       } as unknown as Context;
 
-      // Stub each findOne call with appropriate return values
       findOneStub = ctx.store.findOne as sinon.SinonStub;
     });
 
@@ -444,9 +449,7 @@ describe("EVMParser", () => {
       sinon.restore();
     });
     it("should parse a failed handler execution log correctly", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -483,9 +486,7 @@ describe("EVMParser", () => {
     });
 
     it("should skip failed executions from unsupported domain", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(undefined);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(undefined);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {

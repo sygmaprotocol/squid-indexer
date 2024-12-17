@@ -19,12 +19,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Run Docker
-        run: docker compose build
-      - name: Setup tmate session
-        if: success() || failure()
-        uses: mxschmitt/action-tmate@v3
+        run: docker compose up --build -d
       - name: Wait
-        run: sleep 81s
+        run: sleep 80s
       - name: Install dependencies
         run: yarn install
       - name: Run tests

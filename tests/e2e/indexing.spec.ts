@@ -45,6 +45,7 @@ describe("Indexer e2e tests", function () {
       const response = await fetch(
         "http://localhost:8000/api/transfers?page=1&limit=100"
       );
+      console.log("RESPONSE:::::::::::", response)
       const transfers: Array<TransferResponse> = await response.json();
 
       numberOfTransfers = transfers.length;

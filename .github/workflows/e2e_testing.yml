@@ -18,10 +18,11 @@ jobs:
         uses: actions/setup-node@v2.5.1
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Clean migrations folder
-        run: rm -rf ./db/migrations/*
       - name: Run Docker
-        run: docker compose up --build -d
+        run: docker compose up --build
+      - name: Setup tmate session
+        if: success() || failure()
+        uses: mxschmitt/action-tmate@v3
       - name: Wait
         run: sleep 81s
       - name: Install dependencies

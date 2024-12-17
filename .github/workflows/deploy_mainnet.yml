@@ -46,8 +46,8 @@ jobs:
       - name: render jinja2 templates to task definition json files
         uses: cuchi/jinja2-action@v1.2.0
         with:
-          template: 'sygma-explorer/ecs/task_definition-explorer-indexer-${{ env.ENVIRONMENT }}.j2'
-          output_file: 'sygma-explorer/ecs/task_definition-explorer-indexer-${{ env.ENVIRONMENT }}.json'
+          template: 'squid-indexer/ecs/task_definition-squid-indexer-${{ env.ENVIRONMENT }}.j2'
+          output_file: 'suid-indexer/ecs/task_definition-squid-indexer-${{ env.ENVIRONMENT }}.json'
           data_format: json
           variables: |
             awsAccountId=${{ env.AWS_MAINNET }}
@@ -65,8 +65,8 @@ jobs:
       - name: Deploy to Amazon ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: sygma-explorer/ecs/task_definition-explorer-indexer-${{ env.ENVIRONMENT }}.json
-          service: explorer-indexer-service-${{ env.ENVIRONMENT }}
+          task-definition: squid-indexer/ecs/task_definition-squid-indexer-${{ env.ENVIRONMENT }}.json
+          service: squid-indexer-service-${{ env.ENVIRONMENT }}
           cluster: sygma-explorer-${{ env.ENVIRONMENT }}
           wait-for-service-stability: true
 

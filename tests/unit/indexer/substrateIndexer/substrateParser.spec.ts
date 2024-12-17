@@ -18,7 +18,6 @@ import { V3AssetId } from "../../../../src/indexer/substrateIndexer/types/v1260"
 import { Context } from "../../../../src/indexer/substrateIndexer/substrateProcessor";
 import { Domain, Resource, Route, Token } from "../../../../src/model";
 import { getLogger } from "../../../../src/utils/logger";
-import { Call } from "@subsquid/substrate-processor";
 
 describe("Substrate parser", () => {
   let parser: SubstrateParser;
@@ -45,7 +44,7 @@ describe("Substrate parser", () => {
     resourceID: mockResource.id,
   };
 
-  const mockDomain = {
+  const mockSourceDomain = {
     id: "1",
   };
 
@@ -92,7 +91,7 @@ describe("Substrate parser", () => {
 
       findOneStub
         .withArgs(Route, {
-          where: { fromDomainID: "4", toDomainID: mockDomain.id, resourceID: mockResource.id },
+          where: { fromDomainID: "4", toDomainID: mockSourceDomain.id, resourceID: mockResource.id },
         })
         .resolves(mockRoute);
       let event: Event = {
@@ -274,7 +273,7 @@ describe("Substrate parser", () => {
       sinon.restore();
     });
     it("should parse a proposal execution correctly", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
 
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
@@ -323,7 +322,7 @@ describe("Substrate parser", () => {
       sinon.restore();
     });
     it("should parse a failed handler execution correctly", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
 
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
@@ -488,39 +487,5 @@ describe("Substrate parser", () => {
 
   afterEach(() => {
     sinon.restore();
-  });
-
-  describe('parseSubstrateAsset', function () {
-    let substrateParser: SubstrateParser;
-    let mockCall: sinon.SinonStubbedInstance<Call>;
-    let providerStub: sinon.SinonStubbedInstance<ApiPromise>;
-    let findOneStub: sinon.SinonStub;
-    beforeEach(() => {
-      ctx = {
-        store: {
-          findOne: sinon.stub(),
-        },
-      } as unknown as Context;
-  
-      // Stub each findOne call with appropriate return values
-      findOneStub = ctx.store.findOne as sinon.SinonStub;
-      providerStub = sinon.createStubInstance(ApiPromise);
-  
-      substrateParser = new SubstrateParser(getLogger());
-      mockCall = {
-        args: {
-          asset: {
-            __kind: 'Concrete',
-            value: {
-              interior: {
-                __kind: 'Here',
-              },
-              parents: 0,
-            },
-          },
-          domainID: mockDomain.id
-        }
-      } as unknown as sinon.SinonStubbedInstance<Call>;
-    });
   });
 });

@@ -44,9 +44,9 @@ const mockToken = {
   resourceID: mockResource.id
 };
 
-const mockDomain = {
-  id: '2',
-};
+  const mockSourceDomain = {
+    id: "2",
+  };
 
   const mockDestinationDomain = {
     id: "3",
@@ -87,13 +87,13 @@ const mockDomain = {
 
       findOneStub
         .withArgs(Token, {
-          where: { tokenAddress: mockToken.tokenAddress, domainID: mockDomain.id },
+          where: { tokenAddress: mockToken.tokenAddress, domainID: mockSourceDomain.id },
         })
         .resolves(mockToken);
 
         findOneStub
         .withArgs(Route, {
-          where: { fromDomainID: mockDomain.id, toDomainID: "3", resourceID: mockResource.id },
+          where: { fromDomainID: mockSourceDomain.id, toDomainID: "3", resourceID: mockResource.id },
         })
         .resolves(mockRoute);
       const log: Log = {
@@ -376,7 +376,7 @@ const mockDomain = {
       sinon.restore();
     });
     it("should parse a proposal execution log correctly", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -407,7 +407,7 @@ const mockDomain = {
     });
 
     it("should skip execution from unsupported domain", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(undefined);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(undefined);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -451,7 +451,7 @@ const mockDomain = {
       sinon.restore();
     });
     it("should parse a failed handler execution log correctly", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -488,7 +488,7 @@ const mockDomain = {
     });
 
     it("should skip failed executions from unsupported domain", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(undefined);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(undefined);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -514,6 +514,7 @@ const mockDomain = {
       }
     });
   });
+<<<<<<< HEAD
 
   describe('parseEvmRoute', function () {
     let evmParser: EVMParser;
@@ -538,4 +539,6 @@ const mockDomain = {
       sinon.restore();
     });
   });
+=======
+>>>>>>> 1f654a6b4a069209ed4275e0987c587f50a817d0
 });

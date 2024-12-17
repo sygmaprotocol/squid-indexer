@@ -38,13 +38,20 @@ services:
     ports:
       - "23798:${DB_PORT}"
     env_file: ./envs/.env.init
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME} && psql -U ${DB_USERNAME} -d ${DB_NAME} -c 'SELECT 1'"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
   indexer-init:
     build: 
       context: .
       dockerfile: ./Dockerfile 
     restart: on-failure
     depends_on: 
-      - db
+      db: 
+        condition: service_healthy
     env_file: ./envs/.env.init
   indexer_evm1:
     build: 

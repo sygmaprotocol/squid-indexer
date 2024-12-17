@@ -18,6 +18,8 @@ jobs:
         uses: actions/setup-node@v2.5.1
         with:
           node-version: ${{ matrix.node-version }}
+      - name: Clean migrations folder
+        run: rm -rf ./db/migrations/*
       - name: Run Docker
         run: docker compose up --build -d
       - name: Wait

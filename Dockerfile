@@ -32,6 +32,7 @@ COPY --from=builder /squid/node_modules ./node_modules
 COPY --from=builder /squid/package*.json ./
 COPY --from=builder /squid/lib ./lib
 COPY --from=builder /squid/envs ./envs
+COPY --from=builder /squid/db ./db
 COPY --from=builder /squid/start-prod.sh ./start-prod.sh
 COPY --from=builder /squid/commands.json ./
 

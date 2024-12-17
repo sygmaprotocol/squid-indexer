@@ -5,7 +5,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { DataSource } from "typeorm";
 import { SnakeNamingStrategy } from "typeorm-naming-strategies";
 
-import type { DbConfig } from "../indexer/config/validator";
+import type { DbConfig } from "../indexer/config/envLoader";
 import {
   Account,
   Deposit,

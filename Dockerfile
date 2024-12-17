@@ -24,6 +24,7 @@ RUN corepack yarn install
  
 # copy source code to /squid/src folder
 COPY . .
+RUN ls /squid/db/migrations
 
 RUN corepack yarn build
 

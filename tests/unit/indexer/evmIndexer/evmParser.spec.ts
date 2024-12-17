@@ -6,17 +6,15 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { expect } from "chai";
 import sinon from "sinon";
 import { JsonRpcProvider } from "ethers";
-import { EVMParser } from "../../src/indexer/evmIndexer/evmParser";
+import { EVMParser } from "../../../../src/indexer/evmIndexer/evmParser";
 import { Log } from "@subsquid/evm-processor";
 import { FeeHandlerType, Network, ResourceType } from "@buildwithsygma/core";
-import * as bridge from "../../src/abi/bridge";
-import { generateTransferID } from "../../src/indexer/utils";
-import { Domain as DomainType, HandlerType } from "../../src/indexer/config";
-import {IParser } from "../../src/indexer/indexer";
-import {Context} from "../../src/indexer/evmIndexer/evmProcessor"
-import * as feeRouter from "../../src/abi/FeeHandlerRouter";
-import { Domain, Resource, Route, Token } from "../../src/model";
-import { NotFoundError } from "../../src/utils/error";
+import * as bridge from "../../../../src/abi/bridge";
+import { generateTransferID } from "../../../../src/indexer/utils";
+import { Domain as DomainType, HandlerType } from "../../../../src/indexer/config";
+import { Context } from "../../../../src/indexer/evmIndexer/evmProcessor";
+import { Domain, Resource, Route, Token } from "../../../../src/model";
+import { NotFoundError } from "../../../../src/utils/error";
 
 describe("EVMParser", () => {
   let provider: sinon.SinonStubbedInstance<JsonRpcProvider>;
@@ -44,17 +42,19 @@ const mockToken = {
   resourceID: mockResource.id
 };
 
-const mockDomain = {
-  id: '2',
-};
+  const mockSourceDomain = {
+    id: "2",
+  };
+
+  const mockDestinationDomain = {
+    id: "3",
+    type: "evm"
+  }; 
 
   before(() => {
     // Mock provider
     provider = sinon.createStubInstance(JsonRpcProvider);
     parser = new EVMParser(provider as any);
-    const parsers = new Map<number, IParser>();
-    parsers.set(3, parser);
-    parser.setParsers(parsers);
   });
 
   describe("parseDeposit", () => {
@@ -77,18 +77,21 @@ const mockDomain = {
 
     it("should parse a deposit log correctly", async () => {
       findOneStub
+        .withArgs(Domain, { where: { id: mockDestinationDomain.id } })
+        .resolves(mockDestinationDomain);
+      findOneStub
         .withArgs(Resource, { where: { id: mockResource.id } })
         .resolves(mockResource);
 
       findOneStub
         .withArgs(Token, {
-          where: { tokenAddress: mockToken.tokenAddress, domainID: mockDomain.id },
+          where: { tokenAddress: mockToken.tokenAddress, domainID: mockSourceDomain.id },
         })
         .resolves(mockToken);
 
         findOneStub
         .withArgs(Route, {
-          where: { fromDomainID: mockDomain.id, toDomainID: "3", resourceID: mockResource.id },
+          where: { fromDomainID: mockSourceDomain.id, toDomainID: "3", resourceID: mockResource.id },
         })
         .resolves(mockRoute);
       const log: Log = {
@@ -371,7 +374,7 @@ const mockDomain = {
       sinon.restore();
     });
     it("should parse a proposal execution log correctly", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -402,7 +405,7 @@ const mockDomain = {
     });
 
     it("should skip execution from unsupported domain", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(undefined);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(undefined);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -446,7 +449,7 @@ const mockDomain = {
       sinon.restore();
     });
     it("should parse a failed handler execution log correctly", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(mockDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -483,7 +486,7 @@ const mockDomain = {
     });
 
     it("should skip failed executions from unsupported domain", async () => {
-      findOneStub.withArgs(Domain, { where: { id: mockDomain.id } }).resolves(undefined);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(undefined);
       const log: Log = {
         block: { height: 1, timestamp: 1633072800 },
         transaction: {
@@ -507,30 +510,6 @@ const mockDomain = {
       } catch (error) {
         expect(error).to.be.instanceOf(NotFoundError);
       }
-    });
-  });
-
-  describe('parseEvmRoute', function () {
-    let evmParser: EVMParser;
-    let providerStub: sinon.SinonStubbedInstance<JsonRpcProvider>;
-    let decodeStub: sinon.SinonStub;
-    let findOneStub: sinon.SinonStub;
-
-    beforeEach(() => {
-      providerStub = sinon.createStubInstance(JsonRpcProvider);
-      evmParser = new EVMParser(providerStub as unknown as JsonRpcProvider);
-      decodeStub = sinon.stub(feeRouter.functions.adminSetResourceHandler, 'decode');
-      ctx = {
-        store: {
-          findOne: sinon.stub(),
-        },
-      } as unknown as Context;
-  
-      findOneStub = ctx.store.findOne as sinon.SinonStub;
-    });
-  
-    afterEach(() => {
-      sinon.restore();
     });
   });
 });

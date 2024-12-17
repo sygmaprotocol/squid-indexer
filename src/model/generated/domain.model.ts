@@ -16,6 +16,9 @@ export class Domain {
     id!: string
 
     @StringColumn_({nullable: false})
+    type!: string
+
+    @StringColumn_({nullable: false})
     name!: string
 
     @OneToMany_(() => Route, e => e.fromDomain)

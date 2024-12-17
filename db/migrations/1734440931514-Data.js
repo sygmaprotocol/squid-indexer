@@ -1,5 +1,5 @@
-module.exports = class Data1734354978596 {
-    name = 'Data1734354978596'
+module.exports = class Data1734440931514 {
+    name = 'Data1734440931514'
 
     async up(db) {
         await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "address_status" text, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
@@ -11,7 +11,7 @@ module.exports = class Data1734354978596 {
         await db.query(`CREATE INDEX "IDX_cd316229471fecd312159ee307" ON "route" ("from_domain_id") `)
         await db.query(`CREATE INDEX "IDX_863162a8edb416799e89f386f8" ON "route" ("to_domain_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_7dc7af2a7a9c846759377d1450" ON "route" ("from_domain_id", "to_domain_id", "resource_id") `)
-        await db.query(`CREATE TABLE "domain" ("id" character varying NOT NULL, "type" text NOT NULL, "name" text NOT NULL, CONSTRAINT "PK_27e3ec3ea0ae02c8c5bceab3ba9" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "domain" ("id" character varying NOT NULL, "type" text NOT NULL, "name" text NOT NULL, "icon_url" text, "explorer_url" text, CONSTRAINT "PK_27e3ec3ea0ae02c8c5bceab3ba9" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "token" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "decimals" integer NOT NULL, "token_address" text NOT NULL, "token_symbol" text NOT NULL, "resource_id" character varying, "domain_id" character varying, CONSTRAINT "PK_82fae97f905930df5d62a702fc9" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_435ef0917a04e91698042dff2b" ON "token" ("resource_id") `)
         await db.query(`CREATE INDEX "IDX_3d565341b16e9c03d63e05eac8" ON "token" ("domain_id") `)

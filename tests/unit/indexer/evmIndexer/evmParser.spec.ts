@@ -514,31 +514,4 @@ const mockToken = {
       }
     });
   });
-<<<<<<< HEAD
-
-  describe('parseEvmRoute', function () {
-    let evmParser: EVMParser;
-    let providerStub: sinon.SinonStubbedInstance<JsonRpcProvider>;
-    let decodeStub: sinon.SinonStub;
-    let findOneStub: sinon.SinonStub;
-
-    beforeEach(() => {
-      providerStub = sinon.createStubInstance(JsonRpcProvider);
-      evmParser = new EVMParser(providerStub as unknown as JsonRpcProvider, getLogger());
-      decodeStub = sinon.stub(feeRouter.functions.adminSetResourceHandler, 'decode');
-      ctx = {
-        store: {
-          findOne: sinon.stub(),
-        },
-      } as unknown as Context;
-  
-      findOneStub = ctx.store.findOne as sinon.SinonStub;
-    });
-  
-    afterEach(() => {
-      sinon.restore();
-    });
-  });
-=======
->>>>>>> 1f654a6b4a069209ed4275e0987c587f50a817d0
 });

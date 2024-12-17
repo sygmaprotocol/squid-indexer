@@ -17,4 +17,12 @@ services:
     depends_on: 
       - db
     env_file: ./envs/.env.indexer.example
-
+  api:
+    build: 
+      context: .
+      dockerfile: ./Dockerfile.api
+    depends_on: 
+      - indexer-init
+    env_file: ./envs/.env.api
+    ports:
+      - "8000:8000"

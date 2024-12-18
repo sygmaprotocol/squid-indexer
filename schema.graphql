@@ -7,7 +7,7 @@ type Transfer @entity @index(fields: ["routeID", "depositNonce"], unique: true){
   feeID: String
   fee: Fee @unique
   routeID: String
-  route: Route
+  route: Route!
   amount: String
 }
 
@@ -93,5 +93,6 @@ type Route @entity @index(fields: ["fromDomainID", "toDomainID", "resourceID"], 
   toDomain: Domain   
 
   resourceID: String
+  resource: Resource
   transfers: [Transfer!] @derivedFrom(field: "route")
 }

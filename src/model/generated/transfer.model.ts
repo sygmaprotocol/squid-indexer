@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, StringColumn as StringColumn_, OneToOne as OneToOne_, Index as Index_, JoinColumn as JoinColumn_, ManyToOne as ManyToOne_} from "@subsquid/typeorm-store"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, StringColumn as StringColumn_, OneToOne as OneToOne_, JoinColumn as JoinColumn_, ManyToOne as ManyToOne_} from "@subsquid/typeorm-store"
 import {TransferStatus} from "./_transferStatus"
 import {Deposit} from "./deposit.model"
 import {Execution} from "./execution.model"
@@ -48,7 +48,7 @@ export class Transfer {
 
     @Index_()
     @ManyToOne_(() => Route, {nullable: true})
-    route!: Route | undefined | null
+    route!: Route
 
     @StringColumn_({nullable: true})
     amount!: string | undefined | null

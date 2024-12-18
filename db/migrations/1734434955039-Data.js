@@ -1,5 +1,5 @@
-module.exports = class Data1734354978596 {
-    name = 'Data1734354978596'
+module.exports = class Data1734434955039 {
+    name = 'Data1734434955039'
 
     async up(db) {
         await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "address_status" text, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
@@ -7,9 +7,10 @@ module.exports = class Data1734354978596 {
         await db.query(`CREATE INDEX "IDX_9ced91570695137ec1d60c1a61" ON "deposit" ("account_id") `)
         await db.query(`CREATE TABLE "execution" ("id" character varying NOT NULL, "tx_hash" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE, "block_number" text NOT NULL, "message" text, CONSTRAINT "PK_cc6684fedf29ec4c86db8448a2b" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "resource" ("id" character varying NOT NULL, "type" text NOT NULL, CONSTRAINT "PK_e2894a5867e06ae2e8889f1173f" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE TABLE "route" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "from_domain_id" character varying, "to_domain_id" character varying, "resource_id" text, CONSTRAINT "PK_08affcd076e46415e5821acf52d" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "route" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "from_domain_id" character varying, "to_domain_id" character varying, "resource_id" character varying, CONSTRAINT "PK_08affcd076e46415e5821acf52d" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_cd316229471fecd312159ee307" ON "route" ("from_domain_id") `)
         await db.query(`CREATE INDEX "IDX_863162a8edb416799e89f386f8" ON "route" ("to_domain_id") `)
+        await db.query(`CREATE INDEX "IDX_4536bd7b96f363dedfe95dd26f" ON "route" ("resource_id") `)
         await db.query(`CREATE UNIQUE INDEX "IDX_7dc7af2a7a9c846759377d1450" ON "route" ("from_domain_id", "to_domain_id", "resource_id") `)
         await db.query(`CREATE TABLE "domain" ("id" character varying NOT NULL, "type" text NOT NULL, "name" text NOT NULL, CONSTRAINT "PK_27e3ec3ea0ae02c8c5bceab3ba9" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "token" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "decimals" integer NOT NULL, "token_address" text NOT NULL, "token_symbol" text NOT NULL, "resource_id" character varying, "domain_id" character varying, CONSTRAINT "PK_82fae97f905930df5d62a702fc9" PRIMARY KEY ("id"))`)
@@ -28,6 +29,7 @@ module.exports = class Data1734354978596 {
         await db.query(`ALTER TABLE "deposit" ADD CONSTRAINT "FK_9ced91570695137ec1d60c1a61b" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "route" ADD CONSTRAINT "FK_cd316229471fecd312159ee307e" FOREIGN KEY ("from_domain_id") REFERENCES "domain"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "route" ADD CONSTRAINT "FK_863162a8edb416799e89f386f82" FOREIGN KEY ("to_domain_id") REFERENCES "domain"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+        await db.query(`ALTER TABLE "route" ADD CONSTRAINT "FK_4536bd7b96f363dedfe95dd26f1" FOREIGN KEY ("resource_id") REFERENCES "resource"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "token" ADD CONSTRAINT "FK_435ef0917a04e91698042dff2bc" FOREIGN KEY ("resource_id") REFERENCES "resource"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "token" ADD CONSTRAINT "FK_3d565341b16e9c03d63e05eac83" FOREIGN KEY ("domain_id") REFERENCES "domain"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "fee" ADD CONSTRAINT "FK_119250e5caf62c90134b8e2f2d3" FOREIGN KEY ("transfer_id") REFERENCES "transfer"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
@@ -47,6 +49,7 @@ module.exports = class Data1734354978596 {
         await db.query(`DROP TABLE "route"`)
         await db.query(`DROP INDEX "public"."IDX_cd316229471fecd312159ee307"`)
         await db.query(`DROP INDEX "public"."IDX_863162a8edb416799e89f386f8"`)
+        await db.query(`DROP INDEX "public"."IDX_4536bd7b96f363dedfe95dd26f"`)
         await db.query(`DROP INDEX "public"."IDX_7dc7af2a7a9c846759377d1450"`)
         await db.query(`DROP TABLE "domain"`)
         await db.query(`DROP TABLE "token"`)
@@ -65,6 +68,7 @@ module.exports = class Data1734354978596 {
         await db.query(`ALTER TABLE "deposit" DROP CONSTRAINT "FK_9ced91570695137ec1d60c1a61b"`)
         await db.query(`ALTER TABLE "route" DROP CONSTRAINT "FK_cd316229471fecd312159ee307e"`)
         await db.query(`ALTER TABLE "route" DROP CONSTRAINT "FK_863162a8edb416799e89f386f82"`)
+        await db.query(`ALTER TABLE "route" DROP CONSTRAINT "FK_4536bd7b96f363dedfe95dd26f1"`)
         await db.query(`ALTER TABLE "token" DROP CONSTRAINT "FK_435ef0917a04e91698042dff2bc"`)
         await db.query(`ALTER TABLE "token" DROP CONSTRAINT "FK_3d565341b16e9c03d63e05eac83"`)
         await db.query(`ALTER TABLE "fee" DROP CONSTRAINT "FK_119250e5caf62c90134b8e2f2d3"`)

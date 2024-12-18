@@ -18,7 +18,7 @@ export class RoutesService {
       order: {
         fromDomainID: "ASC",
         toDomainID: "ASC",
-        resourceID: "ASC", 
+        resourceID: "ASC",
       },
       relations: {
         fromDomain: true,

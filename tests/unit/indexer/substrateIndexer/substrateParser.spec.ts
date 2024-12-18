@@ -2,6 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
+import { ApiPromise } from "@polkadot/api";
 import { expect } from "chai";
 import sinon from "sinon";
 import { SubstrateParser } from "../../../../src/indexer/substrateIndexer/substrateParser";
@@ -16,6 +17,7 @@ import { JsonRpcProvider } from "ethers";
 import { V3AssetId } from "../../../../src/indexer/substrateIndexer/types/v1260";
 import { Context } from "../../../../src/indexer/substrateIndexer/substrateProcessor";
 import { Domain, Resource, Route, Token } from "../../../../src/model";
+import { logger } from "../../../../src/utils/logger";
 
 describe("Substrate parser", () => {
   let parser: SubstrateParser;
@@ -52,10 +54,10 @@ describe("Substrate parser", () => {
   }
 
   before(() => {
-    parser = new SubstrateParser();
+    parser = new SubstrateParser(logger);
 
     const parsers = new Map<number, IParser>();
-    parsers.set(1, new EVMParser(new JsonRpcProvider()));
+    parsers.set(1, new EVMParser(new JsonRpcProvider(), logger));
   });
 
   describe("parseDeposit", () => {

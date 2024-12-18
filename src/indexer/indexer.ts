@@ -11,6 +11,7 @@ import type {
 import type { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 import { In } from "typeorm";
+import type winston from "winston";
 
 import {
   Transfer,
@@ -20,7 +21,6 @@ import {
   TransferStatus,
   Fee,
 } from "../model";
-import { logger } from "../utils/logger";
 
 import type { Domain } from "./config";
 import type { Context as EvmContext } from "./evmIndexer/evmProcessor";
@@ -69,10 +69,12 @@ export interface IProcessor {
 export class Indexer {
   private domain: Domain;
   private processor: IProcessor;
+  private logger: winston.Logger;
 
-  constructor(processor: IProcessor, domain: Domain) {
+  constructor(processor: IProcessor, domain: Domain, logger: winston.Logger) {
     this.processor = processor;
     this.domain = domain;
+    this.logger = logger;
   }
 
   public startProcessing(): void {
@@ -83,6 +85,7 @@ export class Indexer {
         isolationLevel: "READ COMMITTED",
       }),
       async (ctx) => {
+        ctx.log = ctx.log.child({ domain: this.domain.id.toString() });
         const decodedEvents = await this.processor.processEvents(
           ctx,
           this.domain,
@@ -240,7 +243,7 @@ export class Indexer {
         relations: { deposit: true },
       });
       if (!transfer?.deposit) {
-        logger.warn(
+        this.logger.warn(
           `Deposit for the fee with txHash: ${f.txIdentifier} not found, skipping...`,
         );
         continue;

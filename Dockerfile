@@ -33,7 +33,6 @@ COPY --from=builder /squid/package*.json ./
 COPY --from=builder /squid/lib ./lib
 COPY --from=builder /squid/envs ./envs
 COPY --from=builder /squid/db ./db
-COPY --from=builder /squid/start-prod.sh ./start-prod.sh
 COPY --from=builder /squid/commands.json ./
 
 RUN corepack yarn global add @subsquid/commands && mv $(which squid-commands) /usr/local/bin/sqd
@@ -41,4 +40,4 @@ RUN corepack yarn global add @subsquid/commands && mv $(which squid-commands) /u
 LABEL org.opencontainers.image.source https://github.com/sygmaprotocol/squid-indexer/
 EXPOSE 8000
 
-ENTRYPOINT sh /start-prod.sh
+ENTRYPOINT ["sh", "-c", "sqd migration:apply && node ./lib/main.js"]

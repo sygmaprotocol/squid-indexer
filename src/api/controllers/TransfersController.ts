@@ -16,7 +16,6 @@ import { TransfersService } from "../services/dataAccess/transfers.service";
 
 export class TransfersController {
   private transfersService: TransfersService;
-
   constructor(dataSource: DataSource) {
     this.transfersService = new TransfersService(dataSource);
   }

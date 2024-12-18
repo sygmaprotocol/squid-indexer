@@ -10,6 +10,7 @@ import type { Log } from "@subsquid/evm-processor";
 import { assertNotNull } from "@subsquid/evm-processor";
 import type { JsonRpcProvider, Provider } from "ethers";
 import { ethers } from "ethers";
+import type winston from "winston";
 
 import * as bridge from "../../abi/bridge";
 import {
@@ -19,7 +20,6 @@ import {
 } from "../../indexer/utils";
 import { Domain, Resource, Route, Token } from "../../model";
 import { NotFoundError } from "../../utils/error";
-import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
 import type { IParser } from "../indexer";
 import type {
@@ -41,8 +41,10 @@ type FeeDataResponse = {
 export class EVMParser implements IParser {
   private STATIC_FEE_DATA = "0x00";
   private provider: JsonRpcProvider;
-  constructor(provider: JsonRpcProvider) {
+  private logger: winston.Logger;
+  constructor(provider: JsonRpcProvider, logger: winston.Logger) {
     this.provider = provider;
+    this.logger = logger;
   }
 
   public async parseDeposit(
@@ -241,7 +243,7 @@ export class EVMParser implements IParser {
         amount: fee.fee.toString(),
       };
     } catch (err) {
-      logger.error("Calculating fee failed", err);
+      this.logger.error("Calculating fee failed", err);
       return {
         tokenAddress: "",
         amount: "0",

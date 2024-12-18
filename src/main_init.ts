@@ -7,6 +7,7 @@ import type { EntityManager } from "typeorm";
 
 import type { Domain as DomainConfig } from "./indexer/config";
 import { fetchSharedConfig } from "./indexer/config";
+import type { DomainMetadata } from "./indexer/config/envLoader";
 import { getEnv } from "./indexer/config/envLoader";
 import { Domain, Resource, Token } from "./model";
 import { initDatabase } from "./utils";
@@ -19,13 +20,18 @@ async function main(): Promise<void> {
   const dataSource = await initDatabase(envVars.dbConfig);
   const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
 
-  await insertDomains(sharedConfig.domains, dataSource.manager);
+  await insertDomains(
+    sharedConfig.domains,
+    dataSource.manager,
+    envVars.domainMetadata,
+  );
   await dataSource.destroy();
 }
 
 async function insertDomains(
   domains: Array<DomainConfig>,
   manager: EntityManager,
+  domainMetadata: DomainMetadata,
 ): Promise<void> {
   for (const domain of domains) {
     await manager.upsert(
@@ -34,6 +40,8 @@ async function insertDomains(
         id: domain.id.toString(),
         type: domain.type,
         name: domain.name,
+        iconURL: domainMetadata.iconUrl ?? "",
+        explorerURL: domainMetadata.explorerUrl ?? "",
       },
       ["id"],
     );

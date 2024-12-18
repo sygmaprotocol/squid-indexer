@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASS}
     ports:
       - "23798:${DB_PORT}"
-    env_file: ./envs/.env.init
+    env_file: ./envs/.env.indexer.example
   indexer:
     build: 
       context: .
@@ -22,7 +22,7 @@ services:
       context: .
       dockerfile: ./Dockerfile.api
     depends_on: 
-      - indexer-init
-    env_file: ./envs/.env.api
+      - indexer
+    env_file: ./envs/.env.indexer.example
     ports:
       - "8000:8000"

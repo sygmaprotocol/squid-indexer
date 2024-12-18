@@ -14,7 +14,7 @@ import fastifyHealthCheck from "fastify-healthcheck";
 import type { DataSource } from "typeorm";
 
 import { initDatabase } from "../utils";
-import { getLogger } from "../utils/logger";
+import { logger } from "../utils/logger";
 
 import { config as envPluginConfig } from "./config/env.config";
 import { SWAGGER_CONFIG, SWAGGER_UI_CONFIG } from "./config/swagger.config";
@@ -22,10 +22,8 @@ import { routesPlugin } from "./services/plugins/routes";
 
 export class App {
   public readonly instance: FastifyInstance;
-  logger;
   protected constructor(instance: FastifyInstance) {
     this.instance = instance;
-    this.logger = getLogger();
   }
 
   public static async init(): Promise<App> {
@@ -45,13 +43,13 @@ export class App {
   public async start(): Promise<void> {
     try {
       await this.instance.ready();
-      this.logger.info(this.instance.printRoutes());
+      logger.info(this.instance.printRoutes());
       await this.instance.listen({
         port: this.instance.config.SERVER_PORT,
         host: this.instance.config.SERVER_ADDRESS,
       });
     } catch (error) {
-      this.logger.error("Error occurred during app startup: ", error);
+      logger.error("Error occurred during app startup: ", error);
       await this.stop(undefined);
     }
   }
@@ -60,14 +58,14 @@ export class App {
     await this.instance.db
       .destroy()
       .catch((error: Error) =>
-        this.logger.error(
+        logger.error(
           `Error occurred during database closing because: ${error.message}`,
         ),
       );
     try {
       await this.instance.close();
     } catch (error) {
-      this.logger.error("Error occurred during server closing: ", error);
+      logger.error("Error occurred during server closing: ", error);
     }
 
     if (signal !== "TEST") {
@@ -108,7 +106,7 @@ export class App {
             await this.instance.db.query("SELECT 1");
             return true;
           } catch (error) {
-            this.logger.error(
+            logger.error(
               "Healthcheck: database connection check failed: ",
               error,
             );

@@ -15,7 +15,7 @@ import { Domain as DomainType, HandlerType } from "../../../../src/indexer/confi
 import { Context } from "../../../../src/indexer/evmIndexer/evmProcessor";
 import { Domain, Resource, Route, Token } from "../../../../src/model";
 import { NotFoundError } from "../../../../src/utils/error";
-import { getLogger } from "../../../../src/utils/logger";
+import { logger } from "../../../../src/utils/logger";
 import * as feeRouter from "../../../../src/abi/FeeHandlerRouter";
 
 describe("EVMParser", () => {
@@ -56,7 +56,7 @@ const mockToken = {
   before(() => {
     // Mock provider
     provider = sinon.createStubInstance(JsonRpcProvider);
-    parser = new EVMParser(provider as any, getLogger());
+    parser = new EVMParser(provider as any, logger);
   });
 
   describe("parseDeposit", () => {

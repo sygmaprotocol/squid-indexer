@@ -14,15 +14,22 @@ import { Indexer } from "./indexer/indexer";
 import { SubstrateParser } from "./indexer/substrateIndexer/substrateParser";
 import { SubstrateProcessor } from "./indexer/substrateIndexer/substrateProcessor";
 import { init } from "./main_init";
-import { getLogger } from "./utils/logger";
+import { logger as rootLogger } from "./utils/logger";
 
 async function startProcessing(): Promise<void> {
   await init();
   const envVars = getEnv();
   const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
   let processor;
-  for (const domain of sharedConfig.domains) {
-    const logger = getLogger(domain.id.toString());
+  for (const domainID of envVars.envDomains) {
+    const domain = sharedConfig.domains.find((domain) => domain.id == domainID);
+    if (!domain) {
+      throw new Error(`domain with id ${domainID} not found in shared-config`);
+    }
+    const logger = rootLogger.child({
+      domainID: domain.id.toString(),
+      domainName: domain.name,
+    });
     let domainMetadata;
     try {
       domainMetadata = getDomainMetadata(domain.id.toString());
@@ -59,8 +66,8 @@ async function startProcessing(): Promise<void> {
 
 startProcessing()
   .then(() => {
-    getLogger().info("Processing started successfully.");
+    rootLogger.info("Processing started successfully.");
   })
   .catch((error) => {
-    getLogger().error("An error occurred during processing:", error);
+    rootLogger.error("An error occurred during processing:", error);
   });

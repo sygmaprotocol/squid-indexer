@@ -4,7 +4,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 */
 import nodeCleanup from "node-cleanup";
 
-import { getLogger } from "../utils/logger";
+import { logger } from "../utils/logger";
 
 import { App } from "./App";
 
@@ -17,12 +17,12 @@ App.init()
           nodeCleanup.uninstall();
         })
         .catch((error) => {
-          getLogger().error("Error occurred while stopping the app", error);
+          logger.error("Error occurred while stopping the app", error);
           process.exit(1);
         });
     });
     await app.start();
   })
   .catch((error) =>
-    getLogger().error("Error occurred while initializing the app", error),
+    logger.error("Error occurred while initializing the app", error),
   );

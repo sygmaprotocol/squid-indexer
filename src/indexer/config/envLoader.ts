@@ -24,6 +24,7 @@ export type EnvVariables = {
   dbConfig: DbConfig;
   logLevel: string;
   version: string;
+  envDomains: number[];
 };
 
 export function getEnv(): EnvVariables {
@@ -57,6 +58,12 @@ export function getEnv(): EnvVariables {
     throw new Error(`DB_PASS is not defined in the environment.`);
   }
 
+  const envDomains = process.env.ENV_DOMAINS;
+  if (!envDomains) {
+    throw new Error(`ENV_DOMAINS is not defined in the environment.`);
+  }
+  const parsedEnvDomains = JSON.parse(envDomains) as number[];
+
   const logLevel = process.env.LOG_LEVEL || "debug";
   const version = process.env.VERSION || "unknown";
 
@@ -71,6 +78,7 @@ export function getEnv(): EnvVariables {
     },
     logLevel,
     version,
+    envDomains: parsedEnvDomains,
   };
 }
 

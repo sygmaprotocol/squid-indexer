@@ -8,7 +8,7 @@ import type {
   Resource,
 } from "@buildwithsygma/core";
 
-import { getLogger } from "../../utils/logger";
+import { logger } from "../../utils/logger";
 
 export type SharedConfig = {
   domains: Array<Domain>;
@@ -50,7 +50,7 @@ export async function fetchSharedConfig(url: string): Promise<SharedConfig> {
     }
     return (await response.json()) as SharedConfig;
   } catch (error) {
-    getLogger().error(
+    logger.error(
       `Failed to fetch shared config for stage: ${process.env.STAGE || "unknown"}`,
       error,
     );

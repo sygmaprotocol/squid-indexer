@@ -17,7 +17,7 @@ import { JsonRpcProvider } from "ethers";
 import { V3AssetId } from "../../../../src/indexer/substrateIndexer/types/v1260";
 import { Context } from "../../../../src/indexer/substrateIndexer/substrateProcessor";
 import { Domain, Resource, Route, Token } from "../../../../src/model";
-import { getLogger } from "../../../../src/utils/logger";
+import { logger } from "../../../../src/utils/logger";
 
 describe("Substrate parser", () => {
   let parser: SubstrateParser;
@@ -54,10 +54,10 @@ describe("Substrate parser", () => {
   }
 
   before(() => {
-    parser = new SubstrateParser(getLogger());
+    parser = new SubstrateParser(logger);
 
     const parsers = new Map<number, IParser>();
-    parsers.set(1, new EVMParser(new JsonRpcProvider(), getLogger()));
+    parsers.set(1, new EVMParser(new JsonRpcProvider(), logger));
   });
 
   describe("parseDeposit", () => {

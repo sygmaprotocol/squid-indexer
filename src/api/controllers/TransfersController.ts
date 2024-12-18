@@ -6,7 +6,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import type { DataSource, FindOptionsWhere } from "typeorm";
 
 import type { Deposit, Transfer } from "../../model";
-import { getLogger } from "../../utils/logger";
+import { logger } from "../../utils/logger";
 import {
   type ITransferBySender,
   type ITransferByTxHash,
@@ -16,10 +16,8 @@ import { TransfersService } from "../services/dataAccess/transfers.service";
 
 export class TransfersController {
   private transfersService: TransfersService;
-  logger;
   constructor(dataSource: DataSource) {
     this.transfersService = new TransfersService(dataSource);
-    this.logger = getLogger();
   }
 
   public async getTransfers(
@@ -46,7 +44,7 @@ export class TransfersController {
       });
       await reply.status(200).send(transfersResult);
     } catch (error) {
-      this.logger.error("Error occurred when fetching transfers", error);
+      logger.error("Error occurred when fetching transfers", error);
       await reply.status(500).send({ error: "Internal server error" });
     }
   }

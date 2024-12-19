@@ -182,18 +182,13 @@ export const transferSchema = {
       example: "2-1-2",
     },
     amount: { type: "string", example: "0.0001" },
-    fromDomainID: { type: "string", example: "1" },
-    fromDomain: { ...domainSchema },
-    toDomainID: { type: "string", nullable: true, example: "2" },
-    toDomain: { ...domainSchema },
     depositNonce: { type: "string", example: "2" },
-    resource: { ...resourceSchema },
-    resourceID: {
+    routeID: {
       type: "string",
       format: "ObjectId",
-      example:
-        "0x0000000000000000000000000000000000000000000000000000000000000300",
+      example: "1ffe10e3-c16c-4fdb-a357-380accf1eb66",
     },
+    route: { ...routeSchema },
     status: { ...transferStatusSchema },
     deposit: { ...depositSchema },
     execution: { ...executionSchema },

@@ -23,7 +23,7 @@ export class RoutesController {
       const routesResult = await this.routesService.findRoutes({});
       await reply.status(200).send(routesResult);
     } catch (error) {
-      logger.error("Error occurred when fetching transfers", error);
+      logger.error("Error occurred when fetching routes", error);
       await reply.status(500).send({ error: "Internal server error" });
     }
   }

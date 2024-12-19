@@ -13,12 +13,12 @@ export class DomainsService {
   }
 
   public async findDomains(where: FindOptionsWhere<Domain>): Promise<Domain[]> {
-    const routes = await this.domainRepository.find({
+    const domains = await this.domainRepository.find({
       where,
       order: {
         id: "ASC",
       },
     });
-    return routes;
+    return domains;
   }
 }

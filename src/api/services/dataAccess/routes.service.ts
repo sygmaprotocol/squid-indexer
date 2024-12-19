@@ -23,7 +23,7 @@ export class RoutesService {
       relations: {
         fromDomain: true,
         toDomain: true,
-        // resource: true,
+        resource: true,
       },
     });
 

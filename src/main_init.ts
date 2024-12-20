@@ -10,7 +10,6 @@ import { fetchSharedConfig } from "./indexer/config";
 import { getDomainMetadata, getEnv } from "./indexer/config/envLoader";
 import { Domain, Resource, Token } from "./model";
 import { initDatabase } from "./utils";
-import { logger } from "./utils/logger";
 
 const NATIVE_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -30,12 +29,12 @@ export async function init(): Promise<void> {
 async function insertDomains(
   domains: Array<DomainConfig>,
   manager: EntityManager,
-  supportedDomains: number[],
+  supportedDomainsIDs: number[],
 ): Promise<void> {
-  for (const domain of domains) {
-    if (!supportedDomains.includes(domain.id)) {
-      logger.warn(`Unsupported domain with id ${domain.id}, skipping...`);
-      continue;
+  for (const domainID of supportedDomainsIDs) {
+    const domain = domains.find((domain) => domain.id == domainID);
+    if (!domain) {
+      throw new Error(`domain with id ${domainID} not found in shared-config`);
     }
     const domainMetadata = getDomainMetadata(domain.id.toString());
     await manager.upsert(

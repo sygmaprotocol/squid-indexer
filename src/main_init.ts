@@ -7,8 +7,7 @@ import type { EntityManager } from "typeorm";
 
 import type { Domain as DomainConfig } from "./indexer/config";
 import { fetchSharedConfig } from "./indexer/config";
-import type { DomainMetadata } from "./indexer/config/envLoader";
-import { getEnv } from "./indexer/config/envLoader";
+import { getDomainMetadata, getEnv } from "./indexer/config/envLoader";
 import { Domain, Resource, Token } from "./model";
 import { initDatabase } from "./utils";
 
@@ -19,20 +18,16 @@ export async function init(): Promise<void> {
   const dataSource = await initDatabase(envVars.dbConfig);
   const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
 
-  await insertDomains(
-    sharedConfig.domains,
-    dataSource.manager,
-    envVars.domainMetadata,
-  );
+  await insertDomains(sharedConfig.domains, dataSource.manager);
   await dataSource.destroy();
 }
 
 async function insertDomains(
   domains: Array<DomainConfig>,
   manager: EntityManager,
-  domainMetadata: DomainMetadata,
 ): Promise<void> {
   for (const domain of domains) {
+    const domainMetadata = getDomainMetadata(domain.id.toString());
     await manager.upsert(
       Domain,
       {

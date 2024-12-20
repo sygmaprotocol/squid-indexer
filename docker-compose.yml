@@ -37,45 +37,21 @@ services:
       POSTGRES_PASSWORD: ${DB_PASS}
     ports:
       - "23798:${DB_PORT}"
-    env_file: ./envs/.env.init
-  indexer-init:
+    env_file: ./envs/.env.indexer.example
+  indexer:
     build: 
       context: .
       dockerfile: ./Dockerfile 
     restart: on-failure
     depends_on: 
       - db
-    env_file: ./envs/.env.init
-  indexer_evm1:
-    build: 
-      context: .
-      dockerfile: ./Dockerfile 
-    restart: on-failure
-    depends_on: 
-      - indexer-init
-    env_file: ./envs/.env.evm-1
-  indexer_evm2:
-    build: 
-      context: .
-      dockerfile: ./Dockerfile 
-    restart: on-failure
-    depends_on: 
-      - indexer-init
-    env_file: ./envs/.env.evm-2
-  indexer_substrate:
-    build: 
-      context: .
-      dockerfile: ./Dockerfile 
-    restart: on-failure
-    depends_on: 
-      - indexer-init
-    env_file: ./envs/.env.substrate
+    env_file: ./envs/.env.indexer.example
   api:
     build: 
       context: .
       dockerfile: ./Dockerfile.api
     depends_on: 
-      - indexer-init
-    env_file: ./envs/.env.api
+      - indexer
+    env_file: ./envs/.env.indexer.example
     ports:
       - "8000:8000"

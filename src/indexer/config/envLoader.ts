@@ -85,8 +85,8 @@ export function getEnv(): EnvVariables {
 export function getDomainMetadata(domainID: string): DomainMetadata {
   const domainMetadata = process.env[`${domainID}_METADATA`];
   if (!domainMetadata) {
-    throw new NotFoundError(
-      `domain metadata not configured for domain: ${domainID}`,
+    throw new Error(
+      `Domain metadata not configured for domain: ${domainID}`,
     );
   }
   return JSON.parse(domainMetadata) as DomainMetadata;

@@ -30,13 +30,7 @@ async function startProcessing(): Promise<void> {
       domainID: domain.id.toString(),
       domainName: domain.name,
     });
-    let domainMetadata;
-    try {
-      domainMetadata = getDomainMetadata(domain.id.toString());
-    } catch (err) {
-      logger.error(err);
-      continue;
-    }
+    const domainMetadata = getDomainMetadata(domain.id.toString())
     switch (domain.type) {
       case Network.EVM: {
         const provider = new ethers.JsonRpcProvider(domainMetadata.rpcUrl);

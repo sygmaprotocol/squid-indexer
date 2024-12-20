@@ -3,8 +3,6 @@ The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
 
-import { NotFoundError } from "../../utils/error";
-
 export type DbConfig = {
   host: string;
   name: string;
@@ -85,9 +83,7 @@ export function getEnv(): EnvVariables {
 export function getDomainMetadata(domainID: string): DomainMetadata {
   const domainMetadata = process.env[`${domainID}_METADATA`];
   if (!domainMetadata) {
-    throw new Error(
-      `Domain metadata not configured for domain: ${domainID}`,
-    );
+    throw new Error(`Domain metadata not configured for domain: ${domainID}`);
   }
   return JSON.parse(domainMetadata) as DomainMetadata;
 }

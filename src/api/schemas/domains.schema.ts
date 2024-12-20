@@ -2,7 +2,7 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import { domainSchema } from ".";
+import { domainMetadataSchema, domainSchema } from ".";
 
 export const domainsSchema = {
   summary: "Get domains",
@@ -14,7 +14,8 @@ export const domainsSchema = {
           schema: {
             type: "array",
             items: {
-              ...domainSchema,
+              ...domainSchema.properties,
+              ...domainMetadataSchema.properties,
             },
           },
         },

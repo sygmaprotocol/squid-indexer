@@ -67,8 +67,8 @@ type Domain @entity {
   id: ID!
   type: String!
   name: String!
-  iconURL: String
-  explorerURL: String
+  iconURL: String!
+  explorerURL: String!
   routesFrom: [Route!] @derivedFrom(field: "fromDomain")
   routesTo: [Route!] @derivedFrom(field: "toDomain")
   token: [Token!] @derivedFrom(field: "domain")

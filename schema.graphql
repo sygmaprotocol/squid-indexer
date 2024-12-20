@@ -85,12 +85,12 @@ type Fee @entity {
 type Route @entity @index(fields: ["fromDomainID", "toDomainID", "resourceID"], unique: true) {
   id: ID!
   fromDomainID: String  
-  fromDomain: Domain 
+  fromDomain: Domain! 
 
   toDomainID: String
-  toDomain: Domain   
+  toDomain: Domain!   
 
   resourceID: String
-  resource: Resource
+  resource: Resource!
   transfers: [Transfer!] @derivedFrom(field: "route")
 }

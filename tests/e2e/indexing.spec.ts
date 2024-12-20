@@ -65,10 +65,10 @@ describe("Indexer e2e tests", function () {
     const transfers: Array<TransferResponse> = await response.json();
 
     for (const transfer of transfers) {
-      if (transfer.route.fromDomain?.name.toLowerCase() == Network.SUBSTRATE) {
+      if (transfer.route.fromDomain.name.toLowerCase() == Network.SUBSTRATE) {
         substrateDeposits++;
       }
-      switch (transfer.route.resource?.type) {
+      switch (transfer.route.resource.type) {
         case ResourceType.FUNGIBLE: {
           fungibleDeposits++;
           break;

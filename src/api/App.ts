@@ -22,7 +22,6 @@ import { routesPlugin } from "./services/plugins/routes";
 
 export class App {
   public readonly instance: FastifyInstance;
-
   protected constructor(instance: FastifyInstance) {
     this.instance = instance;
   }

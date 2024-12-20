@@ -15,14 +15,16 @@ export type DomainMetadata = {
   domainId: number;
   rpcUrl: string;
   domainGateway?: string;
+  iconUrl?: string;
+  explorerUrl?: string;
 };
 
 export type EnvVariables = {
   sharedConfigURL: string;
-  domainMetadata: DomainMetadata;
   dbConfig: DbConfig;
   logLevel: string;
   version: string;
+  envDomains: number[];
 };
 
 export function getEnv(): EnvVariables {
@@ -30,17 +32,6 @@ export function getEnv(): EnvVariables {
   if (!sharedConfigURL) {
     throw new Error(`SHARED_CONFIG_URL is not defined in the environment.`);
   }
-
-  const domainId = Number(process.env.DOMAIN_ID);
-  if (isNaN(domainId)) {
-    throw new Error(`DOMAIN_ID environment variable is invalid or not set.`);
-  }
-
-  const domainMetadata = process.env[`${domainId}_METADATA`];
-  if (!domainMetadata) {
-    throw new Error(`Environment variable ${domainId}_METADATA is not set`);
-  }
-  const parsedDomainMetadata = JSON.parse(domainMetadata) as DomainMetadata;
 
   const dbHost = process.env.DB_HOST;
   if (!dbHost) {
@@ -67,16 +58,17 @@ export function getEnv(): EnvVariables {
     throw new Error(`DB_PASS is not defined in the environment.`);
   }
 
+  const envDomains = process.env.ENV_DOMAINS;
+  if (!envDomains) {
+    throw new Error(`ENV_DOMAINS is not defined in the environment.`);
+  }
+  const parsedEnvDomains = JSON.parse(envDomains) as number[];
+
   const logLevel = process.env.LOG_LEVEL || "debug";
   const version = process.env.VERSION || "unknown";
 
   return {
     sharedConfigURL,
-    domainMetadata: {
-      domainId: domainId,
-      domainGateway: parsedDomainMetadata.domainGateway,
-      rpcUrl: parsedDomainMetadata.rpcUrl,
-    },
     dbConfig: {
       host: dbHost,
       name: dbName,
@@ -86,5 +78,14 @@ export function getEnv(): EnvVariables {
     },
     logLevel,
     version,
+    envDomains: parsedEnvDomains,
   };
+}
+
+export function getDomainMetadata(domainID: string): DomainMetadata {
+  const domainMetadata = process.env[`${domainID}_METADATA`];
+  if (!domainMetadata) {
+    throw new Error(`Domain metadata not configured for domain: ${domainID}`);
+  }
+  return JSON.parse(domainMetadata) as DomainMetadata;
 }

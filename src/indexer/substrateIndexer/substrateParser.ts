@@ -73,7 +73,7 @@ export class SubstrateParser implements ISubstrateParser {
     });
     if (!resource) {
       throw new NotFoundError(
-        `Unssupported resource with ID ${event.resourceId}`,
+        `Unsupported resource with ID ${event.resourceId}`,
       );
     }
 
@@ -218,7 +218,7 @@ export class SubstrateParser implements ISubstrateParser {
     });
     if (!resource) {
       throw new NotFoundError(
-        `Unssupported resource with ID ${event.resourceId}`,
+        `Unsupported resource with ID ${event.resourceId}`,
       );
     }
 

@@ -72,7 +72,7 @@ export class EVMProcessor implements IProcessor {
 
     for (const block of ctx.blocks) {
       this.logger.info(
-        `Processing block ${block.header.height} on networ ${domain.name}(${domain.id})`,
+        `Processing block ${block.header.height} on network ${domain.name}(${domain.id})`,
       );
       for (const log of block.logs) {
         try {

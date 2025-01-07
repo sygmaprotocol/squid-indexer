@@ -7,7 +7,7 @@ import type { EntityManager } from "typeorm";
 
 import type { Domain as DomainConfig } from "./indexer/config";
 import { fetchSharedConfig } from "./indexer/config";
-import { getEnv } from "./indexer/config/envLoader";
+import { getDomainMetadata, getEnv } from "./indexer/config/envLoader";
 import { Domain, Resource, Token } from "./model";
 import { initDatabase } from "./utils";
 
@@ -18,21 +18,33 @@ export async function init(): Promise<void> {
   const dataSource = await initDatabase(envVars.dbConfig);
   const sharedConfig = await fetchSharedConfig(envVars.sharedConfigURL);
 
-  await insertDomains(sharedConfig.domains, dataSource.manager);
+  await insertDomains(
+    sharedConfig.domains,
+    dataSource.manager,
+    envVars.envDomains,
+  );
   await dataSource.destroy();
 }
 
 async function insertDomains(
   domains: Array<DomainConfig>,
   manager: EntityManager,
+  supportedDomainsIDs: number[],
 ): Promise<void> {
-  for (const domain of domains) {
+  for (const domainID of supportedDomainsIDs) {
+    const domain = domains.find((domain) => domain.id == domainID);
+    if (!domain) {
+      throw new Error(`domain with id ${domainID} not found in shared-config`);
+    }
+    const domainMetadata = getDomainMetadata(domain.id.toString());
     await manager.upsert(
       Domain,
       {
         id: domain.id.toString(),
         type: domain.type,
         name: domain.name,
+        iconURL: domainMetadata.iconUrl ?? "",
+        explorerURL: domainMetadata.explorerUrl ?? "",
       },
       ["id"],
     );

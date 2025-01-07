@@ -15,6 +15,8 @@ export type DomainMetadata = {
   domainId: number;
   rpcUrl: string;
   domainGateway?: string;
+  iconUrl: string;
+  explorerUrl: string;
 };
 
 export type EnvVariables = {

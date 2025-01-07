@@ -21,6 +21,12 @@ export class Domain {
     @StringColumn_({nullable: false})
     name!: string
 
+    @StringColumn_({nullable: false})
+    iconURL!: string
+
+    @StringColumn_({nullable: false})
+    explorerURL!: string
+
     @OneToMany_(() => Route, e => e.fromDomain)
     routesFrom!: Route[]
 

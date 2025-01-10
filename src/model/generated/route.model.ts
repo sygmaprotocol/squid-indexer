@@ -23,21 +23,21 @@ export class Route {
 
     @Index_()
     @ManyToOne_(() => Domain, {nullable: true})
-    fromDomain!: Domain | undefined | null
+    fromDomain!: Domain
 
     @StringColumn_({nullable: true})
     toDomainID!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Domain, {nullable: true})
-    toDomain!: Domain | undefined | null
+    toDomain!: Domain
 
     @StringColumn_({nullable: true})
     resourceID!: string | undefined | null
 
     @Index_()
     @ManyToOne_(() => Resource, {nullable: true})
-    resource!: Resource | undefined | null
+    resource!: Resource
 
     @OneToMany_(() => Transfer, e => e.route)
     transfers!: Transfer[]

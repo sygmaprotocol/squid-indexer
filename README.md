@@ -27,6 +27,10 @@ Fetches transfers ordered by time. Results can be filtered by various query para
 - **component**: Component of the transfer.<br/> *Possible values*: `deposit`, `execution`<br/> *Default*: `deposit`
 - **sender**: The address of the sender to filter by.
 
+`GET /routes`
+
+Fetches all active routes. 
+
 `GET /health`
 
 Health check endpoint to ensure the system is running properly 

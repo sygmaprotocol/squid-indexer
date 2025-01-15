@@ -5,21 +5,21 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { ApiPromise } from "@polkadot/api";
 import { expect } from "chai";
 import sinon from "sinon";
-import { SubstrateParser } from "../../src/indexer/substrateIndexer/substrateParser";
-import { IParser } from "../../src/indexer/indexer";
+import { SubstrateParser } from "../../../../src/indexer/substrateIndexer/substrateParser";
+import { IParser } from "../../../../src/indexer/indexer";
 import { Network, ResourceType } from "@buildwithsygma/core";
-import { Domain as DomainType } from "../../src/indexer/config";
-import { events } from "../../src/indexer/substrateIndexer/types";
-import type { Event } from "../../src/indexer/substrateIndexer/substrateProcessor";
-import { generateTransferID } from "../../src/indexer/utils";
-import { EVMParser } from "../../src/indexer/evmIndexer/evmParser";
+import { Domain as DomainType } from "../../../../src/indexer/config";
+import { events } from "../../../../src/indexer/substrateIndexer/types";
+import type { Event } from "../../../../src/indexer/substrateIndexer/substrateProcessor";
+import { generateTransferID } from "../../../../src/indexer/utils";
+import { EVMParser } from "../../../../src/indexer/evmIndexer/evmParser";
 import { JsonRpcProvider } from "ethers";
-import { V3AssetId } from "../../src/indexer/substrateIndexer/types/v1260";
-import { Context } from "../../src/indexer/substrateIndexer/substrateProcessor";
-import { Domain, Resource, Token } from "../../src/model";
+import { V3AssetId } from "../../../../src/indexer/substrateIndexer/types/v1260";
+import { Context } from "../../../../src/indexer/substrateIndexer/substrateProcessor";
+import { Domain, Resource, Route, Token } from "../../../../src/model";
+import { logger } from "../../../../src/utils/logger";
 
 describe("Substrate parser", () => {
-  let provider: sinon.SinonStubbedInstance<ApiPromise>;
   let parser: SubstrateParser;
   let ctx: Context;
   // Mock Data
@@ -28,6 +28,13 @@ describe("Substrate parser", () => {
     type: "fungible",
   };
 
+  const mockRoute = {
+    id: "mockRouteID",
+    resourceID: '0x0000000000000000000000000000000000000000000000000000000000000300',
+    fromDomainID: '4',
+    toDomainID: '1'
+  };
+  
   const mockToken = {
     id: "tokenID",
     tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
@@ -40,14 +47,17 @@ describe("Substrate parser", () => {
   const mockSourceDomain = {
     id: "1",
   };
-  before(() => {
-    provider = sinon.createStubInstance(ApiPromise);
 
-    parser = new SubstrateParser(provider);
+  const mockDestinationDomain = {
+    id: "1", 
+    type: "evm"
+  }
+
+  before(() => {
+    parser = new SubstrateParser(logger);
 
     const parsers = new Map<number, IParser>();
-    parsers.set(1, new EVMParser(new JsonRpcProvider()));
-    parser.setParsers(parsers);
+    parsers.set(1, new EVMParser(new JsonRpcProvider(), logger));
   });
 
   describe("parseDeposit", () => {
@@ -69,11 +79,21 @@ describe("Substrate parser", () => {
     });
     it("should parse a deposit correctly", async () => {
       findOneStub
+        .withArgs(Domain, { where: { id: mockDestinationDomain.id } })
+        .resolves(mockDestinationDomain);
+      findOneStub
         .withArgs(Resource, { where: { id: mockResource.id } })
         .resolves(mockResource);
+
       findOneStub
         .withArgs(Token, { where: { resource: mockResource, domainID: "4" } })
         .resolves(mockToken);
+
+      findOneStub
+        .withArgs(Route, {
+          where: { fromDomainID: "4", toDomainID: mockSourceDomain.id, resourceID: mockResource.id },
+        })
+        .resolves(mockRoute);
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
         extrinsic: { id: "0000000001-0ea58-000001", hash: "0x00" },
@@ -128,12 +148,9 @@ describe("Substrate parser", () => {
           id: "1-4-1",
           blockNumber: 1,
           depositNonce: "1",
-          toDomainID: "1",
           sender: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef",
           destination: "0x5c1f5961696bad2e73f73417f07ef55c62a2dc5b",
-          fromDomainID: "4",
-          resourceID:
-            "0x0000000000000000000000000000000000000000000000000000000000000300",
+          routeID: mockRoute.id,
           txHash: "0000000001-0ea58-000001",
           timestamp: new Date(1633072800),
           depositData:
@@ -256,9 +273,7 @@ describe("Substrate parser", () => {
       sinon.restore();
     });
     it("should parse a proposal execution correctly", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
 
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },
@@ -307,9 +322,7 @@ describe("Substrate parser", () => {
       sinon.restore();
     });
     it("should parse a failed handler execution correctly", async () => {
-      findOneStub
-        .withArgs(Domain, { where: { id: mockSourceDomain.id } })
-        .resolves(mockSourceDomain);
+      findOneStub.withArgs(Domain, { where: { id: mockSourceDomain.id } }).resolves(mockSourceDomain);
 
       let event: Event = {
         block: { height: 1, timestamp: 1633072800 },

@@ -1,6 +1,35 @@
 version: "3"
 
 services:
+
+  evm1:
+    image: ghcr.io/sygmaprotocol/indexer-evm1:latest
+    container_name: evm1
+    command: ganache-cli --chainId 1337 -d --db data/ --blockTime 2 > /dev/null
+    logging:
+      driver: none
+    ports:
+      - "8545:8545"
+
+  evm2:
+    image: ghcr.io/sygmaprotocol/indexer-evm2:latest
+    command: ganache-cli --chainId 1338 -d --db data/ --blockTime 2 > /dev/null
+    container_name: evm2
+    logging:
+      driver: none
+    ports:
+      - "8547:8545"
+
+  substrate-pallet:
+    container_name: substrate-pallet
+    command: ["--pruning=25000"]
+    image: ghcr.io/sygmaprotocol/indexer-substrate:latest
+    ports:
+      - "9944:9944"
+      - "9933:9933"
+    logging:
+      driver: none
+
   db:
     image: postgres:15
     environment:
@@ -8,38 +37,21 @@ services:
       POSTGRES_PASSWORD: ${DB_PASS}
     ports:
       - "23798:${DB_PORT}"
-    env_file: ./envs/.env.init
-  indexer-init:
+    env_file: ./envs/.env.indexer.example
+  indexer:
     build: 
       context: .
       dockerfile: ./Dockerfile 
     restart: on-failure
     depends_on: 
       - db
-    env_file: ./envs/.env.init
-  indexer-sepolia:
-    build: 
-      context: .
-      dockerfile: ./Dockerfile 
-    restart: on-failure
-    depends_on: 
-      - indexer-init
-    env_file: ./envs/.env.sepolia
-  indexer-holesky:
-    build: 
-      context: .
-      dockerfile: ./Dockerfile 
-    restart: on-failure
-    depends_on: 
-      - indexer-init
-    env_file: ./envs/.env.holesky
+    env_file: ./envs/.env.indexer.example
   api:
     build: 
       context: .
       dockerfile: ./Dockerfile.api
     depends_on: 
-      - indexer-init
-    env_file: ./envs/.env.api
+      - indexer
+    env_file: ./envs/.env.indexer.example
     ports:
       - "8000:8000"
-

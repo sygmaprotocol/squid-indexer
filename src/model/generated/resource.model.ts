@@ -18,9 +18,6 @@ export class Resource {
     @StringColumn_({nullable: false})
     type!: string
 
-    @OneToMany_(() => Transfer, e => e.resource)
-    transfers!: Transfer[]
-
     @OneToMany_(() => Token, e => e.resource)
     tokens!: Token[]
 }

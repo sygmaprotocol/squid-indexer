@@ -11,32 +11,27 @@ export type DbConfig = {
   password: string;
 };
 
+export type DomainMetadata = {
+  domainId: number;
+  rpcUrl: string;
+  domainGateway?: string;
+  iconUrl: string;
+  explorerUrl: string;
+};
+
 export type EnvVariables = {
   sharedConfigURL: string;
-  rpcUrls: string;
-  domainId: number;
-  domainGateway: string;
   dbConfig: DbConfig;
   logLevel: string;
   version: string;
+  envDomains: number[];
 };
+
 export function getEnv(): EnvVariables {
   const sharedConfigURL = process.env.SHARED_CONFIG_URL;
   if (!sharedConfigURL) {
     throw new Error(`SHARED_CONFIG_URL is not defined in the environment.`);
   }
-
-  const rpcUrls = process.env.RPC_URL;
-  if (!rpcUrls) {
-    throw new Error(`RPC_URL environment variable is not defined.`);
-  }
-
-  const domainId = Number(process.env.DOMAIN_ID);
-  if (isNaN(domainId)) {
-    throw new Error(`DOMAIN_ID environment variable is invalid or not set.`);
-  }
-
-  const domainGateway = process.env.DOMAIN_GATEWAY || "";
 
   const dbHost = process.env.DB_HOST;
   if (!dbHost) {
@@ -63,14 +58,17 @@ export function getEnv(): EnvVariables {
     throw new Error(`DB_PASS is not defined in the environment.`);
   }
 
+  const envDomains = process.env.ENV_DOMAINS;
+  if (!envDomains) {
+    throw new Error(`ENV_DOMAINS is not defined in the environment.`);
+  }
+  const parsedEnvDomains = JSON.parse(envDomains) as number[];
+
   const logLevel = process.env.LOG_LEVEL || "debug";
   const version = process.env.VERSION || "unknown";
 
   return {
     sharedConfigURL,
-    rpcUrls,
-    domainId,
-    domainGateway,
     dbConfig: {
       host: dbHost,
       name: dbName,
@@ -80,5 +78,14 @@ export function getEnv(): EnvVariables {
     },
     logLevel,
     version,
+    envDomains: parsedEnvDomains,
   };
+}
+
+export function getDomainMetadata(domainID: string): DomainMetadata {
+  const domainMetadata = process.env[`${domainID}_METADATA`];
+  if (!domainMetadata) {
+    throw new Error(`Domain metadata not configured for domain: ${domainID}`);
+  }
+  return JSON.parse(domainMetadata) as DomainMetadata;
 }

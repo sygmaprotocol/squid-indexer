@@ -8,14 +8,15 @@ import type {
 } from "@subsquid/evm-processor";
 import { EvmBatchProcessor } from "@subsquid/evm-processor";
 import type { Store } from "@subsquid/typeorm-store";
+import type winston from "winston";
 
 import * as bridge from "../../abi/bridge";
 import { NotFoundError } from "../../utils/error";
-import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
-import type { DecodedEvents, IParser, IProcessor } from "../indexer";
+import type { IParser, IProcessor } from "../indexer";
 import type {
   DecodedDepositLog,
+  DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   FeeCollectedData,
@@ -24,9 +25,11 @@ import type {
 export class EVMProcessor implements IProcessor {
   private parser: IParser;
   private rpcUrl: string;
-  constructor(parser: IParser, rpcUrl: string) {
+  private logger: winston.Logger;
+  constructor(parser: IParser, rpcUrl: string, logger: winston.Logger) {
     this.parser = parser;
     this.rpcUrl = rpcUrl;
+    this.logger = logger;
   }
   public getProcessor(domain: Domain): EvmBatchProcessor {
     const evmProcessor = new EvmBatchProcessor()
@@ -68,6 +71,9 @@ export class EVMProcessor implements IProcessor {
     const fees: FeeCollectedData[] = [];
 
     for (const block of ctx.blocks) {
+      this.logger.info(
+        `Processing block ${block.header.height} on network ${domain.name}(${domain.id})`,
+      );
       for (const log of block.logs) {
         try {
           switch (log.topics[0]) {
@@ -96,12 +102,12 @@ export class EVMProcessor implements IProcessor {
             }
 
             default:
-              logger.error(`Unsupported log topic: ${log.topics[0]}`);
+              this.logger.error(`Unsupported log topic: ${log.topics[0]}`);
               break;
           }
         } catch (error) {
           if (error instanceof NotFoundError) {
-            logger.error(error.message);
+            this.logger.error(error.message);
           } else {
             throw error;
           }

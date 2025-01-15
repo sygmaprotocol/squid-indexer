@@ -1,17 +1,13 @@
-type Transfer @entity {
+type Transfer @entity @index(fields: ["routeID", "depositNonce"], unique: true){
   id: ID!
   status: TransferStatus!
   depositNonce: String!
-  fromDomainID: String
-  fromDomain: Domain!
-  toDomainID: String
-  toDomain: Domain!
   deposit: Deposit @unique
   execution: Execution @unique
   feeID: String
   fee: Fee @unique
-  resource: Resource
-  resourceID: String
+  routeID: String
+  route: Route!
   amount: String
 }
 
@@ -52,7 +48,6 @@ type Account @entity {
 type Resource @entity {
   id: ID!
   type: String!
-  transfers: [Transfer!] @derivedFrom(field: "resource")
   tokens: [Token!] @derivedFrom(field: "resource")
 }
 
@@ -70,9 +65,12 @@ type Token @entity @index(fields: ["tokenAddress", "domainID"], unique: true) {
 
 type Domain @entity {
   id: ID!
+  type: String!
   name: String!
-  transfersFrom: [Transfer!] @derivedFrom(field: "fromDomain")
-  transfersTo: [Transfer!] @derivedFrom(field: "toDomain")
+  iconURL: String!
+  explorerURL: String!
+  routesFrom: [Route!] @derivedFrom(field: "fromDomain")
+  routesTo: [Route!] @derivedFrom(field: "toDomain")
   token: [Token!] @derivedFrom(field: "domain")
 }
 
@@ -83,4 +81,18 @@ type Fee @entity {
   transfer: Transfer
   token: Token
   tokenID: String
+}
+
+
+type Route @entity @index(fields: ["fromDomainID", "toDomainID", "resourceID"], unique: true) {
+  id: ID!
+  fromDomainID: String  
+  fromDomain: Domain 
+
+  toDomainID: String
+  toDomain: Domain   
+
+  resourceID: String
+  resource: Resource
+  transfers: [Transfer!] @derivedFrom(field: "route")
 }

@@ -5,16 +5,21 @@ SPDX-License-Identifier: LGPL-3.0-only
 
 import { randomUUID } from "crypto";
 
+import type { Network } from "@buildwithsygma/core";
 import { ResourceType } from "@buildwithsygma/core";
-import type { ApiPromise } from "@polkadot/api";
+import { TypeRegistry } from "@polkadot/types";
 import type { MultiLocation } from "@polkadot/types/interfaces";
 import { decodeHex } from "@subsquid/evm-processor";
 import { assertNotNull } from "@subsquid/substrate-processor";
+import type winston from "winston";
 
-import { decodeAmountOrTokenId, generateTransferID } from "../../indexer/utils";
-import { Domain, Resource, Token } from "../../model";
+import {
+  decodeAmountOrTokenId,
+  generateTransferID,
+  parseDestination,
+} from "../../indexer/utils";
+import { Domain, Resource, Route, Token } from "../../model";
 import { NotFoundError } from "../../utils/error";
-import { logger } from "../../utils/logger";
 import type { Domain as DomainType } from "../config";
 import type { IParser } from "../indexer";
 import type { Event } from "../substrateIndexer/substrateProcessor";
@@ -37,17 +42,11 @@ export interface ISubstrateParser extends IParser {
 }
 
 export class SubstrateParser implements ISubstrateParser {
-  private provider: ApiPromise;
-  private parsers!: Map<number, IParser>;
+  private logger: winston.Logger;
 
-  constructor(provider: ApiPromise) {
-    this.provider = provider;
+  constructor(logger: winston.Logger) {
+    this.logger = logger;
   }
-
-  public setParsers(parsers: Map<number, IParser>): void {
-    this.parsers = parsers;
-  }
-
   public async parseDeposit(
     log: Event,
     fromDomain: DomainType,
@@ -57,8 +56,12 @@ export class SubstrateParser implements ISubstrateParser {
     decodedFeeLog: FeeCollectedData;
   }> {
     const event = events.sygmaBridge.deposit.v1250.decode(log);
-    const destinationParser = this.parsers.get(event.destDomainId);
-    if (!destinationParser) {
+    const destinationDomain = await ctx.store.findOne(Domain, {
+      where: {
+        id: event.destDomainId.toString(),
+      },
+    });
+    if (!destinationDomain) {
       throw new NotFoundError(
         `Destination domain id ${event.destDomainId} not supported`,
       );
@@ -70,7 +73,7 @@ export class SubstrateParser implements ISubstrateParser {
     });
     if (!resource) {
       throw new NotFoundError(
-        `Unssupported resource with ID ${event.resourceId}`,
+        `Unsupported resource with ID ${event.resourceId}`,
       );
     }
 
@@ -87,6 +90,22 @@ export class SubstrateParser implements ISubstrateParser {
     }
     const extrinsic = assertNotNull(log.extrinsic, "Missing extrinsic");
 
+    let route = await ctx.store.findOne(Route, {
+      where: {
+        fromDomainID: fromDomain.id.toString(),
+        toDomainID: event.destDomainId.toString(),
+        resourceID: resource.id,
+      },
+    });
+    if (!route) {
+      route = new Route({
+        fromDomainID: fromDomain.id.toString(),
+        toDomainID: event.destDomainId.toString(),
+        resourceID: resource.id,
+      });
+
+      await ctx.store.insert(route);
+    }
     return {
       decodedDepositLog: {
         id: generateTransferID(
@@ -96,14 +115,13 @@ export class SubstrateParser implements ISubstrateParser {
         ),
         blockNumber: log.block.height,
         depositNonce: event.depositNonce.toString(),
-        toDomainID: event.destDomainId.toString(),
         sender: event.sender,
-        destination: destinationParser.parseDestination(
+        destination: parseDestination(
+          destinationDomain.type as Network,
           event.depositData,
           resource.type as ResourceType,
         ),
-        fromDomainID: fromDomain.id.toString(),
-        resourceID: resource.id,
+        routeID: route.id,
         txHash: extrinsic.id,
         timestamp: new Date(log.block.timestamp ?? ""),
         depositData: event.depositData,
@@ -200,7 +218,7 @@ export class SubstrateParser implements ISubstrateParser {
     });
     if (!resource) {
       throw new NotFoundError(
-        `Unssupported resource with ID ${event.resourceId}`,
+        `Unsupported resource with ID ${event.resourceId}`,
       );
     }
 
@@ -239,10 +257,12 @@ export class SubstrateParser implements ISubstrateParser {
         break;
       }
       default:
-        logger.error(`Unsupported resource type: ${resourceType}`);
+        this.logger.error(`Unsupported resource type: ${resourceType}`);
         return "";
     }
-    const decodedData = this.provider.createType<MultiLocation>(
+
+    const registry = new TypeRegistry();
+    const decodedData = registry.createType<MultiLocation>(
       "MultiLocation",
       recipient,
     );

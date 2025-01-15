@@ -10,13 +10,14 @@ import type {
 } from "@subsquid/substrate-processor";
 import { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import type { Store } from "@subsquid/typeorm-store";
+import type winston from "winston";
 
 import { NotFoundError } from "../../utils/error";
-import { logger } from "../../utils/logger";
 import type { Domain } from "../config";
-import type { DecodedEvents, IProcessor } from "../indexer";
+import type { IProcessor } from "../indexer";
 import type {
   DecodedDepositLog,
+  DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   FeeCollectedData,
@@ -29,13 +30,19 @@ export class SubstrateProcessor implements IProcessor {
   private parser: ISubstrateParser;
   private rpcUrl: string;
   private fieldSelection: FieldSelection;
-  constructor(parser: ISubstrateParser, rpcUrl: string) {
+  private logger: winston.Logger;
+  constructor(
+    parser: ISubstrateParser,
+    rpcUrl: string,
+    logger: winston.Logger,
+  ) {
     this.parser = parser;
     this.rpcUrl = rpcUrl;
     this.fieldSelection = {
       extrinsic: { hash: true },
       block: { timestamp: true },
     };
+    this.logger = logger;
   }
 
   public getProcessor(domain: Domain): SubstrateBatchProcessor<Fields> {
@@ -63,6 +70,7 @@ export class SubstrateProcessor implements IProcessor {
         extrinsic: true,
       })
       .setFields(this.fieldSelection);
+
     if (domain.gateway) {
       substrateProcessor.setGateway(domain.gateway);
     }
@@ -78,6 +86,9 @@ export class SubstrateProcessor implements IProcessor {
     const failedHandlerExecutions: DecodedFailedHandlerExecutionLog[] = [];
     const fees: FeeCollectedData[] = [];
     for (const block of ctx.blocks) {
+      this.logger.info(
+        `Processing block ${block.header.height} on network ${domain.name}(${domain.id})`,
+      );
       for (const event of block.events) {
         try {
           switch (event.name) {
@@ -128,12 +139,12 @@ export class SubstrateProcessor implements IProcessor {
             }
 
             default:
-              logger.error(`Unsupported log topic: ${event.name}`);
+              this.logger.error(`Unsupported log topic: ${event.name}`);
               break;
           }
         } catch (error) {
           if (error instanceof NotFoundError) {
-            logger.error(error.message);
+            this.logger.error(error.message);
           } else {
             throw error;
           }

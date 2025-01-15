@@ -2,7 +2,6 @@
 The Licensed Work is (c) 2024 Sygma
 SPDX-License-Identifier: LGPL-3.0-only
 */
-import type { ResourceType } from "@buildwithsygma/core";
 import type {
   Log as _Log,
   Transaction as _Transaction,
@@ -12,6 +11,7 @@ import type {
 import type { SubstrateBatchProcessor } from "@subsquid/substrate-processor";
 import { TypeormDatabase } from "@subsquid/typeorm-store";
 import { In } from "typeorm";
+import type winston from "winston";
 
 import {
   Transfer,
@@ -21,7 +21,6 @@ import {
   TransferStatus,
   Fee,
 } from "../model";
-import { logger } from "../utils/logger";
 
 import type { Domain } from "./config";
 import type { Context as EvmContext } from "./evmIndexer/evmProcessor";
@@ -32,6 +31,7 @@ import type {
 } from "./substrateIndexer/substrateProcessor";
 import type {
   DecodedDepositLog,
+  DecodedEvents,
   DecodedFailedHandlerExecutionLog,
   DecodedProposalExecutionLog,
   FeeCollectedData,
@@ -39,7 +39,6 @@ import type {
 
 type Context = EvmContext | SubstrateContext;
 export interface IParser {
-  setParsers(parsers: Map<number, IParser>): void;
   parseDeposit(
     log: Log | Event,
     fromDomain: Domain,
@@ -58,32 +57,24 @@ export interface IParser {
     toDomain: Domain,
     ctx: Context,
   ): Promise<DecodedFailedHandlerExecutionLog>;
-  parseDestination(hexData: string, resourceType: ResourceType): string;
 }
 
 export interface IProcessor {
-  processEvents(
-    ctx: Context,
-    domain: Domain,
-  ): Promise<DecodedEvents> | DecodedEvents;
+  processEvents(ctx: Context, domain: Domain): Promise<DecodedEvents>;
   getProcessor(
     domain: Domain,
   ): EvmBatchProcessor | SubstrateBatchProcessor<Fields>;
 }
 
-export type DecodedEvents = {
-  deposits: DecodedDepositLog[];
-  executions: DecodedProposalExecutionLog[];
-  failedHandlerExecutions: DecodedFailedHandlerExecutionLog[];
-  fees: FeeCollectedData[];
-};
 export class Indexer {
   private domain: Domain;
   private processor: IProcessor;
+  private logger: winston.Logger;
 
-  constructor(processor: IProcessor, domain: Domain) {
+  constructor(processor: IProcessor, domain: Domain, logger: winston.Logger) {
     this.processor = processor;
     this.domain = domain;
+    this.logger = logger;
   }
 
   public startProcessing(): void {
@@ -94,6 +85,7 @@ export class Indexer {
         isolationLevel: "READ COMMITTED",
       }),
       async (ctx) => {
+        ctx.log = ctx.log.child({ domain: this.domain.id.toString() });
         const decodedEvents = await this.processor.processEvents(
           ctx,
           this.domain,
@@ -143,9 +135,7 @@ export class Indexer {
         deposit: deposit,
         depositNonce: d.depositNonce.toString(),
         amount: d.amount,
-        resourceID: d.resourceID,
-        fromDomainID: d.fromDomainID,
-        toDomainID: d.toDomainID,
+        routeID: d.routeID,
       });
 
       if (!deposits.has(d.id)) {
@@ -189,8 +179,6 @@ export class Indexer {
         id: e.id,
         status: TransferStatus.executed,
         execution: execution,
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
         depositNonce: e.depositNonce,
       });
 
@@ -224,8 +212,6 @@ export class Indexer {
         id: e.id,
         status: TransferStatus.failed,
         execution: failedExecution,
-        fromDomainID: e.fromDomainID,
-        toDomainID: e.toDomainID,
         depositNonce: e.depositNonce,
       });
 
@@ -257,7 +243,7 @@ export class Indexer {
         relations: { deposit: true },
       });
       if (!transfer?.deposit) {
-        logger.warn(
+        this.logger.warn(
           `Deposit for the fee with txHash: ${f.txIdentifier} not found, skipping...`,
         );
         continue;

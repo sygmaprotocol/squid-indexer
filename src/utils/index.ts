@@ -5,7 +5,7 @@ SPDX-License-Identifier: LGPL-3.0-only
 import { DataSource } from "typeorm";
 import { SnakeNamingStrategy } from "typeorm-naming-strategies";
 
-import type { DbConfig } from "../indexer/config/validator";
+import type { DbConfig } from "../indexer/config/envLoader";
 import {
   Account,
   Deposit,
@@ -16,6 +16,7 @@ import {
   Token,
   Transfer,
 } from "../model";
+import { Route } from "../model/generated/route.model";
 
 export async function initDatabase(dbConfig: DbConfig): Promise<DataSource> {
   const dataSource = new DataSource({
@@ -33,6 +34,7 @@ export async function initDatabase(dbConfig: DbConfig): Promise<DataSource> {
       Execution,
       Account,
       Fee,
+      Route,
       Token,
     ],
     namingStrategy: new SnakeNamingStrategy(),

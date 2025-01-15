@@ -29,7 +29,7 @@ COPY --from=builder /squid/node_modules ./node_modules
 COPY --from=builder /squid/package*.json ./
 COPY --from=builder /squid/lib ./lib
 COPY --from=builder /squid/envs ./envs
-LABEL org.opencontainers.image.source https://github.com/sygmaprotocol/squid-indexer
+LABEL org.opencontainers.image.source https://github.com/sprintertech/squid-indexer
 EXPOSE 8000
 
 CMD ["node", "./lib/api/index.js"]

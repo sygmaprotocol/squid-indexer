@@ -38,7 +38,7 @@ COPY --from=builder /squid/commands.json ./
 
 RUN corepack yarn global add @subsquid/commands && mv $(which squid-commands) /usr/local/bin/sqd
 
-LABEL org.opencontainers.image.source https://github.com/sygmaprotocol/squid-indexer/
+LABEL org.opencontainers.image.source https://github.com/sprintertech/squid-indexer/
 EXPOSE 8000
 
 ENTRYPOINT sh /start-prod.sh

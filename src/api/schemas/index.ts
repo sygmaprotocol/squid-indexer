@@ -25,6 +25,14 @@ export const domainSchema = {
   },
 };
 
+export const domainMetadataSchema = {
+  type: "object",
+  properties: {
+    iconURL: { type: "string", example: "https://example.com/icon1.png" },
+    explorerURL: { type: "string", example: "https://explorer.com/1" },
+  },
+};
+
 export const tokenSchema = {
   tpye: "object",
   properties: {
